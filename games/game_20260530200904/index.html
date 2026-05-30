@@ -2,244 +2,519 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>Monster Collect DX</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Tactical Heroes Lite</title>
 <style>
-body { margin:0; background:#111; color:#fff; font-family:sans-serif; text-align:center; touch-action:none; }
-#ui { padding:10px; background:#222; font-size:14px; font-weight:bold; }
-#party { margin-top:5px; color:#FFD700; font-size:18px; letter-spacing: 5px; }
-canvas { background:#000; display:block; margin:10px auto; border:2px solid #555; border-radius:4px; }
-.ctrl { display:grid; grid-template-columns:repeat(3, 60px); gap:8px; justify-content:center; margin-top:10px; }
-button { padding:15px; font-size:20px; border-radius:10px; background:#444; color:#fff; border:none; box-shadow: 0 4px #222; cursor:pointer; }
-button:active { background:#666; box-shadow: 0 0 #222; transform: translateY(4px); }
-.log { color: #aaa; font-size: 12px; margin-top: 10px; height: 1.5em; }
+  :root { --cell-size: 12vw; --max-cell: 60px; }
+  * { box-sizing: border-box; user-select: none; touch-action: manipulation; }
+  body { margin: 0; background: #1a1a24; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
+  
+  #header { width: 100%; max-width: 500px; padding: 10px; background: #2a2a35; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #daa520; }
+  #turn-display { font-size: 1.2rem; font-weight: bold; color: #4da8da; }
+  
+  #game-board { 
+    display: grid; grid-template-columns: repeat(8, minmax(var(--cell-size), var(--max-cell))); 
+    grid-template-rows: repeat(8, minmax(var(--cell-size), var(--max-cell))); 
+    gap: 1px; background: #000; border: 3px solid #333; margin-top: 15px; position: relative;
+  }
+  
+  .cell { display: flex; align-items: center; justify-content: center; position: relative; font-size: 1.5rem; }
+  .plain { background: #7cb342; }
+  .forest { background: #33691e; }
+  .mountain { background: #5d4037; }
+  .castle { background: #607d8b; }
+  
+  /* Overlays for movement and attack */
+  .move-area::after { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:rgba(0,150,255,0.4); pointer-events:none; }
+  .atk-area::after { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:rgba(255,0,0,0.4); pointer-events:none; }
+
+  /* Units */
+  .unit { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; z-index: 10; transition: all 0.2s; cursor: pointer; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5)); }
+  .player { background: rgba(50, 100, 255, 0.3); border-radius: 50%; }
+  .enemy { background: rgba(255, 50, 50, 0.3); border-radius: 50%; }
+  .acted { filter: grayscale(100%) brightness(0.6); }
+
+  /* HP Bars */
+  .hp-bar { position: absolute; bottom: 2px; left: 10%; width: 80%; height: 4px; background: #333; border-radius: 2px; }
+  .hp-fill { height: 100%; background: #00e676; border-radius: 2px; transition: width 0.2s; }
+  .hp-fill.low { background: #ff1744; }
+
+  #footer-info { width: 100%; max-width: 500px; padding: 15px; margin-top: auto; background: #2a2a35; min-height: 120px; border-top: 2px solid #daa520; }
+  .info-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; color: #daa520; }
+  .info-stats { display: flex; gap: 15px; font-size: 0.9rem; color: #ccc; }
+  .info-desc { margin-top: 5px; font-size: 0.85rem; color: #aaa; }
+
+  /* Messages */
+  #message-banner { position: absolute; top: 30%; left: 0; width: 100%; background: rgba(0,0,0,0.8); color: #fff; text-align: center; padding: 20px; font-size: 2rem; font-weight: bold; z-index: 100; display: none; text-shadow: 2px 2px 0 #000; border-top: 2px solid #daa520; border-bottom: 2px solid #daa520; }
+
+  .btn { background: #daa520; color: #000; border: none; padding: 10px 20px; font-size: 1rem; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+  .btn:active { transform: scale(0.95); }
 </style>
 </head>
 <body>
-<div id="ui">
-  <div id="stats">HP:100/100 LV:1 Floor:1</div>
-  <div id="party">仲間: なし</div>
-</div>
-<canvas id="game" width="360" height="360"></canvas>
-<div class="log" id="logMsg">ダンジョンに足を踏み入れた...</div>
 
-<div class="ctrl">
-  <div></div><button onclick="move(0,-1)">▲</button><div></div>
-  <button onclick="move(-1,0)">◀</button>
-  <button onclick="move(0,0)" style="font-size:14px; background:#2a2a2a;">待機</button>
-  <button onclick="move(1,0)">▶</button>
-  <div></div><button onclick="move(0,1)">▼</button><div></div>
+<div id="header">
+  <div id="stage-display">STAGE 1</div>
+  <div id="turn-display">PLAYER PHASE</div>
+</div>
+
+<div id="game-board"></div>
+
+<div id="footer-info">
+  <div class="info-title" id="ui-name">ユニットを選択してください</div>
+  <div class="info-stats" id="ui-stats">HP: -- / Atk: -- / Mov: --</div>
+  <div class="info-desc" id="ui-desc">味方をタップして移動・攻撃。空き地タップで待機。</div>
+</div>
+
+<div id="message-banner">
+  <div id="msg-text">PLAYER PHASE</div>
+  <button class="btn" id="msg-btn" style="display:none;" onclick="nextStage()">次のステージへ</button>
 </div>
 
 <script>
-const c = document.getElementById("game"), ctx = c.getContext("2d");
-const TILE = 24, SIZE = 15;
-let state;
+  // --- Game Data ---
+  const BOARD_SIZE = 8;
+  const TERRAIN = {
+    0: { type: 'plain', icon: '', avoid: 0, heal: 0 },
+    1: { type: 'forest', icon: '🌲', avoid: 20, heal: 0 },
+    2: { type: 'mountain', icon: '⛰️', avoid: 30, heal: 0 },
+    3: { type: 'castle', icon: '🏰', avoid: 20, heal: 10 }
+  };
 
-// モンスターの図鑑（元のAIロジックを流用）
-const MONSTERS = {
-  "🦇": { name:"コウモリ", type:"slime", hpBase:10, atk:3, rate:0.4, bonus:{hp:10, atk:1} },
-  "🐺": { name:"ウルフ", type:"wolf", hpBase:20, atk:5, rate:0.2, bonus:{hp:20, atk:3} },
-  "🐉": { name:"ドラゴン", type:"archer", hpBase:35, atk:8, rate:0.05, bonus:{hp:50, atk:8} }
-};
+  const CLASSES = {
+    sword:  { icon: '🗡️', name: '剣士', hp: 25, atk: 8, mov: 3, range: 1, type: 'sword' },
+    lance:  { icon: '🔱', name: '槍兵', hp: 30, atk: 7, mov: 2, range: 1, type: 'lance' },
+    axe:    { icon: '🪓', name: '斧兵', hp: 28, atk: 9, mov: 2, range: 1, type: 'axe' }, // 敵用追加
+    bow:    { icon: '🏹', name: '弓兵', hp: 20, atk: 9, mov: 2, range: 2, type: 'none' },
+    knight: { icon: '🐎', name: '騎士', hp: 35, atk: 6, mov: 4, range: 1, type: 'lance' },
+    mage:   { icon: '🧙', name: '魔法', hp: 18, atk:10, mov: 2, range: 1, type: 'none' },
+    boss:   { icon: '👹', name: 'ボス', hp: 45, atk:10, mov: 1, range: 1, type: 'axe' }
+  };
 
-function rnd(n){ return Math.floor(Math.random()*n) }
-function log(msg){ document.getElementById("logMsg").textContent = msg; }
+  let stage = 1;
+  let map = [];
+  let units = [];
+  let selectedUnit = null;
+  let isPlayerTurn = true;
+  let animating = false;
 
-function restart(){
-  state = { floor:1, lv:1, baseHp:100, baseAtk:10, x:1, y:1, enemies:[], party:[] };
-  calcStats();
-  state.hp = state.maxHp;
-  genFloor();
-}
+  const boardEl = document.getElementById('game-board');
 
-function calcStats(){
-  state.maxHp = state.baseHp;
-  state.atk = state.baseAtk;
-  for(let icon of state.party){
-    state.maxHp += MONSTERS[icon].bonus.hp;
-    state.atk += MONSTERS[icon].bonus.atk;
+  // --- Initialization ---
+  function initGame() {
+    generateMap();
+    spawnUnits();
+    renderBoard();
+    showMessage("STAGE " + stage, 1500);
   }
-}
 
-function genFloor(){
-  state.enemies = [];
-  state.map = [];
-  for(let y=0; y<SIZE; y++){
-    state.map[y] = [];
-    for(let x=0; x<SIZE; x++){
-      // 壁の生成
-      state.map[y][x] = (x===0 || y===0 || x===SIZE-1 || y===SIZE-1 || Math.random()<0.12) ? 1 : 0;
-    }
+  function generateMap() {
+    // 8x8 固定マップ (1:森, 2:山, 3:城, 0:平地)
+    map = [
+      [2,2,0,0,0,1,1,3],
+      [2,0,0,1,0,0,1,0],
+      [0,0,1,1,0,0,0,0],
+      [0,1,1,0,0,2,2,0],
+      [0,0,0,0,2,2,0,0],
+      [1,0,0,0,0,0,0,1],
+      [1,1,0,0,1,0,0,2],
+      [3,0,0,0,1,0,2,2]
+    ];
   }
-  // 初期位置と出口の確保
-  state.map[1][1] = 0;
-  state.x = 1; state.y = 1;
-  state.exit = {x: SIZE-2, y: SIZE-2};
-  state.map[state.exit.y][state.exit.x] = 0;
 
-  // 敵の配置
-  let count = 4 + state.floor;
-  let spawnPool = ["🦇","🦇","🐺","🐉"];
-  for(let i=0; i<count; i++){
-    let icon = spawnPool[rnd(spawnPool.length)];
-    state.enemies.push({
-      x: rnd(SIZE-2)+1, y: rnd(SIZE-2)+1,
-      icon: icon,
-      type: MONSTERS[icon].type,
-      hp: MONSTERS[icon].hpBase + (state.floor * 2),
-      maxHp: MONSTERS[icon].hpBase + (state.floor * 2)
+  function spawnUnits() {
+    units = [];
+    const statBoost = (stage - 1) * 2; // ステージが上がると敵が強くなる
+    
+    // Player Units (Top Left area)
+    addUnit(1, 6, 'sword', 'player', true); // Lord
+    addUnit(2, 7, 'lance', 'player');
+    addUnit(3, 6, 'bow', 'player');
+    addUnit(1, 5, 'knight', 'player');
+    addUnit(0, 6, 'mage', 'player');
+
+    // Enemy Units (Bottom Right area)
+    addUnit(7, 0, 'boss', 'enemy', false, statBoost);
+    addUnit(6, 1, 'axe', 'enemy', false, statBoost);
+    addUnit(6, 2, 'sword', 'enemy', false, statBoost);
+    addUnit(5, 1, 'bow', 'enemy', false, statBoost);
+    addUnit(4, 0, 'lance', 'enemy', false, statBoost);
+  }
+
+  function addUnit(x, y, clsId, team, isLord = false, boost = 0) {
+    const cls = CLASSES[clsId];
+    units.push({
+      id: Math.random().toString(36).substr(2, 9),
+      x: x, y: y,
+      clsId: clsId,
+      name: cls.name + (isLord ? "(主人公)" : ""),
+      icon: cls.icon,
+      team: team,
+      hp: cls.hp + boost,
+      maxHp: cls.hp + boost,
+      atk: cls.atk + Math.floor(boost/2),
+      mov: cls.mov,
+      range: cls.range,
+      type: cls.type,
+      isLord: isLord,
+      hasActed: false
     });
   }
-  draw();
-}
 
-function draw(){
-  ctx.clearRect(0,0,c.width,c.height);
-  
-  // マップ描画
-  for(let y=0; y<SIZE; y++){
-    for(let x=0; x<SIZE; x++){
-      ctx.fillStyle = state.map[y][x] ? "#2c3e50" : "#1a1a1a";
-      ctx.fillRect(x*TILE, y*TILE, TILE, TILE);
-    }
-  }
-  
-  // 出口（敵が0なら開く）
-  if(state.enemies.length === 0){
-    ctx.fillStyle = "#00ffcc";
-    ctx.fillRect(state.exit.x*TILE+4, state.exit.y*TILE+4, 16, 16);
-  } else {
-    ctx.fillStyle = "#555"; // 閉じている
-    ctx.fillRect(state.exit.x*TILE+8, state.exit.y*TILE+8, 8, 8);
-  }
-
-  ctx.font = "18px sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  // 敵描画
-  for(const e of state.enemies){
-    ctx.fillText(e.icon, e.x*TILE + TILE/2, e.y*TILE + TILE/2);
-    // HPバー
-    ctx.fillStyle = "red";
-    ctx.fillRect(e.x*TILE+2, e.y*TILE+TILE-4, 20 * (e.hp/e.maxHp), 3);
-  }
-  
-  // プレイヤー描画
-  ctx.fillText("🧙‍♂️", state.x*TILE + TILE/2, state.y*TILE + TILE/2);
-
-  // UI更新
-  document.getElementById("stats").textContent = 
-    `HP:${state.hp}/${state.maxHp}  LV:${state.lv}  階:${state.floor}  攻:${state.atk}  敵:${state.enemies.length}`;
-  document.getElementById("party").textContent = 
-    `仲間: ${state.party.length > 0 ? state.party.join("") : "なし"}`;
-}
-
-function move(dx,dy){
-  let nx = state.x + dx, ny = state.y + dy;
-  
-  // 壁チェック
-  if(state.map[ny]?.[nx] === 1) return;
-
-  // 攻撃チェック
-  let enemy = state.enemies.find(e => e.x === nx && e.y === ny);
-  if(enemy){
-    enemy.hp -= state.atk;
-    log(`${MONSTERS[enemy.icon].name}に ${state.atk}ダメージ！`);
+  // --- Rendering ---
+  function renderBoard() {
+    boardEl.innerHTML = '';
     
-    if(enemy.hp <= 0){
-      state.enemies = state.enemies.filter(v => v !== enemy);
-      log(`${MONSTERS[enemy.icon].name}を倒した！`);
-      
-      // 仲間になる判定
-      if(Math.random() < MONSTERS[enemy.icon].rate){
-        if(state.party.length < 3){
-          state.party.push(enemy.icon);
-          log(`✨ ${MONSTERS[enemy.icon].name} が仲間になった！(HP/攻UP)`);
-          calcStats();
-          state.hp = state.maxHp; // 仲間になったら全回復
+    // Draw Terrain
+    for (let y = 0; y < BOARD_SIZE; y++) {
+      for (let x = 0; x < BOARD_SIZE; x++) {
+        const tVal = map[y][x];
+        const terrain = TERRAIN[tVal];
+        const cell = document.createElement('div');
+        cell.className = `cell ${terrain.type}`;
+        cell.id = `cell-${x}-${y}`;
+        cell.textContent = terrain.icon;
+        cell.onclick = () => onCellClick(x, y);
+        boardEl.appendChild(cell);
+      }
+    }
+
+    // Draw Units
+    units.forEach(u => {
+      if (u.hp <= 0) return;
+      const cell = document.getElementById(`cell-${u.x}-${u.y}`);
+      const uEl = document.createElement('div');
+      uEl.className = `unit ${u.team} ${u.hasActed ? 'acted' : ''}`;
+      uEl.innerHTML = `${u.icon}
+        <div class="hp-bar"><div class="hp-fill ${u.hp/u.maxHp < 0.3 ? 'low':''}" style="width:${(u.hp/u.maxHp)*100}%"></div></div>`;
+      cell.appendChild(uEl);
+    });
+  }
+
+  function highlightCells(cells, className) {
+    cells.forEach(pos => {
+      const cell = document.getElementById(`cell-${pos.x}-${pos.y}`);
+      if(cell) cell.classList.add(className);
+    });
+  }
+
+  function clearHighlights() {
+    document.querySelectorAll('.cell').forEach(c => {
+      c.classList.remove('move-area');
+      c.classList.remove('atk-area');
+    });
+  }
+
+  function updateFooter(unit) {
+    if(!unit) return;
+    document.getElementById('ui-name').textContent = unit.name;
+    document.getElementById('ui-stats').textContent = `HP: ${unit.hp}/${unit.maxHp} | 攻: ${unit.atk} | 移動: ${unit.mov}`;
+    let wAdv = unit.type !== 'none' ? `(属性: ${unit.type})` : "";
+    document.getElementById('ui-desc').textContent = `${wAdv} 射程: ${unit.range}`;
+  }
+
+  // --- Logic & Interaction ---
+  function getUnitAt(x, y) {
+    return units.find(u => u.x === x && u.y === y && u.hp > 0);
+  }
+
+  // Manhattan distance simple BFS for movement
+  function getReachableCells(unit) {
+    let reachable = [];
+    for (let y = 0; y < BOARD_SIZE; y++) {
+      for (let x = 0; x < BOARD_SIZE; x++) {
+        const dist = Math.abs(unit.x - x) + Math.abs(unit.y - y);
+        if (dist <= unit.mov) {
+          // 山(2)は進入不可
+          if (map[y][x] !== 2 && (!getUnitAt(x, y) || getUnitAt(x,y).team === unit.team)) {
+            reachable.push({x, y});
+          }
         }
       }
     }
-  } else {
-    // 移動
-    state.x = nx; state.y = ny;
+    return reachable;
   }
-  
-  enemyTurn();
 
-  // ゴール判定
-  if(state.x === state.exit.x && state.y === state.exit.y && state.enemies.length === 0){
-    state.floor++;
-    state.lv++;
-    state.baseHp += 10;
-    state.baseAtk += 2;
-    calcStats();
-    state.hp = state.maxHp;
-    log(`地下${state.floor}階へ進んだ！`);
-    genFloor();
-    return;
-  }
-  draw();
-}
-
-function enemyTurn(){
-  for(const e of state.enemies){
-    let dx = state.x - e.x, dy = state.y - e.y;
-    let dist = Math.abs(dx) + Math.abs(dy);
-
-    // 隣接時は攻撃
-    if(dist === 1){
-      let eAtk = MONSTERS[e.icon].atk + state.floor;
-      state.hp -= eAtk;
-      log(`${MONSTERS[e.icon].name}の攻撃！ ${eAtk}ダメージ！`);
-      if(state.hp <= 0){ 
-        alert(`力尽きた... 到達階層: ${state.floor}F`); 
-        restart(); 
-        return; 
-      }
-      continue;
-    }
-
-    // AIロジック (参考元の動きを継承)
-    if(e.type === "slime"){
-      if(dist < 5){
-        if(Math.abs(dx) > Math.abs(dy)) e.x += Math.sign(dx);
-        else e.y += Math.sign(dy);
-      }
-    } else if(e.type === "wolf"){
-      for(let i=0; i<2; i++){
-        let nx = state.x - e.x, ny = state.y - e.y;
-        if(Math.abs(nx) + Math.abs(ny) === 1) break; // 密着したら止まる
-        if(Math.abs(nx) > Math.abs(ny)) e.x += Math.sign(nx);
-        else e.y += Math.sign(ny);
-      }
-    } else if(e.type === "archer"){
-      if(dist < 4){
-        let eAtk = MONSTERS[e.icon].atk;
-        state.hp -= eAtk; // ドラゴンの遠距離ブレス
-        log(`ドラゴンの炎！ ${eAtk}ダメージ！`);
-        if(state.hp <= 0){ alert("力尽きた..."); restart(); return; }
-      } else {
-        if(Math.abs(dx) > Math.abs(dy)) e.x += Math.sign(dx);
-        else e.y += Math.sign(dy);
+  function getAttackableCells(unit, fromX, fromY) {
+    let attackable = [];
+    for (let y = 0; y < BOARD_SIZE; y++) {
+      for (let x = 0; x < BOARD_SIZE; x++) {
+        const dist = Math.abs(fromX - x) + Math.abs(fromY - y);
+        if (dist === unit.range) {
+          attackable.push({x, y});
+        }
       }
     }
+    return attackable;
   }
-}
 
-// PCキーボード操作
-window.addEventListener("keydown", e => {
-  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
-  if(e.key === "ArrowUp" || e.key === "w") move(0,-1);
-  if(e.key === "ArrowDown" || e.key === "s") move(0,1);
-  if(e.key === "ArrowLeft" || e.key === "a") move(-1,0);
-  if(e.key === "ArrowRight" || e.key === "d") move(1,0);
-  if(e.key === " ") move(0,0); // スペースで待機
-});
+  function onCellClick(x, y) {
+    if (!isPlayerTurn || animating) return;
 
-restart();
+    const clickedUnit = getUnitAt(x, y);
+
+    // すでに選択中のユニットがいる場合
+    if (selectedUnit) {
+      // 同じユニットをクリック -> 待機
+      if (clickedUnit === selectedUnit) {
+        selectedUnit.hasActed = true;
+        deselect();
+        checkTurnEnd();
+        return;
+      }
+
+      // 敵をクリック -> 攻撃判定
+      if (clickedUnit && clickedUnit.team === 'enemy') {
+        const dist = Math.abs(selectedUnit.x - clickedUnit.x) + Math.abs(selectedUnit.y - clickedUnit.y);
+        if (dist === selectedUnit.range) {
+          executeCombat(selectedUnit, clickedUnit);
+          return;
+        }
+      }
+
+      // 空き地をクリック -> 移動判定
+      if (!clickedUnit) {
+        const reachable = getReachableCells(selectedUnit);
+        if (reachable.some(p => p.x === x && p.y === y)) {
+          selectedUnit.x = x;
+          selectedUnit.y = y;
+          selectedUnit.hasActed = true;
+          
+          // 城なら回復
+          if(map[y][x] === 3) {
+            selectedUnit.hp = Math.min(selectedUnit.maxHp, selectedUnit.hp + 10);
+          }
+          
+          deselect();
+          checkTurnEnd();
+          return;
+        }
+      }
+
+      // 範囲外や味方をクリックした場合は選択解除して下へ処理を流す
+      deselect();
+    }
+
+    // 未行動の味方をクリックした場合
+    if (clickedUnit && clickedUnit.team === 'player' && !clickedUnit.hasActed) {
+      selectedUnit = clickedUnit;
+      updateFooter(selectedUnit);
+      const moves = getReachableCells(selectedUnit);
+      const attacks = getAttackableCells(selectedUnit, selectedUnit.x, selectedUnit.y);
+      highlightCells(moves, 'move-area');
+      highlightCells(attacks, 'atk-area');
+    } else if (clickedUnit) {
+      updateFooter(clickedUnit);
+    }
+  }
+
+  function deselect() {
+    selectedUnit = null;
+    clearHighlights();
+    renderBoard();
+  }
+
+  // --- Combat Math ---
+  function getTriangleBonus(atkType, defType) {
+    if (atkType === 'sword' && defType === 'axe') return 2;
+    if (atkType === 'axe' && defType === 'lance') return 2;
+    if (atkType === 'lance' && defType === 'sword') return 2;
+    if (atkType === 'sword' && defType === 'lance') return -2;
+    if (atkType === 'lance' && defType === 'axe') return -2;
+    if (atkType === 'axe' && defType === 'sword') return -2;
+    return 0;
+  }
+
+  function executeCombat(attacker, defender) {
+    animating = true;
+    clearHighlights();
+    
+    // 命中・回避 (MVP仕様: 固定ダメージ + 乱数なしの地形効果減算)
+    let advantage = getTriangleBonus(attacker.type, defender.type);
+    let terrainDef = TERRAIN[map[defender.y][defender.x]].avoid > 0 ? 2 : 0; // 森や山ならダメージ-2
+    
+    let damage = Math.max(1, attacker.atk + advantage - terrainDef);
+    defender.hp -= damage;
+
+    document.getElementById('ui-desc').textContent = `${attacker.name}の攻撃！ ${damage}ダメージ！`;
+    renderBoard();
+
+    setTimeout(() => {
+      // 反撃 (射程が合えば)
+      if (defender.hp > 0) {
+        const dist = Math.abs(attacker.x - defender.x) + Math.abs(attacker.y - defender.y);
+        if (dist === defender.range) {
+          let revAdv = getTriangleBonus(defender.type, attacker.type);
+          let revTer = TERRAIN[map[attacker.y][attacker.x]].avoid > 0 ? 2 : 0;
+          let revDmg = Math.max(1, defender.atk + revAdv - revTer);
+          attacker.hp -= revDmg;
+          document.getElementById('ui-desc').textContent += ` 敵の反撃！ ${revDmg}ダメージ！`;
+        }
+      }
+
+      attacker.hasActed = true;
+      renderBoard();
+      animating = false;
+      deselect();
+      checkWinLoss();
+    }, 800);
+  }
+
+  // --- Turn Management ---
+  function checkWinLoss() {
+    const lord = units.find(u => u.isLord);
+    if (!lord || lord.hp <= 0) {
+      showMessage("GAME OVER<br>主人公が倒れた...");
+      return;
+    }
+
+    const boss = units.find(u => u.clsId === 'boss' && u.hp > 0);
+    const enemies = units.filter(u => u.team === 'enemy' && u.hp > 0);
+    
+    if (!boss || enemies.length === 0) {
+      document.getElementById('msg-text').innerHTML = "STAGE CLEAR!";
+      document.getElementById('msg-btn').style.display = "inline-block";
+      document.getElementById('message-banner').style.display = "block";
+      document.getElementById('message-banner').style.color = "#00e676";
+      return;
+    }
+
+    checkTurnEnd();
+  }
+
+  function nextStage() {
+    document.getElementById('message-banner').style.display = "none";
+    document.getElementById('msg-btn').style.display = "none";
+    document.getElementById('message-banner').style.color = "#fff";
+    
+    stage++;
+    document.getElementById('stage-display').textContent = "STAGE " + stage;
+    
+    // 味方全回復＆レベルアップ処理（MVP用簡易処理）
+    units.forEach(u => {
+      if(u.team === 'player' && u.hp > 0) {
+        u.maxHp += 2; u.atk += 1; u.hp = u.maxHp; u.hasActed = false;
+      }
+    });
+
+    generateMap();
+    spawnUnits(); // 敵を再生成
+    isPlayerTurn = true;
+    renderBoard();
+    showMessage("STAGE " + stage, 1500);
+  }
+
+  function checkTurnEnd() {
+    if (!isPlayerTurn) return;
+    const activePlayers = units.filter(u => u.team === 'player' && u.hp > 0 && !u.hasActed);
+    if (activePlayers.length === 0) {
+      isPlayerTurn = false;
+      document.getElementById('turn-display').textContent = "ENEMY PHASE";
+      document.getElementById('turn-display').style.color = "#ff1744";
+      showMessage("ENEMY PHASE", 1000, startEnemyTurn);
+    }
+  }
+
+  // --- Enemy AI ---
+  function startEnemyTurn() {
+    let enemies = units.filter(u => u.team === 'enemy' && u.hp > 0);
+    let eIndex = 0;
+
+    function nextEnemy() {
+      if (eIndex >= enemies.length || isPlayerTurn) {
+        endEnemyTurn();
+        return;
+      }
+      
+      const e = enemies[eIndex];
+      eIndex++;
+
+      // 1. 最も近いプレイヤーを探す
+      let targets = units.filter(u => u.team === 'player' && u.hp > 0);
+      if (targets.length === 0) return;
+      
+      targets.sort((a, b) => {
+        let da = Math.abs(e.x - a.x) + Math.abs(e.y - a.y);
+        let db = Math.abs(e.x - b.x) + Math.abs(e.y - b.y);
+        return da - db;
+      });
+      let target = targets[0];
+
+      // 2. 移動 (簡易AI: 近づく)
+      let dx = target.x - e.x;
+      let dy = target.y - e.y;
+      
+      let newX = e.x; let newY = e.y;
+      
+      // 移動力分近づく
+      for(let m=0; m<e.mov; m++) {
+        let distX = Math.abs(target.x - newX);
+        let distY = Math.abs(target.y - newY);
+        
+        if(distX + distY === e.range) break; // 攻撃距離なら止まる
+
+        let stepX = newX, stepY = newY;
+        if(distX > distY) stepX += Math.sign(target.x - newX);
+        else stepY += Math.sign(target.y - newY);
+
+        if(map[stepY][stepX] !== 2 && !getUnitAt(stepX, stepY)) {
+          newX = stepX; newY = stepY;
+        } else {
+          // 障害物回避 (非常に簡易)
+          if(distX <= distY) stepX += Math.sign(target.x - e.x);
+          else stepY += Math.sign(target.y - e.y);
+          if(map[stepY] && map[stepY][stepX] !== 2 && !getUnitAt(stepX, stepY)) {
+             newX = stepX; newY = stepY;
+          }
+        }
+      }
+      
+      e.x = newX; e.y = newY;
+      renderBoard();
+
+      // 3. 攻撃
+      setTimeout(() => {
+        const finalDist = Math.abs(e.x - target.x) + Math.abs(e.y - target.y);
+        if (finalDist === e.range) {
+          executeCombat(e, target);
+        }
+        setTimeout(nextEnemy, 500);
+      }, 500);
+    }
+    
+    nextEnemy();
+  }
+
+  function endEnemyTurn() {
+    units.forEach(u => u.hasActed = false);
+    isPlayerTurn = true;
+    document.getElementById('turn-display').textContent = "PLAYER PHASE";
+    document.getElementById('turn-display').style.color = "#4da8da";
+    
+    // 城の自動回復
+    units.forEach(u => {
+      if(u.hp > 0 && map[u.y][u.x] === 3) {
+        u.hp = Math.min(u.maxHp, u.hp + 10);
+      }
+    });
+    
+    renderBoard();
+    showMessage("PLAYER PHASE", 1000);
+  }
+
+  // --- Utility ---
+  function showMessage(text, duration, callback) {
+    const banner = document.getElementById('message-banner');
+    document.getElementById('msg-text').innerHTML = text;
+    banner.style.display = "block";
+    setTimeout(() => {
+      banner.style.display = "none";
+      if(callback) callback();
+    }, duration);
+  }
+
+  // Start
+  initGame();
 </script>
 </body>
 </html>
