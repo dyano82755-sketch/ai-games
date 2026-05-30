@@ -1,540 +1,1447 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ボンバーマン</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            touch-action: none;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ボムメイズ・ブレイク</title>
+<style>
+  :root {
+    --bg: #18222d;
+    --panel: #f4ead6;
+    --panel-2: #dfc79e;
+    --ink: #2a2420;
+    --line: rgba(42, 36, 32, 0.72);
+    --blue: #2878b8;
+    --green: #3e8d53;
+    --orange: #f0a43b;
+    --red: #c84338;
+    --purple: #7d55c7;
+    --shadow: rgba(0, 0, 0, 0.35);
+  }
 
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-        }
+  * {
+    box-sizing: border-box;
+  }
 
-        #gameContainer {
-            position: relative;
-            width: 100%;
-            max-width: 500px;
-            height: 80vh;
-            max-height: 700px;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 20px;
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
-            overflow: hidden;
-        }
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+  }
 
-        #startScreen, #gameOverScreen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 10;
-            text-align: center;
-            padding: 20px;
-        }
+  body {
+    color: var(--ink);
+    background:
+      linear-gradient(135deg, rgba(40, 120, 184, 0.26), rgba(240, 164, 59, 0.18)),
+      repeating-linear-gradient(45deg, rgba(255,255,255,0.035) 0 8px, rgba(0,0,0,0.04) 8px 16px),
+      var(--bg);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+    min-height: 100dvh;
+    overflow: hidden;
+  }
 
-        #gameScreen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none;
-        }
+  button {
+    font: inherit;
+  }
 
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px #ff0000;
-            animation: pulse 1.5s infinite;
-        }
+  .app {
+    width: min(1120px, 100%);
+    height: 100dvh;
+    margin: 0 auto;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 8px;
+    padding: 8px;
+  }
 
-        h2 {
-            font-size: 2rem;
-            margin-bottom: 30px;
-            color: #ffcc00;
-        }
+  .topbar,
+  .side-panel,
+  .bottom-controls,
+  .modal-card {
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px var(--shadow);
+  }
 
-        .btn {
-            background: linear-gradient(to bottom, #ff3300, #b30000);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.2rem;
-            border-radius: 50px;
-            margin: 10px;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            transition: all 0.2s;
-            font-weight: bold;
-        }
+  .topbar {
+    display: grid;
+    grid-template-columns: minmax(160px, 1fr) repeat(5, auto);
+    gap: 8px;
+    align-items: center;
+    min-height: 64px;
+    padding: 8px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.36), rgba(255,255,255,0.04)),
+      var(--panel);
+  }
 
-        .btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.4);
-        }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+  }
 
-        .btn:active {
-            transform: scale(0.95);
-        }
+  .brand-mark {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    color: #fff;
+    background:
+      radial-gradient(circle at 35% 28%, rgba(255,255,255,0.5), transparent 28%),
+      linear-gradient(160deg, #2f3138, #0e1117);
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    font-size: 1.45rem;
+  }
 
-        #scoreBoard {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            font-size: 1.2rem;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px 20px;
-            border-radius: 10px;
-            z-index: 5;
-        }
+  .brand-title {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
 
-        #gameBoard {
-            display: grid;
-            grid-template-columns: repeat(15, 1fr);
-            grid-template-rows: repeat(15, 1fr);
-            width: 100%;
-            height: 100%;
-            gap: 1px;
-            padding: 10px;
-        }
+  .brand-title strong {
+    font-size: 1.12rem;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
-        .cell {
-            background: #333;
-            border-radius: 4px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
+  .brand-title span {
+    color: #63523f;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
-        .wall {
-            background: linear-gradient(135deg, #8B4513, #A0522D);
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
-        }
+  .stat-pill {
+    min-width: 78px;
+    display: grid;
+    gap: 1px;
+    align-content: center;
+    min-height: 44px;
+    padding: 5px 8px;
+    text-align: center;
+    background: rgba(255,255,255,0.45);
+    border: 1px solid rgba(42,36,32,0.28);
+    border-radius: 8px;
+  }
 
-        .breakable {
-            background: linear-gradient(135deg, #D2B48C, #F5DEB3);
-            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
-        }
+  .stat-pill span {
+    color: #705f49;
+    font-size: 0.72rem;
+    line-height: 1;
+  }
 
-        .player {
-            background: radial-gradient(circle, #00FFFF, #008080);
-            border-radius: 50%;
-            width: 80%;
-            height: 80%;
-            box-shadow: 0 0 10px #00FFFF;
-            z-index: 2;
-        }
+  .stat-pill b {
+    font-size: 1rem;
+    line-height: 1.15;
+  }
 
-        .bomb {
-            background: radial-gradient(circle, #FF0000, #8B0000);
-            border-radius: 50%;
-            width: 70%;
-            height: 70%;
-            animation: bombPulse 0.5s infinite alternate;
-            z-index: 3;
-        }
+  .main {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(290px, 1fr) minmax(220px, 270px);
+    gap: 8px;
+    align-items: stretch;
+  }
 
-        .explosion {
-            background: radial-gradient(circle, #FFFF00, #FFA500);
-            border-radius: 50%;
-            width: 100%;
-            height: 100%;
-            animation: explosion 0.3s forwards;
-            z-index: 4;
-        }
+  .arena-wrap {
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    place-items: center;
+  }
 
-        .powerup {
-            background: radial-gradient(circle, #00FF00, #008000);
-            border-radius: 50%;
-            width: 60%;
-            height: 60%;
-            animation: powerupPulse 1s infinite;
-            z-index: 2;
-        }
+  .arena-frame {
+    width: min(100%, calc(100dvh - 230px), 720px);
+    max-width: 720px;
+    min-width: 290px;
+    aspect-ratio: 1;
+    padding: 7px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.12), rgba(0,0,0,0.24)),
+      #1c1614;
+    border: 3px solid #111;
+    border-radius: 8px;
+    box-shadow: 0 16px 34px rgba(0,0,0,0.42);
+  }
 
-        @keyframes bombPulse {
-            from { transform: scale(1); }
-            to { transform: scale(1.2); }
-        }
+  #board {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(13, 1fr);
+    grid-template-rows: repeat(13, 1fr);
+    gap: 2px;
+    background: #101215;
+    border-radius: 6px;
+    overflow: hidden;
+  }
 
-        @keyframes explosion {
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(2); opacity: 0; }
-        }
+  .tile {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-width: 0;
+    min-height: 0;
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.12), transparent 38%),
+      #5ca268;
+    overflow: hidden;
+  }
 
-        @keyframes powerupPulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
+  .tile.floor:nth-child(3n) {
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.1), transparent 38%),
+      #58985f;
+  }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
+  .tile.solid {
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.22), transparent 36%),
+      repeating-linear-gradient(0deg, #4f5963 0 8px, #434b55 8px 16px);
+    box-shadow: inset 0 0 0 2px rgba(0,0,0,0.18);
+  }
 
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            z-index: 5;
-        }
+  .tile.crate {
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.26), transparent 36%),
+      repeating-linear-gradient(45deg, #b97738 0 12px, #9f642f 12px 24px);
+    box-shadow: inset 0 0 0 2px rgba(77,42,18,0.32);
+  }
 
-        .control-btn {
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.5rem;
-            cursor: pointer;
-            user-select: none;
-        }
+  .tile.exit::before {
+    content: "";
+    position: absolute;
+    inset: 17%;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle, rgba(255,255,255,0.6), transparent 25%),
+      conic-gradient(var(--purple), #61d1ff, #ffe47a, var(--purple));
+    box-shadow: 0 0 14px rgba(125,85,199,0.74);
+    animation: portal-spin 1.8s linear infinite;
+  }
 
-        #bombBtn {
-            background: rgba(255, 0, 0, 0.3);
-            width: 70px;
-            height: 70px;
-            font-size: 2rem;
-        }
+  .tile.explosion::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle, #fff6a3 0 16%, #ffb43b 17% 45%, rgba(200,67,56,0.8) 46% 68%, transparent 69%);
+    animation: blast 230ms ease-out infinite alternate;
+    z-index: 2;
+  }
 
-        .instructions {
-            margin-top: 20px;
-            font-size: 0.9rem;
-            line-height: 1.4;
-            max-width: 80%;
-        }
+  .entity,
+  .bomb,
+  .powerup {
+    position: relative;
+    z-index: 4;
+    width: 78%;
+    height: 78%;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: #fff;
+    font-size: clamp(1rem, 3.2dvh, 1.65rem);
+    text-shadow: 0 2px 0 rgba(0,0,0,0.48);
+  }
 
-        .instructions p {
-            margin: 5px 0;
-        }
+  .player {
+    background:
+      radial-gradient(circle at 35% 28%, rgba(255,255,255,0.46), transparent 30%),
+      linear-gradient(180deg, #53b7f0, var(--blue));
+    border: 2px solid #fff;
+    box-shadow: 0 4px 9px rgba(0,0,0,0.36);
+  }
 
-        .highlight {
-            color: #ffcc00;
-            font-weight: bold;
-        }
-    </style>
+  .player.invincible {
+    animation: blink 160ms steps(2) infinite;
+  }
+
+  .enemy {
+    background:
+      radial-gradient(circle at 35% 28%, rgba(255,255,255,0.38), transparent 30%),
+      linear-gradient(180deg, #ef675b, var(--red));
+    border: 2px solid #fff;
+    box-shadow: 0 4px 9px rgba(0,0,0,0.34);
+  }
+
+  .enemy.fast {
+    background:
+      radial-gradient(circle at 35% 28%, rgba(255,255,255,0.38), transparent 30%),
+      linear-gradient(180deg, #b387ff, var(--purple));
+  }
+
+  .bomb {
+    background:
+      radial-gradient(circle at 38% 30%, rgba(255,255,255,0.45), transparent 22%),
+      radial-gradient(circle, #2b2d32 0 58%, #111 59%);
+    border: 2px solid #e8eef5;
+    box-shadow: 0 3px 9px rgba(0,0,0,0.46);
+    animation: bomb-pulse 380ms ease-in-out infinite alternate;
+  }
+
+  .bomb::before {
+    content: "";
+    position: absolute;
+    top: -8%;
+    right: 16%;
+    width: 34%;
+    height: 24%;
+    border-radius: 50% 50% 20% 20%;
+    background: #f5d46a;
+    box-shadow: 0 0 10px #ffec8f;
+  }
+
+  .powerup {
+    width: 62%;
+    height: 62%;
+    background:
+      radial-gradient(circle at 35% 25%, rgba(255,255,255,0.55), transparent 30%),
+      linear-gradient(180deg, #55d980, var(--green));
+    border: 2px solid #fff;
+    box-shadow: 0 0 12px rgba(90, 224, 126, 0.72);
+    animation: bob 760ms ease-in-out infinite alternate;
+  }
+
+  .side-panel {
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    gap: 8px;
+    padding: 10px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.34), rgba(255,255,255,0.03)),
+      var(--panel);
+    overflow: hidden;
+  }
+
+  .mission h2,
+  .log h2 {
+    margin: 0 0 8px;
+    font-size: 1rem;
+  }
+
+  .mission-grid {
+    display: grid;
+    gap: 7px;
+  }
+
+  .mission-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px;
+    align-items: center;
+    min-height: 43px;
+    padding: 7px;
+    border: 1px solid rgba(42,36,32,0.24);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.44);
+  }
+
+  .mission-item b {
+    font-size: 0.92rem;
+  }
+
+  .mission-item span {
+    color: #675640;
+    font-size: 0.8rem;
+  }
+
+  .action-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .btn {
+    min-height: 42px;
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    color: var(--ink);
+    background: linear-gradient(180deg, #fff0c8, var(--orange));
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(42,36,32,0.48);
+  }
+
+  .btn.blue {
+    color: #fff;
+    background: linear-gradient(180deg, #4aa8e5, var(--blue));
+  }
+
+  .btn.gray {
+    background: linear-gradient(180deg, #f5efe4, #b9aa95);
+  }
+
+  .btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(42,36,32,0.48);
+  }
+
+  .log-list {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow: auto;
+    max-height: 100%;
+  }
+
+  .log-list li {
+    padding: 7px 8px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.46);
+    color: #554532;
+    font-size: 0.84rem;
+    line-height: 1.35;
+  }
+
+  .bottom-controls {
+    display: grid;
+    grid-template-columns: minmax(170px, 1fr) auto auto;
+    gap: 8px;
+    align-items: center;
+    min-height: 0;
+    padding: 8px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0.03)),
+      var(--panel-2);
+  }
+
+  .hint {
+    min-width: 0;
+    color: #493824;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .dpad {
+    width: 112px;
+    height: 112px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 5px;
+    touch-action: none;
+  }
+
+  .control-btn,
+  .bomb-btn {
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    color: #fff;
+    background: linear-gradient(180deg, #496579, #2f4353);
+    font-weight: 900;
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(42,36,32,0.54);
+    touch-action: none;
+  }
+
+  .control-btn:active,
+  .bomb-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(42,36,32,0.54);
+  }
+
+  .control-btn.up { grid-column: 2; grid-row: 1; }
+  .control-btn.left { grid-column: 1; grid-row: 2; }
+  .control-btn.right { grid-column: 3; grid-row: 2; }
+  .control-btn.down { grid-column: 2; grid-row: 3; }
+
+  .bomb-btn {
+    width: 96px;
+    height: 96px;
+    background:
+      radial-gradient(circle at 35% 25%, rgba(255,255,255,0.32), transparent 28%),
+      linear-gradient(180deg, #ff705e, var(--red));
+    font-size: 1.05rem;
+  }
+
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: none;
+    place-items: center;
+    padding: 14px;
+    background: rgba(16, 12, 10, 0.52);
+  }
+
+  .modal.show {
+    display: grid;
+  }
+
+  .modal-card {
+    width: min(520px, 100%);
+    padding: 18px;
+    text-align: center;
+    color: var(--ink);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.04)),
+      var(--panel);
+  }
+
+  .modal-card strong {
+    display: block;
+    font-size: 2rem;
+    line-height: 1.08;
+  }
+
+  .modal-card p {
+    margin: 10px auto 0;
+    max-width: 420px;
+    color: #5f4e39;
+    line-height: 1.55;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .keyboard-help {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 12px;
+    text-align: left;
+    font-size: 0.84rem;
+  }
+
+  .keyboard-help span {
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.42);
+  }
+
+  @keyframes bomb-pulse {
+    from { transform: scale(0.92); filter: brightness(0.92); }
+    to { transform: scale(1.08); filter: brightness(1.25); }
+  }
+
+  @keyframes blast {
+    from { transform: scale(0.82); opacity: 0.82; }
+    to { transform: scale(1.08); opacity: 1; }
+  }
+
+  @keyframes bob {
+    from { transform: translateY(2px) scale(0.96); }
+    to { transform: translateY(-2px) scale(1.04); }
+  }
+
+  @keyframes blink {
+    0% { opacity: 1; }
+    100% { opacity: 0.35; }
+  }
+
+  @keyframes portal-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @media (max-width: 860px) {
+    body {
+      overflow: auto;
+    }
+
+    .app {
+      height: auto;
+      min-height: 100dvh;
+    }
+
+    .topbar {
+      grid-template-columns: 1fr repeat(3, auto);
+    }
+
+    .topbar .stat-pill:nth-of-type(n+5) {
+      display: none;
+    }
+
+    .main {
+      grid-template-columns: 1fr;
+    }
+
+    .side-panel {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto;
+      overflow: visible;
+    }
+
+    .mission-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .log {
+      display: none;
+    }
+
+    .arena-frame {
+      width: min(94vw, 58dvh);
+    }
+  }
+
+  @media (max-width: 560px) {
+    .app {
+      gap: 6px;
+      padding: 6px;
+    }
+
+    .topbar {
+      grid-template-columns: 1fr 1fr 1fr;
+      min-height: 0;
+    }
+
+    .brand {
+      grid-column: 1 / -1;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      font-size: 1.2rem;
+    }
+
+    .brand-title strong {
+      font-size: 1rem;
+    }
+
+    .stat-pill {
+      min-width: 0;
+      min-height: 38px;
+    }
+
+    .main {
+      gap: 6px;
+    }
+
+    .mission-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .side-panel {
+      padding: 8px;
+      border: 0;
+      box-shadow: none;
+      background: transparent;
+    }
+
+    .side-panel .mission {
+      display: none;
+    }
+
+    .action-row {
+      max-width: 100%;
+    }
+
+    .mission-item {
+      min-height: 36px;
+      padding: 6px 7px;
+    }
+
+    .bottom-controls {
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      padding: 6px;
+    }
+
+    .hint {
+      grid-column: 1 / -1;
+      font-size: 0.88rem;
+    }
+
+    .dpad {
+      width: 138px;
+      height: 138px;
+    }
+
+    .bomb-btn {
+      width: 112px;
+      height: 112px;
+    }
+
+    .arena-frame {
+      width: min(96vw, 54dvh);
+      min-width: 280px;
+      padding: 5px;
+    }
+
+    #board {
+      gap: 1px;
+    }
+  }
+
+  @media (max-height: 690px) and (max-width: 560px) {
+    .mission {
+      display: none;
+    }
+
+    .arena-frame {
+      width: min(94vw, 48dvh);
+    }
+
+    .dpad {
+      width: 126px;
+      height: 126px;
+    }
+
+    .bomb-btn {
+      width: 100px;
+      height: 100px;
+    }
+  }
+</style>
 </head>
 <body>
-    <div id="gameContainer">
-        <div id="startScreen">
-            <h1>💣 ボンバーマン 💣</h1>
-            <h2>爆破ゲーム</h2>
-            <button id="startBtn" class="btn">スタート</button>
-            <div class="instructions">
-                <p>🎯 <span class="highlight">矢印キー</span> または <span class="highlight">タッチ操作</span>で移動</p>
-                <p>💣 <span class="highlight">スペースキー</span> または <span class="highlight">ボムボタン</span>で爆弾を設置</p>
-                <p>💥 爆弾が爆発する前に逃げましょう！</p>
-            </div>
-        </div>
-
-        <div id="gameOverScreen" style="display: none;">
-            <h1>ゲームオーバー</h1>
-            <h2>スコア: <span id="finalScore">0</span></h2>
-            <button id="restartBtn" class="btn">リスタート</button>
-        </div>
-
-        <div id="gameScreen">
-            <div id="scoreBoard">スコア: <span id="score">0</span></div>
-            <div id="gameBoard"></div>
-            <div id="controls">
-                <div class="control-btn" id="upBtn">⬆️</div>
-                <div class="control-btn" id="leftBtn">⬅️</div>
-                <div class="control-btn" id="downBtn">⬇️</div>
-                <div class="control-btn" id="rightBtn">➡️</div>
-                <div class="control-btn" id="bombBtn">💣</div>
-            </div>
-        </div>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">●</div>
+      <div class="brand-title">
+        <strong>ボムメイズ・ブレイク</strong>
+        <span id="phaseText">出口を探して敵をかわそう</span>
+      </div>
     </div>
+    <div class="stat-pill"><span>STAGE</span><b id="stageValue">1</b></div>
+    <div class="stat-pill"><span>SCORE</span><b id="scoreValue">0</b></div>
+    <div class="stat-pill"><span>LIFE</span><b id="lifeValue">3</b></div>
+    <div class="stat-pill"><span>BOMB</span><b id="bombValue">1</b></div>
+    <div class="stat-pill"><span>FIRE</span><b id="fireValue">2</b></div>
+  </header>
 
-    <script>
-        // ゲーム状態
-        const gameState = {
-            score: 0,
-            playerX: 1,
-            playerY: 1,
-            bombs: [],
-            explosions: [],
-            gameBoard: [],
-            gameRunning: false,
-            playerSpeed: 100,
-            bombTimer: 2000,
-            explosionDuration: 300
-        };
+  <main class="main">
+    <section class="arena-wrap" aria-label="ゲーム盤">
+      <div class="arena-frame">
+        <div id="board"></div>
+      </div>
+    </section>
 
-        // ボードサイズ
-        const boardSize = 15;
-        const cellTypes = {
-            EMPTY: 0,
-            WALL: 1,
-            BREAKABLE: 2
-        };
+    <aside class="side-panel">
+      <section class="mission">
+        <h2>ミッション</h2>
+        <div class="mission-grid">
+          <div class="mission-item"><b>🎯</b><div><b>勝利</b><span>敵を倒して出口へ</span></div></div>
+          <div class="mission-item"><b>💣</b><div><b>爆弾</b><span>3秒後に十字爆発</span></div></div>
+          <div class="mission-item"><b>🎁</b><div><b>強化</b><span>木箱から出ることがある</span></div></div>
+          <div class="mission-item"><b>⚠️</b><div><b>注意</b><span>爆風は自分にも当たる</span></div></div>
+        </div>
+      </section>
+      <div class="action-row">
+        <button class="btn blue" id="pauseBtn" type="button">PAUSE</button>
+        <button class="btn gray" id="restartBtn" type="button">RETRY</button>
+      </div>
+      <section class="log">
+        <h2>ログ</h2>
+        <ul class="log-list" id="logList"></ul>
+      </section>
+    </aside>
+  </main>
 
-        // DOM要素
-        const startScreen = document.getElementById('startScreen');
-        const gameOverScreen = document.getElementById('gameOverScreen');
-        const gameScreen = document.getElementById('gameScreen');
-        const gameBoard = document.getElementById('gameBoard');
-        const startBtn = document.getElementById('startBtn');
-        const restartBtn = document.getElementById('restartBtn');
-        const scoreElement = document.getElementById('score');
-        const finalScoreElement = document.getElementById('finalScore');
-        const upBtn = document.getElementById('upBtn');
-        const leftBtn = document.getElementById('leftBtn');
-        const downBtn = document.getElementById('downBtn');
-        const rightBtn = document.getElementById('rightBtn');
-        const bombBtn = document.getElementById('bombBtn');
+  <footer class="bottom-controls">
+    <div class="hint" id="hintText">矢印/WASDで移動、Spaceで爆弾。スマホは下のボタンで操作。</div>
+    <div class="dpad" aria-label="移動操作">
+      <button class="control-btn up" data-move="0,-1" type="button" aria-label="上">▲</button>
+      <button class="control-btn left" data-move="-1,0" type="button" aria-label="左">◀</button>
+      <button class="control-btn right" data-move="1,0" type="button" aria-label="右">▶</button>
+      <button class="control-btn down" data-move="0,1" type="button" aria-label="下">▼</button>
+    </div>
+    <button class="bomb-btn" id="bombBtn" type="button">💣<br>置く</button>
+  </footer>
+</div>
 
-        // ゲーム初期化
-        function initGame() {
-            // ボード生成
-            gameState.gameBoard = [];
-            for (let y = 0; y < boardSize; y++) {
-                gameState.gameBoard[y] = [];
-                for (let x = 0; x < boardSize; x++) {
-                    if (x === 0 || y === 0 || x === boardSize - 1 || y === boardSize - 1) {
-                        gameState.gameBoard[y][x] = cellTypes.WALL;
-                    } else if (x % 2 === 0 && y % 2 === 0) {
-                        gameState.gameBoard[y][x] = cellTypes.WALL;
-                    } else if (Math.random() < 0.3) {
-                        gameState.gameBoard[y][x] = cellTypes.BREAKABLE;
-                    } else {
-                        gameState.gameBoard[y][x] = cellTypes.EMPTY;
-                    }
-                }
-            }
+<div class="modal show" id="modal">
+  <div class="modal-card">
+    <strong id="modalTitle">ボムメイズ・ブレイク</strong>
+    <p id="modalText">爆弾で木箱を壊し、敵を倒して出口へ向かおう。敵を全て倒すと出口が開く。</p>
+    <div class="keyboard-help">
+      <span>移動: 矢印 / WASD</span>
+      <span>爆弾: Space / Enter</span>
+      <span>一時停止: P</span>
+      <span>やり直し: R</span>
+    </div>
+    <div class="modal-actions" id="modalActions"></div>
+  </div>
+</div>
 
-            // プレイヤー初期位置
-            gameState.playerX = 1;
-            gameState.playerY = 1;
-            gameState.bombs = [];
-            gameState.explosions = [];
-            gameState.score = 0;
-            scoreElement.textContent = gameState.score;
+<script>
+(() => {
+  const SIZE = 13;
+  const EMPTY = 0;
+  const SOLID = 1;
+  const CRATE = 2;
+  const TICK_MS = 90;
+  const BOMB_TIME = 3000;
+  const BLAST_TIME = 420;
+  const PLAYER_MOVE_MS = 115;
 
-            // ボード描画
-            renderBoard();
+  const el = {
+    board: document.getElementById("board"),
+    phase: document.getElementById("phaseText"),
+    stage: document.getElementById("stageValue"),
+    score: document.getElementById("scoreValue"),
+    life: document.getElementById("lifeValue"),
+    bomb: document.getElementById("bombValue"),
+    fire: document.getElementById("fireValue"),
+    hint: document.getElementById("hintText"),
+    log: document.getElementById("logList"),
+    pause: document.getElementById("pauseBtn"),
+    restart: document.getElementById("restartBtn"),
+    bombBtn: document.getElementById("bombBtn"),
+    modal: document.getElementById("modal"),
+    modalTitle: document.getElementById("modalTitle"),
+    modalText: document.getElementById("modalText"),
+    modalActions: document.getElementById("modalActions")
+  };
+
+  const state = {
+    mode: "menu",
+    stage: 1,
+    score: 0,
+    lives: 3,
+    board: [],
+    player: { x: 1, y: 1, bombsMax: 1, fire: 2, invulnerableUntil: 0 },
+    bombs: [],
+    blasts: [],
+    enemies: [],
+    powerups: [],
+    exit: null,
+    logs: [],
+    lastPlayerMove: 0,
+    loopId: null
+  };
+
+  const powerupData = {
+    bomb: { icon: "💣", label: "爆弾+1" },
+    fire: { icon: "🔥", label: "火力+1" },
+    life: { icon: "💖", label: "ライフ+1" }
+  };
+
+  function now() {
+    return performance.now();
+  }
+
+  function key(x, y) {
+    return `${x},${y}`;
+  }
+
+  function inBounds(x, y) {
+    return x >= 0 && y >= 0 && x < SIZE && y < SIZE;
+  }
+
+  function tileAt(x, y) {
+    return state.board[y]?.[x] ?? SOLID;
+  }
+
+  function isBlocked(x, y, actor = "player") {
+    if (!inBounds(x, y)) return true;
+    if (tileAt(x, y) === SOLID || tileAt(x, y) === CRATE) return true;
+    const bomb = state.bombs.find(b => b.x === x && b.y === y);
+    if (!bomb) return false;
+    if (actor === "player" && bomb.justPlaced && bomb.x === state.player.x && bomb.y === state.player.y) return false;
+    return true;
+  }
+
+  function pushLog(text) {
+    state.logs.unshift(text);
+    state.logs = state.logs.slice(0, 7);
+  }
+
+  function setHint(text) {
+    el.hint.textContent = text;
+  }
+
+  function buildBoard() {
+    state.board = [];
+    for (let y = 0; y < SIZE; y++) {
+      const row = [];
+      for (let x = 0; x < SIZE; x++) {
+        if (x === 0 || y === 0 || x === SIZE - 1 || y === SIZE - 1) row.push(SOLID);
+        else if (x % 2 === 0 && y % 2 === 0) row.push(SOLID);
+        else row.push(Math.random() < crateChance() ? CRATE : EMPTY);
+      }
+      state.board.push(row);
+    }
+
+    clearArea(1, 1);
+    clearArea(SIZE - 2, SIZE - 2);
+    clearArea(1, SIZE - 2);
+  }
+
+  function crateChance() {
+    return Math.min(0.58, 0.38 + state.stage * 0.025);
+  }
+
+  function clearArea(cx, cy) {
+    [[0,0], [1,0], [0,1], [-1,0], [0,-1]].forEach(([dx, dy]) => {
+      const x = cx + dx;
+      const y = cy + dy;
+      if (inBounds(x, y) && state.board[y][x] !== SOLID) state.board[y][x] = EMPTY;
+    });
+  }
+
+  function emptyCellsFarFromStart(minDist = 5) {
+    const cells = [];
+    for (let y = 1; y < SIZE - 1; y++) {
+      for (let x = 1; x < SIZE - 1; x++) {
+        if (tileAt(x, y) === EMPTY && Math.abs(x - 1) + Math.abs(y - 1) >= minDist) {
+          cells.push({ x, y });
+        }
+      }
+    }
+    return cells;
+  }
+
+  function crateCellsFarFromStart(minDist = 5) {
+    const cells = [];
+    for (let y = 1; y < SIZE - 1; y++) {
+      for (let x = 1; x < SIZE - 1; x++) {
+        if (tileAt(x, y) === CRATE && Math.abs(x - 1) + Math.abs(y - 1) >= minDist) {
+          cells.push({ x, y });
+        }
+      }
+    }
+    return cells;
+  }
+
+  function randomItem(items) {
+    return items[Math.floor(Math.random() * items.length)];
+  }
+
+  function setupStage(keepStats = false) {
+    stopLoop();
+    if (!keepStats) {
+      state.stage = 1;
+      state.score = 0;
+      state.lives = 3;
+      state.player.bombsMax = 1;
+      state.player.fire = 2;
+    }
+    buildBoard();
+    state.mode = "playing";
+    state.player.x = 1;
+    state.player.y = 1;
+    state.player.invulnerableUntil = now() + 1400;
+    state.bombs = [];
+    state.blasts = [];
+    state.enemies = [];
+    state.powerups = [];
+    state.exit = null;
+    state.logs = [];
+
+    hideExitUnderCrate();
+    spawnPowerups();
+    spawnEnemies();
+    pushLog(`STAGE ${state.stage} 開始。`);
+    setHint("木箱を壊し、敵を倒して出口へ。爆風には注意。");
+    hideModal();
+    updateUI();
+    render();
+    startLoop();
+  }
+
+  function hideExitUnderCrate() {
+    let crates = crateCellsFarFromStart(7);
+    if (!crates.length) crates = crateCellsFarFromStart(4);
+    const exit = randomItem(crates.length ? crates : [{ x: SIZE - 2, y: SIZE - 2 }]);
+    if (tileAt(exit.x, exit.y) !== CRATE) state.board[exit.y][exit.x] = CRATE;
+    state.exit = { x: exit.x, y: exit.y, revealed: false, open: false };
+  }
+
+  function spawnPowerups() {
+    const crates = crateCellsFarFromStart(4).filter(c => !(state.exit && c.x === state.exit.x && c.y === state.exit.y));
+    const count = Math.min(5, 2 + Math.floor(state.stage / 2));
+    const types = ["bomb", "fire", "fire", "bomb", "life"];
+    for (let i = 0; i < count && crates.length; i++) {
+      const index = Math.floor(Math.random() * crates.length);
+      const cell = crates.splice(index, 1)[0];
+      state.powerups.push({
+        x: cell.x,
+        y: cell.y,
+        type: types[(i + state.stage) % types.length],
+        revealed: false
+      });
+    }
+  }
+
+  function spawnEnemies() {
+    const cells = emptyCellsFarFromStart(7);
+    const enemyCount = Math.min(7, 2 + state.stage);
+    for (let i = 0; i < enemyCount && cells.length; i++) {
+      const index = Math.floor(Math.random() * cells.length);
+      const cell = cells.splice(index, 1)[0];
+      state.enemies.push({
+        id: `enemy-${state.stage}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+        x: cell.x,
+        y: cell.y,
+        dir: randomItem([[1,0], [-1,0], [0,1], [0,-1]]),
+        nextMoveAt: now() + 400 + Math.random() * 500,
+        fast: i % 4 === 3 || state.stage >= 4,
+        stunnedUntil: 0
+      });
+    }
+  }
+
+  function startLoop() {
+    state.loopId = setInterval(tick, TICK_MS);
+  }
+
+  function stopLoop() {
+    if (state.loopId) {
+      clearInterval(state.loopId);
+      state.loopId = null;
+    }
+  }
+
+  function tick() {
+    if (state.mode !== "playing") return;
+    const t = now();
+    state.bombs.forEach(bomb => {
+      if (t >= bomb.explodeAt) explodeBomb(bomb);
+    });
+    state.bombs.forEach(bomb => {
+      if (bomb.justPlaced && (bomb.x !== state.player.x || bomb.y !== state.player.y)) bomb.justPlaced = false;
+    });
+    state.blasts = state.blasts.filter(blast => t < blast.until);
+    moveEnemies(t);
+    checkHazards();
+    checkPowerup();
+    checkExit();
+    updateUI();
+    render();
+  }
+
+  function movePlayer(dx, dy) {
+    if (state.mode !== "playing") return;
+    const t = now();
+    if (t - state.lastPlayerMove < PLAYER_MOVE_MS) return;
+    const nx = state.player.x + dx;
+    const ny = state.player.y + dy;
+    if (isBlocked(nx, ny, "player")) return;
+    state.player.x = nx;
+    state.player.y = ny;
+    state.lastPlayerMove = t;
+    checkPowerup();
+    checkExit();
+    checkHazards();
+    updateUI();
+    render();
+  }
+
+  function placeBomb() {
+    if (state.mode !== "playing") return;
+    const activeOwned = state.bombs.filter(b => b.owner === "player").length;
+    if (activeOwned >= state.player.bombsMax) {
+      setHint("同時に置ける爆弾は上限です。少し待とう。");
+      return;
+    }
+    if (state.bombs.some(b => b.x === state.player.x && b.y === state.player.y)) return;
+    state.bombs.push({
+      x: state.player.x,
+      y: state.player.y,
+      owner: "player",
+      range: state.player.fire,
+      explodeAt: now() + BOMB_TIME,
+      justPlaced: true
+    });
+    setHint("爆弾を設置。3秒以内に逃げよう。");
+    render();
+  }
+
+  function explodeBomb(bomb) {
+    if (!state.bombs.includes(bomb)) return;
+    state.bombs = state.bombs.filter(b => b !== bomb);
+    const cells = blastCells(bomb.x, bomb.y, bomb.range);
+    const endTime = now() + BLAST_TIME;
+
+    cells.forEach(cell => {
+      state.blasts.push({ x: cell.x, y: cell.y, until: endTime });
+      if (tileAt(cell.x, cell.y) === CRATE) {
+        state.board[cell.y][cell.x] = EMPTY;
+        state.score += 20;
+        revealHidden(cell.x, cell.y);
+      }
+    });
+
+    state.bombs
+      .filter(other => cells.some(cell => cell.x === other.x && cell.y === other.y))
+      .forEach(other => explodeBomb(other));
+
+    state.enemies.forEach(enemy => {
+      if (cells.some(cell => cell.x === enemy.x && cell.y === enemy.y)) {
+        enemy.dead = true;
+        state.score += enemy.fast ? 180 : 120;
+        pushLog(enemy.fast ? "すばやい敵を撃破。" : "敵を撃破。");
+      }
+    });
+    state.enemies = state.enemies.filter(enemy => !enemy.dead);
+
+    if (!state.enemies.length && state.exit?.revealed) {
+      state.exit.open = true;
+      pushLog("出口が開いた。");
+      setHint("敵は全滅。光る出口へ向かおう。");
+    }
+
+    checkHazards();
+    updateUI();
+    render();
+  }
+
+  function blastCells(x, y, range) {
+    const cells = [{ x, y }];
+    const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
+    dirs.forEach(([dx, dy]) => {
+      for (let i = 1; i <= range; i++) {
+        const nx = x + dx * i;
+        const ny = y + dy * i;
+        if (!inBounds(nx, ny) || tileAt(nx, ny) === SOLID) break;
+        cells.push({ x: nx, y: ny });
+        if (tileAt(nx, ny) === CRATE) break;
+      }
+    });
+    return cells;
+  }
+
+  function revealHidden(x, y) {
+    if (state.exit && state.exit.x === x && state.exit.y === y) {
+      state.exit.revealed = true;
+      state.exit.open = state.enemies.length === 0;
+      pushLog(state.exit.open ? "出口を発見。すぐ入れる。" : "出口を発見。敵を倒すと開く。");
+    }
+    const power = state.powerups.find(p => p.x === x && p.y === y);
+    if (power) {
+      power.revealed = true;
+      pushLog(`${powerupData[power.type].label} が出現。`);
+    }
+  }
+
+  function moveEnemies(t) {
+    state.enemies.forEach(enemy => {
+      if (t < enemy.nextMoveAt || t < enemy.stunnedUntil) return;
+      const delay = enemy.fast ? 360 : 560;
+      enemy.nextMoveAt = t + delay + Math.random() * 150;
+      const dirs = enemyChoices(enemy);
+      for (const [dx, dy] of dirs) {
+        const nx = enemy.x + dx;
+        const ny = enemy.y + dy;
+        if (!isBlocked(nx, ny, "enemy") && !isBlast(nx, ny) && !enemyAt(nx, ny, enemy.id)) {
+          enemy.x = nx;
+          enemy.y = ny;
+          enemy.dir = [dx, dy];
+          break;
+        }
+      }
+    });
+  }
+
+  function enemyChoices(enemy) {
+    const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
+    const sameLine = enemy.x === state.player.x || enemy.y === state.player.y;
+    const canSee = sameLine && clearLine(enemy.x, enemy.y, state.player.x, state.player.y);
+    if (canSee || enemy.fast || Math.random() < 0.38) {
+      dirs.sort((a, b) => {
+        const da = Math.abs(enemy.x + a[0] - state.player.x) + Math.abs(enemy.y + a[1] - state.player.y);
+        const db = Math.abs(enemy.x + b[0] - state.player.x) + Math.abs(enemy.y + b[1] - state.player.y);
+        return da - db;
+      });
+    } else {
+      dirs.sort(() => Math.random() - 0.5);
+    }
+    if (enemy.dir && Math.random() < 0.45) dirs.unshift(enemy.dir);
+    return dirs;
+  }
+
+  function clearLine(x1, y1, x2, y2) {
+    const dx = Math.sign(x2 - x1);
+    const dy = Math.sign(y2 - y1);
+    let x = x1 + dx;
+    let y = y1 + dy;
+    while (x !== x2 || y !== y2) {
+      if (tileAt(x, y) !== EMPTY || state.bombs.some(b => b.x === x && b.y === y)) return false;
+      x += dx;
+      y += dy;
+    }
+    return true;
+  }
+
+  function enemyAt(x, y, ignoreId = "") {
+    return state.enemies.some(enemy => enemy.id !== ignoreId && enemy.x === x && enemy.y === y);
+  }
+
+  function isBlast(x, y) {
+    return state.blasts.some(blast => blast.x === x && blast.y === y);
+  }
+
+  function checkHazards() {
+    if (state.mode !== "playing") return;
+    const t = now();
+    if (t < state.player.invulnerableUntil) return;
+    const hitByBlast = isBlast(state.player.x, state.player.y);
+    const hitByEnemy = state.enemies.some(enemy => enemy.x === state.player.x && enemy.y === state.player.y);
+    if (hitByBlast || hitByEnemy) loseLife(hitByBlast ? "爆風を受けた。" : "敵にぶつかった。");
+  }
+
+  function loseLife(reason) {
+    state.lives -= 1;
+    pushLog(reason);
+    if (state.lives <= 0) {
+      gameOver();
+      return;
+    }
+    state.player.x = 1;
+    state.player.y = 1;
+    state.player.invulnerableUntil = now() + 1700;
+    setHint(`ライフ残り ${state.lives}。少しの間むてき。`);
+  }
+
+  function checkPowerup() {
+    const index = state.powerups.findIndex(p => p.revealed && p.x === state.player.x && p.y === state.player.y);
+    if (index < 0) return;
+    const power = state.powerups.splice(index, 1)[0];
+    if (power.type === "bomb") state.player.bombsMax = Math.min(5, state.player.bombsMax + 1);
+    if (power.type === "fire") state.player.fire = Math.min(5, state.player.fire + 1);
+    if (power.type === "life") state.lives = Math.min(5, state.lives + 1);
+    state.score += 50;
+    setHint(`${powerupData[power.type].label} を取った。`);
+    pushLog(`${powerupData[power.type].label} 獲得。`);
+  }
+
+  function checkExit() {
+    if (!state.exit?.revealed) return;
+    if (!state.exit.open && !state.enemies.length) {
+      state.exit.open = true;
+      pushLog("出口が開いた。");
+    }
+    if (state.exit.open && state.player.x === state.exit.x && state.player.y === state.exit.y) {
+      stageClear();
+    }
+  }
+
+  function stageClear() {
+    state.mode = "clear";
+    stopLoop();
+    state.score += 500 + state.stage * 100;
+    updateUI();
+    render();
+    showModal("STAGE CLEAR!", `ステージ${state.stage}突破。スコア ${state.score}。次の迷路へ進もう。`, [
+      { label: "次のステージ", className: "blue", action: () => {
+        state.stage += 1;
+        setupStage(true);
+      }},
+      { label: "最初から", className: "gray", action: () => setupStage(false) }
+    ]);
+  }
+
+  function gameOver() {
+    state.mode = "gameover";
+    stopLoop();
+    updateUI();
+    render();
+    showModal("GAME OVER", `スコア ${state.score}。爆弾の置き場所と逃げ道を見直して再挑戦しよう。`, [
+      { label: "もう一度", className: "blue", action: () => setupStage(false) }
+    ]);
+  }
+
+  function togglePause() {
+    if (state.mode === "menu") return;
+    if (state.mode === "paused") {
+      state.mode = "playing";
+      hideModal();
+      startLoop();
+      setHint("再開。爆弾と敵の位置を確認しよう。");
+    } else if (state.mode === "playing") {
+      state.mode = "paused";
+      stopLoop();
+      showModal("PAUSE", "一時停止中。落ち着いて次のルートを考えよう。", [
+        { label: "再開", className: "blue", action: togglePause },
+        { label: "やり直し", className: "gray", action: () => setupStage(false) }
+      ]);
+    }
+    updateUI();
+    render();
+  }
+
+  function updateUI() {
+    el.stage.textContent = state.stage;
+    el.score.textContent = state.score;
+    el.life.textContent = state.lives;
+    el.bomb.textContent = `${state.bombs.filter(b => b.owner === "player").length}/${state.player.bombsMax}`;
+    el.fire.textContent = state.player.fire;
+    el.phase.textContent = phaseText();
+    el.pause.textContent = state.mode === "paused" ? "RESUME" : "PAUSE";
+    el.log.innerHTML = "";
+    state.logs.forEach(line => {
+      const li = document.createElement("li");
+      li.textContent = line;
+      el.log.appendChild(li);
+    });
+  }
+
+  function phaseText() {
+    if (state.mode === "menu") return "準備中";
+    if (state.mode === "paused") return "一時停止中";
+    if (state.mode === "gameover") return "作戦失敗";
+    if (state.mode === "clear") return "ステージクリア";
+    if (state.exit?.open) return "出口が開いた";
+    if (state.exit?.revealed) return `敵残り ${state.enemies.length}`;
+    return `敵残り ${state.enemies.length} / 出口探索中`;
+  }
+
+  function render() {
+    const blastSet = new Set(state.blasts.map(blast => key(blast.x, blast.y)));
+    const bombMap = new Map(state.bombs.map(bomb => [key(bomb.x, bomb.y), bomb]));
+    const enemyMap = new Map(state.enemies.map(enemy => [key(enemy.x, enemy.y), enemy]));
+    const powerMap = new Map(state.powerups.filter(p => p.revealed).map(p => [key(p.x, p.y), p]));
+
+    el.board.innerHTML = "";
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const cell = document.createElement("div");
+        const classes = ["tile"];
+        const tile = tileAt(x, y);
+        if (tile === SOLID) classes.push("solid");
+        else if (tile === CRATE) classes.push("crate");
+        else classes.push("floor");
+        if (state.exit?.revealed && state.exit.x === x && state.exit.y === y) classes.push("exit");
+        if (blastSet.has(key(x, y))) classes.push("explosion");
+        cell.className = classes.join(" ");
+
+        const power = powerMap.get(key(x, y));
+        if (power && !blastSet.has(key(x, y))) {
+          const node = document.createElement("div");
+          node.className = "powerup";
+          node.textContent = powerupData[power.type].icon;
+          cell.appendChild(node);
         }
 
-        // ボード描画
-        function renderBoard() {
-            gameBoard.innerHTML = '';
-            for (let y = 0; y < boardSize; y++) {
-                for (let x = 0; x < boardSize; x++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    cell.dataset.x = x;
-                    cell.dataset.y = y;
-
-                    // セルタイプに応じてクラスを追加
-                    if (gameState.gameBoard[y][x] === cellTypes.WALL) {
-                        cell.classList.add('wall');
-                    } else if (gameState.gameBoard[y][x] === cellTypes.BREAKABLE) {
-                        cell.classList.add('breakable');
-                    }
-
-                    // プレイヤー位置にプレイヤーを表示
-                    if (x === gameState.playerX && y === gameState.playerY) {
-                        const player = document.createElement('div');
-                        player.className = 'player';
-                        cell.appendChild(player);
-                    }
-
-                    // 爆弾を表示
-                    const bomb = gameState.bombs.find(b => b.x === x && b.y === y);
-                    if (bomb) {
-                        const bombElement = document.createElement('div');
-                        bombElement.className = 'bomb';
-                        cell.appendChild(bombElement);
-                    }
-
-                    // 爆発を表示
-                    const explosion = gameState.explosions.find(e => e.x === x && e.y === y);
-                    if (explosion) {
-                        const explosionElement = document.createElement('div');
-                        explosionElement.className = 'explosion';
-                        cell.appendChild(explosionElement);
-                    }
-
-                    gameBoard.appendChild(cell);
-                }
-            }
+        const bomb = bombMap.get(key(x, y));
+        if (bomb) {
+          const node = document.createElement("div");
+          node.className = "bomb";
+          cell.appendChild(node);
         }
 
-        // 移動処理
-        function movePlayer(dx, dy) {
-            if (!gameState.gameRunning) return;
-
-            const newX = gameState.playerX + dx;
-            const newY = gameState.playerY + dy;
-
-            // 壁やブロックに衝突しないか確認
-            if (newX >= 0 && newX < boardSize && newY >= 0 && newY < boardSize) {
-                if (gameState.gameBoard[newY][newX] !== cellTypes.WALL && 
-                    gameState.gameBoard[newY][newX] !== cellTypes.BREAKABLE) {
-                    gameState.playerX = newX;
-                    gameState.playerY = newY;
-                    renderBoard();
-                }
-            }
+        const enemy = enemyMap.get(key(x, y));
+        if (enemy && tile !== SOLID && tile !== CRATE) {
+          const node = document.createElement("div");
+          node.className = `entity enemy ${enemy.fast ? "fast" : ""}`;
+          node.textContent = enemy.fast ? "◆" : "✖";
+          cell.appendChild(node);
         }
 
-        // 爆弾設置
-        function placeBomb() {
-            if (!gameState.gameRunning) return;
-
-            // 既に爆弾があるか確認
-            const existingBomb = gameState.bombs.find(b => b.x === gameState.playerX && b.y === gameState.playerY);
-            if (existingBomb) return;
-
-            // 爆弾を設置
-            gameState.bombs.push({
-                x: gameState.playerX,
-                y: gameState.playerY,
-                timer: setTimeout(() => {
-                    explodeBomb(gameState.playerX, gameState.playerY);
-                }, gameState.bombTimer)
-            });
-
-            renderBoard();
+        if (state.player.x === x && state.player.y === y) {
+          const node = document.createElement("div");
+          node.className = `entity player ${now() < state.player.invulnerableUntil ? "invincible" : ""}`;
+          node.textContent = "★";
+          cell.appendChild(node);
         }
 
-        // 爆発処理
-        function explodeBomb(x, y) {
-            if (!gameState.gameRunning) return;
+        el.board.appendChild(cell);
+      }
+    }
+  }
 
-            // 爆発範囲を計算
-            const explosionRange = 2;
-            const explosionPositions = [];
+  function showModal(title, text, actions) {
+    el.modalTitle.textContent = title;
+    el.modalText.textContent = text;
+    el.modalActions.innerHTML = "";
+    actions.forEach(action => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = `btn ${action.className || ""}`;
+      btn.textContent = action.label;
+      btn.addEventListener("click", action.action);
+      el.modalActions.appendChild(btn);
+    });
+    el.modal.classList.add("show");
+  }
 
-            // 中心
-            explosionPositions.push({x, y});
+  function hideModal() {
+    el.modal.classList.remove("show");
+  }
 
-            // 上下左右
-            for (let i = 1; i <= explosionRange; i++) {
-                if (y - i >= 0 && gameState.gameBoard[y - i][x] !== cellTypes.WALL) {
-                    explosionPositions.push({x, y: y - i});
-                    if (gameState.gameBoard[y - i][x] === cellTypes.BREAKABLE) break;
-                }
-                if (y + i < boardSize && gameState.gameBoard[y + i][x] !== cellTypes.WALL) {
-                    explosionPositions.push({x, y: y + i});
-                    if (gameState.gameBoard[y + i][x] === cellTypes.BREAKABLE) break;
-                }
-                if (x - i >= 0 && gameState.gameBoard[y][x - i] !== cellTypes.WALL) {
-                    explosionPositions.push({x: x - i, y});
-                    if (gameState.gameBoard[y][x - i] === cellTypes.BREAKABLE) break;
-                }
-                if (x + i < boardSize && gameState.gameBoard[y][x + i] !== cellTypes.WALL) {
-                    explosionPositions.push({x: x + i, y});
-                    if (gameState.gameBoard[y][x + i] === cellTypes.BREAKABLE) break;
-                }
-            }
+  function bindHoldButton(button, onPress) {
+    let timer = null;
+    let interval = null;
+    const start = event => {
+      event.preventDefault();
+      onPress();
+      timer = setTimeout(() => {
+        interval = setInterval(onPress, 145);
+      }, 240);
+    };
+    const stop = event => {
+      if (event) event.preventDefault();
+      clearTimeout(timer);
+      clearInterval(interval);
+      timer = null;
+      interval = null;
+    };
+    button.addEventListener("pointerdown", start);
+    button.addEventListener("pointerup", stop);
+    button.addEventListener("pointercancel", stop);
+    button.addEventListener("pointerleave", stop);
+  }
 
-            // 爆発を表示
-            explosionPositions.forEach(pos => {
-                gameState.explosions.push({
-                    x: pos.x,
-                    y: pos.y,
-                    timer: setTimeout(() => {
-                        gameState.explosions = gameState.explosions.filter(e => !(e.x === pos.x && e.y === pos.y));
-                        if (gameState.gameBoard[pos.y][pos.x] === cellTypes.BREAKABLE) {
-                            gameState.gameBoard[pos.y][pos.x] = cellTypes.EMPTY;
-                            gameState.score += 10;
-                            scoreElement.textContent = gameState.score;
-                        }
-                        renderBoard();
-                    }, gameState.explosionDuration)
-                });
-            });
+  document.querySelectorAll("[data-move]").forEach(button => {
+    const [dx, dy] = button.dataset.move.split(",").map(Number);
+    bindHoldButton(button, () => movePlayer(dx, dy));
+  });
 
-            // 爆弾を削除
-            gameState.bombs = gameState.bombs.filter(b => !(b.x === x && b.y === y));
+  el.bombBtn.addEventListener("pointerdown", event => {
+    event.preventDefault();
+    placeBomb();
+  });
+  el.pause.addEventListener("click", togglePause);
+  el.restart.addEventListener("click", () => setupStage(false));
 
-            renderBoard();
-        }
+  document.addEventListener("keydown", event => {
+    const keyName = event.key.toLowerCase();
+    const movement = {
+      arrowup: [0, -1],
+      w: [0, -1],
+      arrowdown: [0, 1],
+      s: [0, 1],
+      arrowleft: [-1, 0],
+      a: [-1, 0],
+      arrowright: [1, 0],
+      d: [1, 0]
+    };
 
-        // ゲーム開始
-        function startGame() {
-            startScreen.style.display = 'none';
-            gameScreen.style.display = 'block';
-            gameState.gameRunning = true;
-            initGame();
+    if (movement[keyName]) {
+      event.preventDefault();
+      movePlayer(...movement[keyName]);
+    } else if (event.key === " " || event.key === "Enter") {
+      event.preventDefault();
+      placeBomb();
+    } else if (keyName === "p") {
+      event.preventDefault();
+      togglePause();
+    } else if (keyName === "r") {
+      event.preventDefault();
+      setupStage(false);
+    }
+  }, { passive: false });
 
-            // キーボード入力
-            document.addEventListener('keydown', (e) => {
-                switch (e.key) {
-                    case 'ArrowUp':
-                        movePlayer(0, -1);
-                        break;
-                    case 'ArrowDown':
-                        movePlayer(0, 1);
-                        break;
-                    case 'ArrowLeft':
-                        movePlayer(-1, 0);
-                        break;
-                    case 'ArrowRight':
-                        movePlayer(1, 0);
-                        break;
-                    case ' ':
-                        placeBomb();
-                        break;
-                }
-            });
-
-            // タッチ操作
-            upBtn.addEventListener('click', () => movePlayer(0, -1));
-            downBtn.addEventListener('click', () => movePlayer(0, 1));
-            leftBtn.addEventListener('click', () => movePlayer(-1, 0));
-            rightBtn.addEventListener('click', () => movePlayer(1, 0));
-            bombBtn.addEventListener('click', placeBomb);
-        }
-
-        // ゲームオーバー
-        function gameOver() {
-            gameState.gameRunning = false;
-            finalScoreElement.textContent = gameState.score;
-            gameOverScreen.style.display = 'block';
-        }
-
-        // リスタート
-        function restartGame() {
-            gameOverScreen.style.display = 'none';
-            startGame();
-        }
-
-        // イベントリスナー
-        startBtn.addEventListener('click', startGame);
-        restartBtn.addEventListener('click', restartGame);
-
-        // 初期状態
-        initGame();
-    </script>
+  showModal("ボムメイズ・ブレイク", "爆弾で木箱を壊し、敵を倒して出口へ向かおう。敵を全て倒すと出口が開く。", [
+    { label: "ゲーム開始", className: "blue", action: () => setupStage(false) }
+  ]);
+  buildBoard();
+  clearArea(1, 1);
+  render();
+  updateUI();
+})();
+</script>
 </body>
 </html>
