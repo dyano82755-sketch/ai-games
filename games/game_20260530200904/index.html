@@ -360,29 +360,12 @@
     pointer-events: none;
   }
 
-  .cell.grass {
-    background: #70a64d;
-  }
-
-  .cell.forest {
-    background: #2f7445;
-  }
-
-  .cell.fort {
-    background: #92734c;
-  }
-
-  .cell.road {
-    background: #bc965e;
-  }
-
-  .cell.mountain {
-    background: #6a625a;
-  }
-
-  .cell.water {
-    background: #4b8fa5;
-  }
+  .cell.grass { background: #70a64d; }
+  .cell.forest { background: #2f7445; }
+  .cell.fort { background: #92734c; }
+  .cell.road { background: #bc965e; }
+  .cell.mountain { background: #6a625a; }
+  .cell.water { background: #4b8fa5; }
 
   .terrain-mark {
     position: absolute;
@@ -395,6 +378,7 @@
 
   .cell.move::after,
   .cell.attack::after,
+  .cell.skill-area::after,
   .cell.danger::after,
   .cell.selected::after {
     content: "";
@@ -411,6 +395,12 @@
   .cell.attack::after {
     background: rgba(184, 59, 53, 0.32);
     box-shadow: inset 0 0 0 3px rgba(255, 181, 85, 0.82);
+  }
+
+  /* 新設: スキル発動範囲の紫ハイライト */
+  .cell.skill-area::after {
+    background: rgba(138, 43, 226, 0.36);
+    box-shadow: inset 0 0 0 3px rgba(230, 130, 255, 0.85);
   }
 
   .cell.danger::after {
@@ -456,13 +446,8 @@
     filter: grayscale(0.8) brightness(0.62);
   }
 
-  .unit-token.hit {
-    animation: hit-wobble 260ms ease;
-  }
-
-  .unit-token.flash {
-    animation: flash-strike 360ms ease;
-  }
+  .unit-token.hit { animation: hit-wobble 260ms ease; }
+  .unit-token.flash { animation: flash-strike 360ms ease; }
 
   .mini-hp {
     position: absolute;
@@ -586,7 +571,7 @@
 
   .command-bar {
     display: grid;
-    grid-template-columns: minmax(160px, 1fr) auto auto auto;
+    grid-template-columns: minmax(160px, 1fr) auto auto auto auto; /* ボタン増量のため列拡張 */
     gap: 8px;
     align-items: center;
     padding: 10px;
@@ -626,9 +611,7 @@
     background: rgba(20, 16, 13, 0.42);
   }
 
-  .overlay.show {
-    display: grid;
-  }
+  .overlay.show { display: grid; }
 
   .banner {
     width: min(520px, 100%);
@@ -643,26 +626,9 @@
     box-shadow: 0 18px 40px rgba(0,0,0,0.48);
   }
 
-  .banner strong {
-    display: block;
-    font-size: 1.8rem;
-    line-height: 1.15;
-  }
-
-  .banner span {
-    display: block;
-    margin-top: 8px;
-    color: #f4dba6;
-    line-height: 1.45;
-  }
-
-  .banner-actions {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 14px;
-  }
+  .banner strong { font-size: 1.8rem; line-height: 1.15; }
+  .banner span { display: block; margin-top: 8px; color: #f4dba6; line-height: 1.45; }
+  .banner-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 
   @keyframes hit-wobble {
     0% { transform: translateX(0) scale(1); }
@@ -684,97 +650,28 @@
   }
 
   @media (max-width: 920px) {
-    .app {
-      min-height: 100dvh;
-    }
-
-    .battlefield {
-      grid-template-columns: 1fr;
-    }
-
-    .panel {
-      overflow: visible;
-    }
-
-    .mission,
-    .stats {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .unit-card,
-    .triangle,
-    .log {
-      display: none;
-    }
-
-    .board-frame {
-      width: min(94vw, 72dvh, 650px);
-    }
-
-    .roster {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      max-height: none;
-    }
+    .app { min-height: 100dvh; }
+    .battlefield { grid-template-columns: 1fr; }
+    .panel { overflow: visible; }
+    .mission, .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .unit-card, .triangle, .log { display: none; }
+    .board-frame { width: min(94vw, 72dvh, 650px); }
+    .roster { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: none; }
   }
 
   @media (max-width: 560px) {
-    .app {
-      gap: 8px;
-      padding: 7px;
-    }
-
-    .topbar {
-      grid-template-columns: 1fr auto;
-    }
-
-    .phase-pill {
-      grid-column: 1 / -1;
-      min-width: 0;
-      padding: 8px;
-      order: 3;
-    }
-
-    .brand-title strong {
-      font-size: 1rem;
-    }
-
-    .crest {
-      width: 42px;
-      height: 42px;
-      font-size: 1.25rem;
-    }
-
-    .mission {
-      grid-template-columns: 1fr;
-    }
-
-    .roster {
-      grid-template-columns: 1fr;
-    }
-
-    .command-bar {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .hint {
-      grid-column: 1 / -1;
-      font-size: 0.9rem;
-    }
-
-    .cmd-btn {
-      min-width: 0;
-      width: 100%;
-      padding-inline: 8px;
-    }
-
-    .unit-token {
-      font-size: 1.12rem;
-      border-width: 2px;
-    }
-
-    .terrain-mark {
-      font-size: 0.72rem;
-    }
+    .app { gap: 8px; padding: 7px; }
+    .topbar { grid-template-columns: 1fr auto; }
+    .phase-pill { grid-column: 1 / -1; min-width: 0; padding: 8px; order: 3; }
+    .brand-title strong { font-size: 1rem; }
+    .crest { width: 42px; height: 42px; font-size: 1.25rem; }
+    .mission { grid-template-columns: 1fr; }
+    .roster { grid-template-columns: 1fr; }
+    .command-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .hint { grid-column: 1 / -1; font-size: 0.9rem; }
+    .cmd-btn { min-width: 0; width: 100%; padding-inline: 8px; }
+    .unit-token { font-size: 1.12rem; border-width: 2px; }
+    .terrain-mark { font-size: 0.72rem; }
   }
 </style>
 </head>
@@ -824,7 +721,7 @@
       </div>
       <div class="stats" id="statGrid"></div>
       <div class="triangle">
-        剣は斧に強く、斧は槍に強く、槍は剣に強い。森と砦は受けるダメージを少し減らす。
+        剣は斧に強く、斧は槍に強く、槍は剣に強い。青マスへ移動後、隣接する赤い敵へ通常攻撃、または「技を使う」ボタンで固有の奥義を発動可能！
       </div>
     </section>
 
@@ -846,6 +743,7 @@
 
   <footer class="command-bar">
     <div class="hint" id="hintText">味方を選んで、青いマスへ進軍しよう。</div>
+    <button class="cmd-btn secondary" id="skillBtn" type="button" disabled>💥 技を使う</button>
     <button class="cmd-btn secondary" id="waitBtn" type="button" disabled>🛡️ 待機</button>
     <button class="cmd-btn secondary" id="dangerBtn" type="button">⚠️ 危険</button>
     <button class="cmd-btn blue" id="endTurnBtn" type="button">🌙 終了</button>
@@ -918,15 +816,24 @@
   ];
 
   const classes = {
-    hero: { icon: "🛡️", label: "星剣ロード", hp: 34, atk: 10, mov: 3, min: 1, max: 1, type: "sword", trait: "近くの仲間を勇気づける" },
-    lancer: { icon: "🔱", label: "槍ナイト", hp: 36, atk: 9, mov: 4, min: 1, max: 1, type: "lance", trait: "足が速く、前線を支える" },
-    archer: { icon: "🏹", label: "風の弓兵", hp: 27, atk: 10, mov: 3, min: 2, max: 2, type: "bow", trait: "離れた敵を狙える" },
-    mage: { icon: "✨", label: "ルーン魔道士", hp: 25, atk: 11, mov: 3, min: 1, max: 2, type: "magic", trait: "地形の守りを少し無視する" },
+    // 初期クラス（技データ、進化先データを内包）
+    hero: { icon: "🛡️", label: "星剣ロード", hp: 34, atk: 10, mov: 3, min: 1, max: 1, type: "sword", trait: "近くの仲間を勇気づける", nextClass: "hero_v2", skill: { name: "星烈斬", bonus: 6, min: 1, max: 1 } },
+    lancer: { icon: "🔱", label: "槍ナイト", hp: 36, atk: 9, mov: 4, min: 1, max: 1, type: "lance", trait: "足が速く、前線を支える", nextClass: "lancer_v2", skill: { name: "流星突", bonus: 4, min: 1, max: 1 } },
+    archer: { icon: "🏹", label: "風の弓兵", hp: 27, atk: 10, mov: 3, min: 2, max: 2, type: "bow", trait: "離れた敵を狙える", nextClass: "archer_v2", skill: { name: "狙撃矢", bonus: 3, min: 2, max: 3 } },
+    mage: { icon: "✨", label: "ルーン魔道士", hp: 25, atk: 11, mov: 3, min: 1, max: 2, type: "magic", trait: "地形の守りを少し無視する", nextClass: "mage_v2", skill: { name: "爆炎ルーン", bonus: 8, min: 1, max: 2 } },
+    
+    // 進化後クラス（Lv3到達時に自動クラスチェンジ）
+    hero_v2: { icon: "👑", label: "ブレイブロード", hp: 44, atk: 15, mov: 3, min: 1, max: 1, type: "sword", trait: "星紋の力を完全覚醒せし勇者", skill: { name: "真・星烈覇斬", bonus: 12, min: 1, max: 1 } },
+    lancer_v2: { icon: "🐎", label: "ホーリーナイト", hp: 46, atk: 13, mov: 4, min: 1, max: 1, type: "lance", trait: "聖なる加護を受けし白銀の重騎士", skill: { name: "神聖流星突", bonus: 9, min: 1, max: 1 } },
+    archer_v2: { icon: "🎯", label: "スナイパーマスター", hp: 35, atk: 14, mov: 3, min: 2, max: 2, type: "bow", trait: "遥か彼方の闇を射抜く神射手", skill: { name: "神幻究極矢", bonus: 8, min: 2, max: 4 } },
+    mage_v2: { icon: "🔮", label: "ルーン大魔導士", hp: 32, atk: 17, mov: 3, min: 1, max: 2, type: "magic", trait: "世界の理を操る禁術の体現者", skill: { name: "終焉のメテオ", bonus: 15, min: 1, max: 3 } },
+
+    // 敵ユニット
     bandit: { icon: "🪓", label: "山賊", hp: 26, atk: 8, mov: 3, min: 1, max: 1, type: "axe", trait: "荒っぽい一撃" },
     soldier: { icon: "🗡️", label: "剣兵", hp: 25, atk: 8, mov: 3, min: 1, max: 1, type: "sword", trait: "素早い斬撃" },
     guard: { icon: "🔰", label: "重槍兵", hp: 34, atk: 9, mov: 2, min: 1, max: 1, type: "lance", trait: "砦で粘る守備役" },
-    sniper: { icon: "🎯", label: "見張り弓", hp: 24, atk: 9, mov: 2, min: 2, max: 2, type: "bow", trait: "遠くから狙う" },
-    boss: { icon: "👑", label: "影の隊長", hp: 44, atk: 11, mov: 2, min: 1, max: 1, type: "axe", trait: "倒せば章クリア" }
+    sniper: { icon: "🏹", label: "見張り弓", hp: 24, atk: 9, mov: 2, min: 2, max: 2, type: "bow", trait: "遠くから狙う" },
+    boss: { icon: "👹", label: "影の隊長", hp: 44, atk: 11, mov: 2, min: 1, max: 1, type: "axe", trait: "倒せば章クリア" }
   };
 
   const state = {
@@ -937,6 +844,7 @@
     best: Number(localStorage.getItem(bestKey) || 0),
     selectedId: null,
     selectionMoved: false,
+    selectedSkill: false, // 新設: スキル発動モードの管理
     showDanger: false,
     locked: false,
     units: [],
@@ -952,6 +860,7 @@
     roster: document.getElementById("roster"),
     log: document.getElementById("logList"),
     hint: document.getElementById("hintText"),
+    skill: document.getElementById("skillBtn"), // 新設
     wait: document.getElementById("waitBtn"),
     danger: document.getElementById("dangerBtn"),
     endTurn: document.getElementById("endTurnBtn"),
@@ -998,7 +907,9 @@
       acted: false,
       pop: "",
       hit: false,
-      flash: false
+      flash: false,
+      level: 1, // 新設: 初期レベル
+      exp: 0    // 新設: 初期経験値
     });
   }
 
@@ -1007,15 +918,28 @@
     state.turn = 1;
     state.selectedId = null;
     state.selectionMoved = false;
+    state.selectedSkill = false;
     state.locked = false;
-    state.units = [];
+    
+    // 味方ユニットの引き継ぎ・生成処理
+    if (state.stage === 1 || state.units.length === 0) {
+      state.units = [];
+      addUnit(0, 7, "hero", "player", "リク");
+      addUnit(1, 6, "lancer", "player", "カイ");
+      addUnit(2, 7, "archer", "player", "ノア");
+      addUnit(0, 5, "mage", "player", "ミオ");
+    } else {
+      // 次のステージへ進む場合は、プレイヤーユニットのみ生存状態を引き継ぐ
+      const currentPlayers = aliveUnits("player");
+      state.units = [];
+      currentPlayers.forEach(p => {
+        p.acted = false;
+        p.hp = p.maxHp; // ステージ開始時は全回復
+        state.units.push(p);
+      });
+    }
+
     const variant = (state.stage - 1) % 3;
-
-    addUnit(0, 7, "hero", "player", "リク");
-    addUnit(1, 6, "lancer", "player", "カイ");
-    addUnit(2, 7, "archer", "player", "ノア");
-    addUnit(0, 5, "mage", "player", "ミオ");
-
     if (variant === 0) {
       addUnit(7, 0, "boss", "enemy", "ザガン", true);
       addUnit(6, 1, "bandit", "enemy", "山賊A");
@@ -1036,42 +960,19 @@
       addUnit(7, 5, "guard", "enemy", "重槍");
     }
 
-    pushLog(`第${state.stage}章、開始。敵将を倒そう。`);
+    pushLog(`第${state.stage}章、開始。敵軍を迎え撃て。`);
     updateAll();
     showOverlay(`第${state.stage}章`, stageMap().title, 900);
   }
 
-  function tileAt(x, y) {
-    return stageMap().tiles[y][x];
-  }
-
-  function terrainAt(x, y) {
-    return terrain[tileAt(x, y)];
-  }
-
-  function inBounds(x, y) {
-    return x >= 0 && y >= 0 && x < BOARD_SIZE && y < BOARD_SIZE;
-  }
-
-  function aliveUnits(team) {
-    return state.units.filter((unit) => unit.team === team && unit.hp > 0);
-  }
-
-  function getUnitAt(x, y) {
-    return state.units.find((unit) => unit.hp > 0 && unit.x === x && unit.y === y);
-  }
-
-  function selectedUnit() {
-    return state.units.find((unit) => unit.id === state.selectedId && unit.hp > 0);
-  }
-
-  function keyOf(x, y) {
-    return `${x},${y}`;
-  }
-
-  function distance(a, b) {
-    return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-  }
+  function tileAt(x, y) { return stageMap().tiles[y][x]; }
+  function terrainAt(x, y) { return terrain[tileAt(x, y)]; }
+  function inBounds(x, y) { return x >= 0 && y >= 0 && x < BOARD_SIZE && y < BOARD_SIZE; }
+  function aliveUnits(team) { return state.units.filter((unit) => unit.team === team && unit.hp > 0); }
+  function getUnitAt(x, y) { return state.units.find((unit) => unit.hp > 0 && unit.x === x && unit.y === y); }
+  function selectedUnit() { return state.units.find((unit) => unit.id === state.selectedId && unit.hp > 0); }
+  function keyOf(x, y) { return `${x},${y}`; }
+  function distance(a, b) { return Math.abs(a.x - b.x) + Math.abs(a.y - b.y); }
 
   function getReachable(unit, includeStart = false) {
     const start = keyOf(unit.x, unit.y);
@@ -1107,12 +1008,14 @@
     }).filter((pos) => includeStart || pos.x !== unit.x || pos.y !== unit.y);
   }
 
-  function attackCellsFrom(unit, x = unit.x, y = unit.y) {
+  function attackCellsFrom(unit, x = unit.x, y = unit.y, customMin, customMax) {
     const cells = [];
+    const minRange = customMin !== undefined ? customMin : unit.min;
+    const maxRange = customMax !== undefined ? customMax : unit.max;
     for (let cy = 0; cy < BOARD_SIZE; cy++) {
       for (let cx = 0; cx < BOARD_SIZE; cx++) {
         const dist = Math.abs(cx - x) + Math.abs(cy - y);
-        if (dist >= unit.min && dist <= unit.max) {
+        if (dist >= minRange && dist <= maxRange) {
           cells.push({ x: cx, y: cy });
         }
       }
@@ -1120,8 +1023,12 @@
     return cells;
   }
 
-  function canAttack(attacker, defender) {
+  function canAttack(attacker, defender, isSkill = false) {
     const dist = distance(attacker, defender);
+    if (isSkill) {
+      const skl = unitClass(attacker).skill;
+      return dist >= skl.min && dist <= skl.max;
+    }
     return dist >= attacker.min && dist <= attacker.max;
   }
 
@@ -1146,25 +1053,58 @@
     return 0;
   }
 
-  function damageAmount(attacker, defender) {
+  // 攻撃力計算（アクティブスキルのボーナス補正を統合）
+  function damageAmount(attacker, defender, isSkill = false) {
     const land = terrainAt(defender.x, defender.y);
     const magicPierce = attacker.type === "magic" ? Math.floor(land.def / 2) : land.def;
     const advantage = triangleBonus(attacker.type, defender.type);
-    const crit = Math.random() < (attacker.team === "player" ? 0.12 : 0.05);
-    const base = Math.max(1, attacker.atk + advantage - magicPierce);
-    return { value: base + (crit ? 5 : 0), crit, advantage };
+    const crit = Math.random() < (attacker.team === "player" ? 0.15 : 0.05);
+    
+    let attackPower = attacker.atk;
+    if (isSkill) {
+      attackPower += unitClass(attacker).skill.bonus; // スキル固有の威力を加算
+    }
+
+    const base = Math.max(1, attackPower + advantage - magicPierce);
+    return { value: base + (crit ? 6 : 0), crit, advantage };
   }
 
-  function forecastText(attacker, defender) {
+  function forecastText(attacker, defender, isSkill = false) {
     const land = terrainAt(defender.x, defender.y);
     const advantage = triangleBonus(attacker.type, defender.type);
-    const base = Math.max(1, attacker.atk + advantage - (attacker.type === "magic" ? Math.floor(land.def / 2) : land.def));
+    let attackPower = attacker.atk + (isSkill ? unitClass(attacker).skill.bonus : 0);
+    const base = Math.max(1, attackPower + advantage - (attacker.type === "magic" ? Math.floor(land.def / 2) : land.def));
     const icon = advantage > 0 ? "有利" : advantage < 0 ? "不利" : "互角";
-    return `${attacker.name} → ${defender.name}: ${base}ダメージ予想（${icon}）`;
+    return isSkill 
+      ? `【技】${unitClass(attacker).skill.name} → ${defender.name}: ${base}ダメージ予想（${icon}）`
+      : `${attacker.name} → ${defender.name}: ${base}ダメージ予想（${icon}）`;
   }
 
-  async function strike(attacker, defender, counter = false) {
-    const result = damageAmount(attacker, defender);
+  // 経験値獲得とレベルアップ・進化の処理
+  function gainExp(unit, amount) {
+    if (unit.team !== "player") return;
+    unit.exp += amount;
+    pushLog(`${unit.name}は 経験値を ${amount} 獲得。`);
+    
+    if (unit.exp >= 100) {
+      unit.level++;
+      unit.exp -= 100;
+      unit.maxHp += 4;
+      unit.atk += 2;
+      unit.hp = unit.maxHp; // レベルアップで全回復
+      pushLog(`🎉 【レベルアップ】${unit.name}がLv.${unit.level}に上がった！ステータス上昇！`);
+      
+      // レベル3で自動進化（クラスチェンジ）
+      const cls = unitClass(unit);
+      if (unit.level === 3 && cls.nextClass) {
+        unit.classId = cls.nextClass;
+        pushLog(`✨ 【クラスチェンジ】${unit.name}が「${classes[cls.nextClass].label}」へ進化した！ アイコンと技が超強化！`);
+      }
+    }
+  }
+
+  async function strike(attacker, defender, counter = false, isSkill = false) {
+    const result = damageAmount(attacker, defender, isSkill);
     attacker.flash = true;
     updateAll();
     await sleep(170);
@@ -1173,35 +1113,53 @@
     defender.hit = true;
     defender.pop = result.crit ? `必殺 ${result.value}` : `-${result.value}`;
     state.score += attacker.team === "player" ? result.value * 10 : 0;
-    pushLog(`${counter ? "反撃" : "攻撃"}: ${attacker.name}が${defender.name}へ${result.value}ダメージ${result.crit ? "。必殺！" : "。"}`);
+    
+    if (isSkill) {
+      pushLog(`奥義・${unitClass(attacker).skill.name}！ ${attacker.name}が${defender.name}へ${result.value}ダメージ！`);
+    } else {
+      pushLog(`${counter ? "反撃" : "攻撃"}: ${attacker.name}が${defender.name}へ${result.value}ダメージ${result.crit ? "。必殺！" : "。"}`);
+    }
+    
+    // 味方ユニットなら戦闘行動で経験値獲得
+    if (attacker.team === "player") {
+      gainExp(attacker, 20);
+    }
+
     updateAll();
     await sleep(result.crit ? 620 : 480);
 
     attacker.flash = false;
     defender.hit = false;
     defender.pop = "";
+    
     if (defender.hp <= 0) {
-      if (attacker.team === "player") state.score += defender.boss ? 450 : 180;
+      if (attacker.team === "player") {
+        state.score += defender.boss ? 450 : 180;
+        gainExp(attacker, 40); // 撃破ボーナス経験値
+      }
       pushLog(`${defender.name}を撃破。`);
     }
     updateAll();
   }
 
-  async function executeCombat(attacker, defender) {
+  async function executeCombat(attacker, defender, isSkill = false) {
     if (state.locked || attacker.hp <= 0 || defender.hp <= 0) return;
     state.locked = true;
     clearSelection(false);
-    await strike(attacker, defender);
+    
+    // 攻撃の実行
+    await strike(attacker, defender, false, isSkill);
 
+    // 反撃の実行（通常攻撃かつ相手が生存しており、射程が合う場合のみ）
     if (defender.hp > 0 && attacker.hp > 0 && canAttack(defender, attacker)) {
-      await strike(defender, attacker, true);
+      await strike(defender, attacker, true, false);
     }
 
     attacker.acted = true;
     if (terrainAt(attacker.x, attacker.y).heal && attacker.hp > 0) {
       const heal = terrainAt(attacker.x, attacker.y).heal;
       attacker.hp = Math.min(attacker.maxHp, attacker.hp + heal);
-      pushLog(`${attacker.name}は砦で${heal}回復。`);
+      pushLog(`${attacker.name}は砦の加護で${heal}回復。`);
     }
 
     state.locked = false;
@@ -1213,6 +1171,7 @@
   function clearSelection(render = true) {
     state.selectedId = null;
     state.selectionMoved = false;
+    state.selectedSkill = false;
     if (render) updateAll();
   }
 
@@ -1223,7 +1182,7 @@
     const land = terrainAt(unit.x, unit.y);
     if (land.heal) {
       unit.hp = Math.min(unit.maxHp, unit.hp + land.heal);
-      pushLog(`${unit.name}は砦で${land.heal}回復。`);
+      pushLog(`${unit.name}は砦で待機、${land.heal}回復。`);
     } else {
       pushLog(`${unit.name}は待機。`);
     }
@@ -1234,14 +1193,28 @@
 
   function selectUnit(unit) {
     if (state.phase !== "player" || state.locked) return;
+    state.selectedSkill = false; // 選択し直した時はスキル選択をリセット
     if (unit.team === "player" && !unit.acted) {
       state.selectedId = unit.id;
       state.selectionMoved = false;
-      pushHint(`${unit.name}を選択。青いマスへ進軍、赤い敵へ攻撃。`);
+      pushHint(`${unit.name}を選択中。青いマスへ進軍、または「技を使う」を選択可能。`);
     } else {
       state.selectedId = null;
       state.selectionMoved = false;
       pushHint(`${unit.name} / ${unitClass(unit).label} / HP ${unit.hp}/${unit.maxHp}`);
+    }
+    updateAll();
+  }
+
+  // スキル（技）発動モードのトグル
+  function toggleSkillMode() {
+    const unit = selectedUnit();
+    if (!unit || unit.acted || state.phase !== "player") return;
+    state.selectedSkill = !state.selectedSkill;
+    if (state.selectedSkill) {
+      pushHint(`奥義【${unitClass(unit).skill.name}】発動体勢！ 紫色の範囲にいる敵を選択してください。`);
+    } else {
+      pushHint("技の選択を解除しました。通常進軍を行います。");
     }
     updateAll();
   }
@@ -1261,12 +1234,31 @@
       return;
     }
 
-    if (clicked && clicked.team === "enemy") {
-      if (canAttack(unit, clicked)) {
-        pushHint(forecastText(unit, clicked));
-        await executeCombat(unit, clicked);
+    // スキル発動モード中のクリック処理
+    if (state.selectedSkill) {
+      if (clicked && clicked.team === "enemy") {
+        if (canAttack(unit, clicked, true)) {
+          await executeCombat(unit, clicked, true);
+        } else {
+          pushHint("技の射程外です。通常攻撃に変えるか、移動してください。");
+          state.selectedSkill = false;
+          updateAll();
+        }
       } else {
-        pushHint("射程外。近づいてから攻撃しよう。");
+        state.selectedSkill = false;
+        pushHint("技をキャンセルしました。");
+        updateAll();
+      }
+      return;
+    }
+
+    // 通常モード中のクリック処理
+    if (clicked && clicked.team === "enemy") {
+      if (canAttack(unit, clicked, false)) {
+        pushHint(forecastText(unit, clicked, false));
+        await executeCombat(unit, clicked, false);
+      } else {
+        pushHint("攻撃射程外。青いマスに移動して近づいてください。");
       }
       return;
     }
@@ -1282,14 +1274,14 @@
         unit.x = x;
         unit.y = y;
         state.selectionMoved = true;
-        const targets = aliveUnits("enemy").filter((enemy) => canAttack(unit, enemy));
-        pushHint(targets.length ? "攻撃できる敵がいる。赤い敵を選ぼう。" : "ここで待機できる。");
+        const targets = aliveUnits("enemy").filter((enemy) => canAttack(unit, enemy, false));
+        pushHint(targets.length ? "敵が射程内にいます。タップして攻撃、または下の「技を使う」を発動！" : "ここで待機、または「技を使う」を発動できます。");
         updateAll();
         return;
       }
     }
 
-    pushHint("そのマスへは行けない。別の作戦を選ぼう。");
+    pushHint("そのマスへは進軍できません。");
   }
 
   function checkPlayerDone() {
@@ -1303,7 +1295,7 @@
     clearSelection(false);
     state.phase = "enemy";
     updateAll();
-    await showOverlay("敵フェイズ", "敵軍が動き出した。守りを固めよう。", 850);
+    await showOverlay("敵フェイズ", "敵軍が進軍を開始。防衛線を維持せよ。", 850);
     await runEnemyTurn();
   }
 
@@ -1324,7 +1316,7 @@
       }
 
       if (target && canAttack(enemy, target)) {
-        await executeCombat(enemy, target);
+        await executeCombat(enemy, target, false);
         if (checkEndState()) return;
       }
       await sleep(250);
@@ -1351,7 +1343,7 @@
     if (next) {
       enemy.x = next.x;
       enemy.y = next.y;
-      pushLog(`${enemy.name}が前進。`);
+      pushLog(`${enemy.name}が距離を詰めてきた。`);
     }
   }
 
@@ -1365,18 +1357,18 @@
         unit.hp = Math.min(unit.maxHp, unit.hp + land.heal);
       }
     });
-    pushHint(`味方フェイズ ${state.turn}ターン目。`);
+    pushHint(`味方フェイズ ${state.turn}ターン目。戦術を選べ。`);
     updateAll();
-    showOverlay("味方フェイズ", "進軍再開。勝てる一手を選ぼう。", 650);
+    showOverlay("味方フェイズ", "全軍、進軍を再開せよ！", 650);
   }
 
   function checkEndState() {
-    const hero = state.units.find((unit) => unit.team === "player" && unit.classId === "hero");
+    const hero = state.units.find((unit) => unit.team === "player" && unit.classId.startsWith("hero"));
     if (!hero || hero.hp <= 0) {
       state.phase = "gameover";
       state.locked = false;
       updateBest();
-      showOverlay("GAME OVER", "リクが倒れた。もう一度、配置を考えて挑戦しよう。", 0, [
+      showOverlay("GAME OVER", "リクが倒れた。部隊の連携を練り直し再挑戦しよう。", 0, [
         { label: "↻ 再挑戦", action: resetGame, primary: true }
       ]);
       return true;
@@ -1389,8 +1381,8 @@
       const turnBonus = Math.max(0, 6 - state.turn) * 120;
       state.score += 600 + turnBonus;
       updateBest();
-      showOverlay("STAGE CLEAR!", `スコア ${state.score}。第${state.stage + 1}章へ進める。`, 0, [
-        { label: "⚔️ 次の章", action: nextStage, primary: true },
+      showOverlay("STAGE CLEAR!", `作戦成功！ スコア: ${state.score}。次の章への扉が開いた。`, 0, [
+        { label: "⚔️ 次の章へ", action: nextStage, primary: true },
         { label: "↻ 最初から", action: resetGame }
       ]);
       updateAll();
@@ -1403,6 +1395,7 @@
     state.stage += 1;
     state.selectedId = null;
     state.selectionMoved = false;
+    state.selectedSkill = false;
     hideOverlay();
     setupStage();
   }
@@ -1414,6 +1407,8 @@
     state.log = [];
     state.selectedId = null;
     state.selectionMoved = false;
+    state.selectedSkill = false;
+    state.units = []; // リセット時は味方データも初期化
     hideOverlay();
     setupStage();
   }
@@ -1430,9 +1425,7 @@
     state.log = state.log.slice(0, 7);
   }
 
-  function pushHint(text) {
-    el.hint.textContent = text;
-  }
+  function pushHint(text) { el.hint.textContent = text; }
 
   function showOverlay(title, text, duration = 0, actions = []) {
     el.overlayTitle.textContent = title;
@@ -1451,17 +1444,23 @@
     return sleep(duration).then(() => hideOverlay());
   }
 
-  function hideOverlay() {
-    el.overlay.classList.remove("show");
-  }
+  function hideOverlay() { el.overlay.classList.remove("show"); }
 
   function cellClass(x, y, unit, reachable, attacks, danger) {
     const land = terrainAt(x, y);
     const classes = ["cell", land.css];
     if (danger.has(keyOf(x, y))) classes.push("danger");
     if (unit && unit.x === x && unit.y === y) classes.push("selected");
-    if (reachable.has(keyOf(x, y))) classes.push("move");
-    if (attacks.has(keyOf(x, y))) classes.push("attack");
+    
+    // スキル選択中なら紫ハイライト、通常なら青・赤ハイライト
+    if (state.selectedSkill && unit && unit.id === state.selectedId) {
+      const skl = unitClass(unit).skill;
+      const dist = Math.abs(unit.x - x) + Math.abs(unit.y - y);
+      if (dist >= skl.min && dist <= skl.max) classes.push("skill-area");
+    } else {
+      if (reachable.has(keyOf(x, y))) classes.push("move");
+      if (attacks.has(keyOf(x, y))) classes.push("attack");
+    }
     return classes.join(" ");
   }
 
@@ -1525,14 +1524,24 @@
     const cls = unitClass(unit);
     el.portrait.textContent = cls.icon;
     el.unitName.textContent = unit.name;
-    el.unitClass.textContent = `${cls.label} / ${cls.trait}`;
+    
+    // スキル持ちならスキル名、敵なら特性を表示
+    const skillDesc = cls.skill ? `【技】${cls.skill.name}(威+${cls.skill.bonus})` : cls.trait;
+    el.unitClass.textContent = `${cls.label} / ${skillDesc}`;
+    
     const hpRatio = Math.max(0, unit.hp / unit.maxHp);
     el.hpFill.style.width = `${hpRatio * 100}%`;
     el.hpFill.classList.toggle("low", hpRatio < 0.35);
+    
     const range = unit.min === unit.max ? unit.max : `${unit.min}-${unit.max}`;
+    const lvStr = unit.team === "player" ? `${unit.level}` : "--";
+    const expStr = unit.team === "player" ? `${unit.exp}/100` : "--";
+
     el.statGrid.innerHTML = `
       <div class="stat"><span>HP</span><b>${unit.hp}/${unit.maxHp}</b></div>
       <div class="stat"><span>攻撃</span><b>${unit.atk}</b></div>
+      <div class="stat"><span>Lv</span><b>${lvStr}</b></div>
+      <div class="stat"><span>EXP</span><b>${expStr}</b></div>
       <div class="stat"><span>移動</span><b>${unit.mov}</b></div>
       <div class="stat"><span>射程</span><b>${range}</b></div>
     `;
@@ -1548,7 +1557,7 @@
       button.className = `${unit.team} ${unit.id === state.selectedId ? "is-selected" : ""}`;
       button.innerHTML = `
         <span class="roster-icon">${cls.icon}</span>
-        <span class="roster-name"><b>${unit.name}</b><span>${cls.label}</span></span>
+        <span class="roster-name"><b>${unit.name}</b><span>Lv.${unit.level} ${cls.label}</span></span>
         <b>${unit.hp}</b>
       `;
       button.addEventListener("click", () => selectUnit(unit));
@@ -1571,7 +1580,14 @@
     el.best.textContent = String(state.best);
     el.phase.textContent = state.phase === "enemy" ? "敵フェイズ" : state.phase === "player" ? `味方 ${state.turn}` : state.phase === "clear" ? "クリア" : "作戦終了";
     el.phase.classList.toggle("enemy", state.phase === "enemy");
-    el.wait.disabled = !selectedUnit() || state.phase !== "player" || state.locked;
+    
+    // ボタンの活性・非活性制御
+    const activeUnit = selectedUnit();
+    const canUseSkill = activeUnit && unitClass(activeUnit).skill && !activeUnit.acted && state.phase === "player" && !state.locked;
+    
+    el.skill.disabled = !canUseSkill;
+    el.skill.classList.toggle("blue", state.selectedSkill); // 選択中はボタンの色を変える
+    el.wait.disabled = !activeUnit || state.phase !== "player" || state.locked;
     el.endTurn.disabled = state.phase !== "player" || state.locked;
     el.danger.textContent = state.showDanger ? "✅ 危険" : "⚠️ 危険";
   }
@@ -1584,10 +1600,11 @@
     renderLog();
   }
 
+  el.skill.addEventListener("click", toggleSkillMode); // 新設
   el.wait.addEventListener("click", endSelectedAction);
   el.danger.addEventListener("click", () => {
     state.showDanger = !state.showDanger;
-    pushHint(state.showDanger ? "敵が届くマスを表示中。" : "危険マスを非表示。");
+    pushHint(state.showDanger ? "敵軍の攻撃予測範囲を表示中。" : "危険エリアを非表示にしました。");
     updateAll();
   });
   el.endTurn.addEventListener("click", endPlayerTurn);
