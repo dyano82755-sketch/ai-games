@@ -80,7 +80,6 @@
   .cell.mountain { background: #6a625a; }
   .cell.water { background: #4b8fa5; }
 
-  /* 変更点: 地形マーク（🛡️や🚫など）をはっきり表示 */
   .terrain-mark { position: absolute; inset: auto 4px 3px auto; color: rgba(255,255,255,0.85); font-size: 0.85rem; text-shadow: 0 1px 2px rgba(0,0,0,0.9); pointer-events: none; white-space: nowrap;}
 
   .cell.move::after, .cell.attack::after, .cell.skill-area::after, .cell.danger::after, .cell.selected::after { content: ""; position: absolute; inset: 0; pointer-events: none; }
@@ -211,7 +210,6 @@
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const bestKey = "crestTacticsBestScore";
 
-  // 変更点: 地形の視覚的アイコンと解説テキストを拡張
   const terrain = {
     G: { name: "草原", mark: "", css: "grass", cost: 1, def: 0, heal: 0, pass: true, desc: "平坦な土地。地形効果なし。" },
     F: { name: "森", mark: "🌲🛡️", css: "forest", cost: 2, def: 2, heal: 0, pass: true, desc: "身を隠せる。敵のダメージを2軽減。" },
@@ -493,8 +491,10 @@
   }
 
   async function executeCombat(attacker, defender, isSkill = false) {
-    if (state.locked || attacker.hp <= 0 || defender.hp <= 0) return;
-    state.locked = true;
+    if (attacker.hp <= 0 || defender.hp <= 0) return;
+    
+    const wasLocked = state.locked;
+    state.locked = true; // アニメーション中はロック
     clearSelection(false);
     
     await strike(attacker, defender, false, isSkill);
@@ -509,7 +509,7 @@
       pushLog(`${attacker.name}は砦の加護で${heal}回復。`);
     }
 
-    state.locked = false;
+    state.locked = wasLocked; // ロック状態を元に戻す
     updateAll();
     if (checkEndState()) return;
     if (state.phase === "player") checkPlayerDone();
@@ -559,7 +559,6 @@
     const clicked = getUnitAt(x, y);
     const unit = selectedUnit();
 
-    // 変更点: 空き地タップで地形解説を表示
     if (!unit) { 
       if (clicked) {
         selectUnit(clicked); 
@@ -609,7 +608,7 @@
     await runEnemyTurn();
   }
 
-  // 変更点: 敵AIをアグレッシブに（攻撃可能マスへ最優先移動）
+  // 敵の賢いAI（攻撃できるなら確実に行動し、無ければ近づく）
   async function runEnemyTurn() {
     state.locked = true;
     const enemies = aliveUnits("enemy");
@@ -617,16 +616,22 @@
       if (state.phase !== "enemy" || enemy.hp <= 0) break;
       const players = aliveUnits("player");
       if (!players.length) break;
-      let target = players.slice().sort((a, b) => distance(enemy, a) - distance(enemy, b))[0];
 
-      if (!canAttack(enemy, target)) {
-        moveEnemyToward(enemy, target); updateAll(); await sleep(420);
-        target = aliveUnits("player").slice().sort((a, b) => distance(enemy, a) - distance(enemy, b))[0];
+      let target = getBestTarget(enemy);
+
+      if (!target) {
+        moveEnemySmart(enemy, players);
+        updateAll();
+        await sleep(420);
+        target = getBestTarget(enemy);
       }
 
-      if (target && canAttack(enemy, target)) {
+      if (target) {
         await executeCombat(enemy, target, false);
         if (checkEndState()) return;
+      } else {
+        enemy.acted = true;
+        updateAll();
       }
       await sleep(250);
     }
@@ -634,7 +639,15 @@
     if (!checkEndState()) startPlayerTurn();
   }
 
-  function moveEnemyToward(enemy, target) {
+  function getBestTarget(enemy) {
+    const players = aliveUnits("player");
+    const possibleTargets = players.filter(p => canAttack(enemy, p));
+    if (possibleTargets.length === 0) return null;
+    // HPが一番低い相手を優先して狙う（トドメを刺しにくる）
+    return possibleTargets.sort((a, b) => a.hp - b.hp)[0];
+  }
+
+  function moveEnemySmart(enemy, players) {
     const reachable = getReachable(enemy, true);
     let bestCell = { x: enemy.x, y: enemy.y };
     let bestScore = -Infinity;
@@ -643,24 +656,41 @@
       const occupant = getUnitAt(pos.x, pos.y);
       if (occupant && occupant.id !== enemy.id) return;
 
-      const canHit = attackCellsFrom(enemy, pos.x, pos.y).some(cell => cell.x === target.x && cell.y === target.y);
-      const dist = Math.abs(pos.x - target.x) + Math.abs(pos.y - target.y);
-      
-      let score = -dist; // 基本は近づく
-      if (canHit) score += 100; // 攻撃できるなら最優先
-      
-      // 弓や魔法の場合、反撃を受けないように距離を取る（最大射程を好む）
-      if (canHit && enemy.max > 1 && dist === enemy.max) score += 10;
+      let cellScore = 0;
+      let minDist = Infinity;
+      let canHitSomeone = false;
 
-      if (score > bestScore) {
-        bestScore = score;
+      players.forEach(p => {
+        const distToP = Math.abs(pos.x - p.x) + Math.abs(pos.y - p.y);
+        if (distToP < minDist) minDist = distToP;
+        if (distToP >= enemy.min && distToP <= enemy.max) canHitSomeone = true;
+      });
+
+      cellScore -= minDist; // 近づくほどスコアが高い
+
+      if (canHitSomeone) {
+        cellScore += 100; // 攻撃できるマスは最優先
+        if (enemy.max > 1) { // 弓や魔法は反撃を受けない最大射程を好む
+          players.forEach(p => {
+            const d = Math.abs(pos.x - p.x) + Math.abs(pos.y - p.y);
+            if (d === enemy.max) cellScore += 10;
+          });
+        }
+      }
+      
+      // 地形効果（森や砦など防御が上がるマス）を好む
+      const land = terrainAt(pos.x, pos.y);
+      cellScore += land.def * 2;
+
+      if (cellScore > bestScore) {
+        bestScore = cellScore;
         bestCell = pos;
       }
     });
 
     if (bestCell.x !== enemy.x || bestCell.y !== enemy.y) {
       enemy.x = bestCell.x; enemy.y = bestCell.y;
-      pushLog(`${enemy.name}が進軍。`);
+      pushLog(`${enemy.name}が移動。`);
     }
   }
 
