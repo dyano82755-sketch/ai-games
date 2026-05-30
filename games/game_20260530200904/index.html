@@ -1,549 +1,245 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Dungeon Monsters</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: manipulation; }
-    body {
-      background: #0f0f1b; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      height: 100vh; overflow: hidden;
-    }
-
-    #gameWrapper {
-      width: 100%; max-width: 600px; height: 100vh; max-height: 900px;
-      display: flex; flex-direction: column; background: #1a1a2e;
-      position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.8);
-    }
-
-    /* --- UI: Header & Stats --- */
-    #headerUI {
-      padding: 10px; background: linear-gradient(to bottom, #16213e, #0f0f1b);
-      border-bottom: 2px solid #e94560; flex-shrink: 0;
-    }
-    .status-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; }
-    .hp-bar-bg { width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden; margin-bottom: 5px;}
-    .hp-bar-fill { width: 100%; height: 100%; background: #e94560; transition: width 0.2s; }
-    .exp-bar-bg { width: 100%; height: 4px; background: #222; border-radius: 2px; overflow: hidden; }
-    .exp-bar-fill { width: 0%; height: 100%; background: #4caf50; transition: width 0.2s; }
-    
-    /* --- UI: Party --- */
-    #partyUI {
-      display: flex; gap: 10px; padding: 5px 0;
-    }
-    .party-slot {
-      width: 40px; height: 40px; background: rgba(255,255,255,0.1); border-radius: 8px;
-      display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
-      border: 1px solid #555; position: relative;
-    }
-    .party-slot[data-rarity="Rare"] { border-color: #4da8da; box-shadow: 0 0 5px #4da8da; }
-    .party-slot[data-rarity="Epic"] { border-color: #9b59b6; box-shadow: 0 0 8px #9b59b6; }
-    .party-slot[data-rarity="Legendary"] { border-color: #f1c40f; box-shadow: 0 0 12px #f1c40f; }
-
-    /* --- Main Game Board --- */
-    #boardContainer {
-      flex-grow: 1; display: flex; justify-content: center; align-items: center;
-      padding: 10px; background: #0f0f1b; overflow: hidden;
-    }
-    #gameGrid {
-      display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr);
-      width: 100%; max-width: 500px; aspect-ratio: 1; background: #0a0a10;
-      border: 2px solid #333; border-radius: 8px; position: relative;
-    }
-    .cell { display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
-    .wall { background: #2a2a3a; border-radius: 3px; box-shadow: inset 0 0 5px #111; margin: 1px; }
-    .floor { background: transparent; }
-
-    /* --- Entities --- */
-    .entity {
-      position: absolute; width: calc(100% / 15); height: calc(100% / 15);
-      display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
-      transition: top 0.15s, left 0.15s; z-index: 10;
-    }
-    #player { z-index: 20; font-size: 1.8rem; filter: drop-shadow(0 0 5px #fff); }
-    .enemy { z-index: 15; }
-    .stairs { z-index: 5; font-size: 1.5rem; animation: pulse 1s infinite alternate; }
-    .item { z-index: 5; font-size: 1.3rem; }
-    
-    @keyframes pulse { from { transform: scale(0.9); } to { transform: scale(1.1); } }
-    @keyframes damage { 0% { filter: brightness(2) drop-shadow(0 0 10px red); transform: scale(1.2); } 100% { filter: none; transform: scale(1); } }
-    .taking-damage { animation: damage 0.2s; }
-
-    /* --- Log & Controls --- */
-    #logArea {
-      height: 60px; background: rgba(0,0,0,0.5); padding: 5px 10px; font-size: 0.85rem;
-      overflow-y: hidden; display: flex; flex-direction: column-reverse; border-top: 1px solid #333;
-      color: #aaa;
-    }
-    .log-new { color: #fff; font-weight: bold; }
-    .log-rare { color: #f1c40f; }
-
-    #controls {
-      display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 60px);
-      gap: 5px; padding: 15px; background: #16213e; border-top: 2px solid #e94560;
-    }
-    .c-btn {
-      background: rgba(255,255,255,0.1); border-radius: 12px; display: flex;
-      align-items: center; justify-content: center; font-size: 2rem; border: 1px solid rgba(255,255,255,0.2);
-    }
-    .c-btn:active { background: rgba(255,255,255,0.3); transform: scale(0.95); }
-    #btnUp { grid-column: 2; grid-row: 1; }
-    #btnLeft { grid-column: 1; grid-row: 2; }
-    #btnRight { grid-column: 3; grid-row: 2; }
-    #btnDown { grid-column: 2; grid-row: 3; }
-    #btnWait { grid-column: 2; grid-row: 2; font-size: 1rem; font-weight: bold; }
-
-    /* --- Overlays --- */
-    .overlay {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.9); display: flex; flex-direction: column;
-      align-items: center; justify-content: center; z-index: 100; text-align: center; padding: 20px;
-    }
-    h1 { font-size: 2.2rem; color: #e94560; margin-bottom: 10px; text-shadow: 0 0 10px #e94560; }
-    p { margin-bottom: 20px; font-size: 1rem; line-height: 1.5; color: #ccc;}
-    .btn {
-      background: #e94560; color: white; padding: 12px 30px; font-size: 1.2rem;
-      border: none; border-radius: 30px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(233, 69, 96, 0.5);
-    }
-    .btn:active { transform: scale(0.95); }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Monster Collect DX</title>
+<style>
+body { margin:0; background:#111; color:#fff; font-family:sans-serif; text-align:center; touch-action:none; }
+#ui { padding:10px; background:#222; font-size:14px; font-weight:bold; }
+#party { margin-top:5px; color:#FFD700; font-size:18px; letter-spacing: 5px; }
+canvas { background:#000; display:block; margin:10px auto; border:2px solid #555; border-radius:4px; }
+.ctrl { display:grid; grid-template-columns:repeat(3, 60px); gap:8px; justify-content:center; margin-top:10px; }
+button { padding:15px; font-size:20px; border-radius:10px; background:#444; color:#fff; border:none; box-shadow: 0 4px #222; cursor:pointer; }
+button:active { background:#666; box-shadow: 0 0 #222; transform: translateY(4px); }
+.log { color: #aaa; font-size: 12px; margin-top: 10px; height: 1.5em; }
+</style>
 </head>
 <body>
+<div id="ui">
+  <div id="stats">HP:100/100 LV:1 Floor:1</div>
+  <div id="party">仲間: なし</div>
+</div>
+<canvas id="game" width="360" height="360"></canvas>
+<div class="log" id="logMsg">ダンジョンに足を踏み入れた...</div>
 
-<div id="gameWrapper">
-  <div id="headerUI">
-    <div class="status-row">
-      <span id="uiLevel">Lv.1</span>
-      <span id="uiFloor">B1F</span>
-      <span id="uiAtkDef">⚔️10 🛡️5</span>
-    </div>
-    <div class="hp-bar-bg"><div id="hpFill" class="hp-bar-fill"></div></div>
-    <div class="status-row" style="font-size:0.8rem; margin-bottom:2px;">
-      <span>HP: <span id="uiHp">100/100</span></span>
-      <span>EXP: <span id="uiExp">0/10</span></span>
-    </div>
-    <div class="exp-bar-bg"><div id="expFill" class="exp-bar-fill"></div></div>
-    
-    <div style="font-size:0.8rem; margin-top:5px; color:#aaa;">仲間のモンスター (最大3体/能力ボーナス)</div>
-    <div id="partyUI">
-      <div class="party-slot" id="party0"></div>
-      <div class="party-slot" id="party1"></div>
-      <div class="party-slot" id="party2"></div>
-    </div>
-  </div>
-
-  <div id="boardContainer">
-    <div id="gameGrid"></div>
-  </div>
-
-  <div id="logArea">
-    <div id="log1"></div>
-    <div id="log2"></div>
-    <div id="log3"></div>
-  </div>
-
-  <div id="controls">
-    <div class="c-btn" id="btnUp">▲</div>
-    <div class="c-btn" id="btnLeft">◀</div>
-    <div class="c-btn" id="btnWait">待機</div>
-    <div class="c-btn" id="btnRight">▶</div>
-    <div class="c-btn" id="btnDown">▼</div>
-  </div>
-
-  <div id="startScreen" class="overlay">
-    <h1>Dungeon Monsters</h1>
-    <p>ダンジョンに潜り、モンスターを倒して仲間にしよう！<br>仲間が増えると主人公のステータスも上がるぞ。<br>5階ごとに待ち受けるボスを倒し、最深部を目指せ！</p>
-    <button class="btn" onclick="startGame()">探索開始</button>
-  </div>
-
-  <div id="gameOverScreen" class="overlay" style="display: none;">
-    <h1 style="color: #ff3333;">GAME OVER</h1>
-    <p>力尽きた...<br>到達階層: <span id="resFloor"></span>F<br>最終レベル: <span id="resLevel"></span></p>
-    <button class="btn" onclick="location.reload()">再挑戦</button>
-  </div>
+<div class="ctrl">
+  <div></div><button onclick="move(0,-1)">▲</button><div></div>
+  <button onclick="move(-1,0)">◀</button>
+  <button onclick="move(0,0)" style="font-size:14px; background:#2a2a2a;">待機</button>
+  <button onclick="move(1,0)">▶</button>
+  <div></div><button onclick="move(0,1)">▼</button><div></div>
 </div>
 
 <script>
-  // --- Game Data & Definitions ---
-  const MONSTER_DB = [
-    { id: 1, icon: '🦇', name: 'コウモリ', rarity: 'Common', hp: 20, atk: 5, def: 1, rate: 0.5, bonus: {hp:5, atk:1, def:0} },
-    { id: 2, icon: '🐀', name: '大ネズミ', rarity: 'Common', hp: 25, atk: 4, def: 2, rate: 0.5, bonus: {hp:10, atk:0, def:1} },
-    { id: 3, icon: '🐍', name: '毒ヘビ', rarity: 'Common', hp: 15, atk: 8, def: 1, rate: 0.5, bonus: {hp:0, atk:2, def:0} },
-    { id: 4, icon: '🐺', name: 'ウルフ', rarity: 'Rare', hp: 40, atk: 12, def: 3, rate: 0.2, bonus: {hp:10, atk:3, def:1} },
-    { id: 5, icon: '🦂', name: '大サソリ', rarity: 'Rare', hp: 35, atk: 10, def: 6, rate: 0.2, bonus: {hp:5, atk:2, def:3} },
-    { id: 6, icon: '🦅', name: 'グリフォン', rarity: 'Epic', hp: 80, atk: 20, def: 10, rate: 0.05, bonus: {hp:20, atk:5, def:3} },
-    { id: 7, icon: '🦄', name: 'ユニコーン', rarity: 'Epic', hp: 100, atk: 15, def: 15, rate: 0.05, bonus: {hp:30, atk:2, def:5} },
-    // Bosses
-    { id: 101, icon: '🧌', name: '巨大トロル', rarity: 'Boss', hp: 150, atk: 20, def: 5, rate: 1.0, bonus: {hp:50, atk:10, def:5} },
-    { id: 102, icon: '🐉', name: '炎ドラゴン', rarity: 'Legendary', hp: 300, atk: 35, def: 15, rate: 0.01, bonus: {hp:100, atk:20, def:10} }
-  ];
+const c = document.getElementById("game"), ctx = c.getContext("2d");
+const TILE = 24, SIZE = 15;
+let state;
 
-  // --- Game State ---
-  let state = {
-    floor: 1,
-    player: { x: 0, y: 0, baseHp: 100, maxHp: 100, hp: 100, baseAtk: 10, atk: 10, baseDef: 5, def: 5, level: 1, exp: 0, nextExp: 10, el: null },
-    party: [], // Max 3
-    map: [],
-    enemies: [],
-    items: [],
-    stairs: null,
-    logs: ["","","探索を開始した！"],
-    isRunning: false
-  };
+// モンスターの図鑑（元のAIロジックを流用）
+const MONSTERS = {
+  "🦇": { name:"コウモリ", type:"slime", hpBase:10, atk:3, rate:0.4, bonus:{hp:10, atk:1} },
+  "🐺": { name:"ウルフ", type:"wolf", hpBase:20, atk:5, rate:0.2, bonus:{hp:20, atk:3} },
+  "🐉": { name:"ドラゴン", type:"archer", hpBase:35, atk:8, rate:0.05, bonus:{hp:50, atk:8} }
+};
 
-  const GRID_SIZE = 15;
-  const gridEl = document.getElementById('gameGrid');
+function rnd(n){ return Math.floor(Math.random()*n) }
+function log(msg){ document.getElementById("logMsg").textContent = msg; }
 
-  // --- Map Generation (Drunkard's Walk algorithm) ---
-  function generateMap() {
-    state.map = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(1)); // 1=wall, 0=floor
-    let x = Math.floor(GRID_SIZE/2), y = Math.floor(GRID_SIZE/2);
-    state.player.x = x; state.player.y = y;
-    
-    let floorCount = 0;
-    const targetFloors = state.floor % 5 === 0 ? 80 : 60; // ボス階は少し広い
-    
-    while(floorCount < targetFloors) {
-      if(state.map[y][x] === 1) { state.map[y][x] = 0; floorCount++; }
-      const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
-      const d = dirs[Math.floor(Math.random()*dirs.length)];
-      x = Math.max(1, Math.min(GRID_SIZE-2, x + d[0]));
-      y = Math.max(1, Math.min(GRID_SIZE-2, y + d[1]));
+function restart(){
+  state = { floor:1, lv:1, baseHp:100, baseAtk:10, x:1, y:1, enemies:[], party:[] };
+  calcStats();
+  state.hp = state.maxHp;
+  genFloor();
+}
+
+function calcStats(){
+  state.maxHp = state.baseHp;
+  state.atk = state.baseAtk;
+  for(let icon of state.party){
+    state.maxHp += MONSTERS[icon].bonus.hp;
+    state.atk += MONSTERS[icon].bonus.atk;
+  }
+}
+
+function genFloor(){
+  state.enemies = [];
+  state.map = [];
+  for(let y=0; y<SIZE; y++){
+    state.map[y] = [];
+    for(let x=0; x<SIZE; x++){
+      // 壁の生成
+      state.map[y][x] = (x===0 || y===0 || x===SIZE-1 || y===SIZE-1 || Math.random()<0.12) ? 1 : 0;
     }
   }
+  // 初期位置と出口の確保
+  state.map[1][1] = 0;
+  state.x = 1; state.y = 1;
+  state.exit = {x: SIZE-2, y: SIZE-2};
+  state.map[state.exit.y][state.exit.x] = 0;
 
-  function renderMap() {
-    gridEl.innerHTML = '';
-    // Player
-    const pEl = document.createElement('div');
-    pEl.className = 'entity'; pEl.id = 'player'; pEl.textContent = '🧙‍♂️';
-    gridEl.appendChild(pEl);
-    state.player.el = pEl;
-    updateEntityPos(pEl, state.player.x, state.player.y);
-
-    // Grid cells
-    for(let y=0; y<GRID_SIZE; y++) {
-      for(let x=0; x<GRID_SIZE; x++) {
-        const cell = document.createElement('div');
-        cell.className = state.map[y][x] === 1 ? 'cell wall' : 'cell floor';
-        gridEl.appendChild(cell);
-      }
-    }
-  }
-
-  function spawnEntities() {
-    state.enemies.forEach(e => e.el.remove());
-    state.items.forEach(i => i.el.remove());
-    if(state.stairs && state.stairs.el) state.stairs.el.remove();
-    state.enemies = []; state.items = [];
-
-    const emptyCells = [];
-    for(let y=0; y<GRID_SIZE; y++) {
-      for(let x=0; x<GRID_SIZE; x++) {
-        if(state.map[y][x] === 0 && (x !== state.player.x || y !== state.player.y)) {
-          emptyCells.push({x, y});
-        }
-      }
-    }
-    // Shuffle
-    emptyCells.sort(() => Math.random() - 0.5);
-
-    // 階層ボスチェック
-    if (state.floor % 5 === 0) {
-      const bossData = state.floor === 5 ? MONSTER_DB.find(m=>m.id===101) : MONSTER_DB.find(m=>m.id===102);
-      const pos = emptyCells.pop();
-      createEnemy(pos.x, pos.y, bossData, true);
-    } else {
-      // ザコ敵
-      const numEnemies = 3 + Math.floor(state.floor / 2);
-      for(let i=0; i<numEnemies; i++) {
-        const pos = emptyCells.pop();
-        if(!pos) break;
-        // 階層に応じて出現モンスターを絞る
-        const pool = MONSTER_DB.filter(m => m.rarity !== 'Boss' && m.rarity !== 'Legendary');
-        const mData = pool[Math.floor(Math.random() * pool.length)];
-        createEnemy(pos.x, pos.y, mData, false);
-      }
-    }
-
-    // アイテム(回復薬)
-    const numItems = 2;
-    for(let i=0; i<numItems; i++) {
-      const pos = emptyCells.pop();
-      if(!pos) break;
-      const el = document.createElement('div');
-      el.className = 'entity item'; el.textContent = '🧪';
-      gridEl.appendChild(el);
-      updateEntityPos(el, pos.x, pos.y);
-      state.items.push({ x: pos.x, y: pos.y, el: el });
-    }
-
-    // 階段
-    const sPos = emptyCells.pop();
-    const sEl = document.createElement('div');
-    sEl.className = 'entity stairs'; sEl.textContent = '🚪';
-    gridEl.appendChild(sEl);
-    updateEntityPos(sEl, sPos.x, sPos.y);
-    state.stairs = { x: sPos.x, y: sPos.y, el: sEl };
-  }
-
-  function createEnemy(x, y, data, isBoss) {
-    const el = document.createElement('div');
-    el.className = 'entity enemy'; el.textContent = data.icon;
-    if(isBoss) { el.style.fontSize = '2.5rem'; el.style.zIndex = '18'; }
-    gridEl.appendChild(el);
-    updateEntityPos(el, x, y);
-    
-    // ステータス補正（階層で強くなる）
-    const multi = 1 + (state.floor * 0.1);
+  // 敵の配置
+  let count = 4 + state.floor;
+  let spawnPool = ["🦇","🦇","🐺","🐉"];
+  for(let i=0; i<count; i++){
+    let icon = spawnPool[rnd(spawnPool.length)];
     state.enemies.push({
-      x: x, y: y, el: el,
-      data: data, isBoss: isBoss,
-      hp: Math.floor(data.hp * multi), maxHp: Math.floor(data.hp * multi),
-      atk: Math.floor(data.atk * multi), def: Math.floor(data.def * multi)
+      x: rnd(SIZE-2)+1, y: rnd(SIZE-2)+1,
+      icon: icon,
+      type: MONSTERS[icon].type,
+      hp: MONSTERS[icon].hpBase + (state.floor * 2),
+      maxHp: MONSTERS[icon].hpBase + (state.floor * 2)
     });
   }
+  draw();
+}
 
-  function updateEntityPos(el, x, y) {
-    el.style.left = `calc(${x} * 100% / 15)`;
-    el.style.top = `calc(${y} * 100% / 15)`;
-  }
-
-  // --- Game Logic ---
-  function addLog(msg, isRare = false) {
-    state.logs.push(msg);
-    if(state.logs.length > 3) state.logs.shift();
-    for(let i=0; i<3; i++) {
-      const logEl = document.getElementById(`log${3-i}`);
-      logEl.textContent = state.logs[i];
-      logEl.className = i===2 ? 'log-new' : '';
-      if(isRare && i===2) logEl.classList.add('log-rare');
+function draw(){
+  ctx.clearRect(0,0,c.width,c.height);
+  
+  // マップ描画
+  for(let y=0; y<SIZE; y++){
+    for(let x=0; x<SIZE; x++){
+      ctx.fillStyle = state.map[y][x] ? "#2c3e50" : "#1a1a1a";
+      ctx.fillRect(x*TILE, y*TILE, TILE, TILE);
     }
   }
+  
+  // 出口（敵が0なら開く）
+  if(state.enemies.length === 0){
+    ctx.fillStyle = "#00ffcc";
+    ctx.fillRect(state.exit.x*TILE+4, state.exit.y*TILE+4, 16, 16);
+  } else {
+    ctx.fillStyle = "#555"; // 閉じている
+    ctx.fillRect(state.exit.x*TILE+8, state.exit.y*TILE+8, 8, 8);
+  }
 
-  function updateUI() {
-    document.getElementById('uiLevel').textContent = `Lv.${state.player.level}`;
-    document.getElementById('uiFloor').textContent = `${state.floor}F`;
-    document.getElementById('uiAtkDef').textContent = `⚔️${state.player.atk} 🛡️${state.player.def}`;
-    document.getElementById('uiHp').textContent = `${state.player.hp}/${state.player.maxHp}`;
-    document.getElementById('uiExp').textContent = `${state.player.exp}/${state.player.nextExp}`;
+  ctx.font = "18px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  // 敵描画
+  for(const e of state.enemies){
+    ctx.fillText(e.icon, e.x*TILE + TILE/2, e.y*TILE + TILE/2);
+    // HPバー
+    ctx.fillStyle = "red";
+    ctx.fillRect(e.x*TILE+2, e.y*TILE+TILE-4, 20 * (e.hp/e.maxHp), 3);
+  }
+  
+  // プレイヤー描画
+  ctx.fillText("🧙‍♂️", state.x*TILE + TILE/2, state.y*TILE + TILE/2);
+
+  // UI更新
+  document.getElementById("stats").textContent = 
+    `HP:${state.hp}/${state.maxHp}  LV:${state.lv}  階:${state.floor}  攻:${state.atk}  敵:${state.enemies.length}`;
+  document.getElementById("party").textContent = 
+    `仲間: ${state.party.length > 0 ? state.party.join("") : "なし"}`;
+}
+
+function move(dx,dy){
+  let nx = state.x + dx, ny = state.y + dy;
+  
+  // 壁チェック
+  if(state.map[ny]?.[nx] === 1) return;
+
+  // 攻撃チェック
+  let enemy = state.enemies.find(e => e.x === nx && e.y === ny);
+  if(enemy){
+    enemy.hp -= state.atk;
+    log(`${MONSTERS[enemy.icon].name}に ${state.atk}ダメージ！`);
     
-    document.getElementById('hpFill').style.width = `${Math.max(0, (state.player.hp / state.player.maxHp) * 100)}%`;
-    document.getElementById('expFill').style.width = `${Math.min(100, (state.player.exp / state.player.nextExp) * 100)}%`;
-
-    // Party
-    for(let i=0; i<3; i++) {
-      const slot = document.getElementById(`party${i}`);
-      if(state.party[i]) {
-        slot.textContent = state.party[i].icon;
-        slot.setAttribute('data-rarity', state.party[i].rarity);
-      } else {
-        slot.textContent = '';
-        slot.removeAttribute('data-rarity');
-      }
-    }
-  }
-
-  function calcPlayerStats() {
-    let p = state.player;
-    p.maxHp = p.baseHp; p.atk = p.baseAtk; p.def = p.baseDef;
-    state.party.forEach(m => {
-      p.maxHp += m.bonus.hp; p.atk += m.bonus.atk; p.def += m.bonus.def;
-    });
-    if(p.hp > p.maxHp) p.hp = p.maxHp;
-    updateUI();
-  }
-
-  function playerMove(dx, dy) {
-    if(!state.isRunning) return;
-    const nx = state.player.x + dx;
-    const ny = state.player.y + dy;
-
-    if(nx < 0 || ny < 0 || nx >= GRID_SIZE || ny >= GRID_SIZE || state.map[ny][nx] === 1) {
-      // Wall
-      return;
-    }
-
-    // Check Enemy
-    const enemyIdx = state.enemies.findIndex(e => e.x === nx && e.y === ny);
-    if(enemyIdx !== -1) {
-      combat(enemyIdx);
-    } else {
-      // Move
-      state.player.x = nx; state.player.y = ny;
-      updateEntityPos(state.player.el, nx, ny);
+    if(enemy.hp <= 0){
+      state.enemies = state.enemies.filter(v => v !== enemy);
+      log(`${MONSTERS[enemy.icon].name}を倒した！`);
       
-      // Check Items
-      const itemIdx = state.items.findIndex(i => i.x === nx && i.y === ny);
-      if(itemIdx !== -1) {
-        state.player.hp = Math.min(state.player.maxHp, state.player.hp + 30);
-        addLog("回復薬を拾った！ HPが30回復。");
-        state.items[itemIdx].el.remove();
-        state.items.splice(itemIdx, 1);
-        updateUI();
-      }
-
-      // Check Stairs
-      if(state.stairs && state.stairs.x === nx && state.stairs.y === ny) {
-        if(state.floor % 5 === 0 && state.enemies.some(e=>e.isBoss)) {
-          addLog("ボスを倒すまで進めない！");
-          state.player.x -= dx; state.player.y -= dy; // 戻る
-          updateEntityPos(state.player.el, state.player.x, state.player.y);
-          return;
-        }
-        nextFloor();
-        return;
-      }
-    }
-    
-    // プレイヤーが行動したら敵も動く（ターン制）
-    enemiesTurn();
-  }
-
-  function combat(enemyIdx) {
-    const e = state.enemies[enemyIdx];
-    const dmg = Math.max(1, state.player.atk - e.def);
-    e.hp -= dmg;
-    e.el.classList.remove('taking-damage');
-    void e.el.offsetWidth; // reflow
-    e.el.classList.add('taking-damage');
-    
-    addLog(`${e.data.name}に ${dmg}のダメージ！`);
-
-    if(e.hp <= 0) {
-      // Enemy dies
-      addLog(`${e.data.name}を倒した！`);
-      e.el.remove();
-      state.enemies.splice(enemyIdx, 1);
-      
-      // EXP
-      const expGain = e.isBoss ? 20 : 5;
-      state.player.exp += expGain;
-      if(state.player.exp >= state.player.nextExp) levelUp();
-      
-      // Recruit
-      if(Math.random() < e.data.rate || e.isBoss) {
-        recruitMonster(e.data);
-      }
-    } else {
-      // Counter attack
-      enemyAttack(e);
-    }
-    updateUI();
-  }
-
-  function recruitMonster(mData) {
-    if(state.party.length < 3) {
-      state.party.push(mData);
-      addLog(`✨ ${mData.name} が仲間になった！`, true);
-    } else {
-      // パーティ満杯なら一番古いものと入れ替え（簡易仕様）
-      const left = state.party.shift();
-      state.party.push(mData);
-      addLog(`✨ ${left.name}と別れ、${mData.name}を仲間にした！`, true);
-    }
-    calcPlayerStats();
-  }
-
-  function enemyAttack(e) {
-    const dmg = Math.max(1, e.atk - state.player.def);
-    state.player.hp -= dmg;
-    addLog(`${e.data.name}の攻撃！ ${dmg}のダメージを受けた。`);
-    
-    state.player.el.classList.remove('taking-damage');
-    void state.player.el.offsetWidth;
-    state.player.el.classList.add('taking-damage');
-
-    if(state.player.hp <= 0) {
-      state.isRunning = false;
-      document.getElementById('resFloor').textContent = state.floor;
-      document.getElementById('resLevel').textContent = state.player.level;
-      document.getElementById('gameOverScreen').style.display = 'flex';
-    }
-  }
-
-  function enemiesTurn() {
-    if(!state.isRunning) return;
-    state.enemies.forEach(e => {
-      // 隣接していれば攻撃、それ以外はプレイヤーに向かって移動
-      const dx = state.player.x - e.x;
-      const dy = state.player.y - e.y;
-      const dist = Math.abs(dx) + Math.abs(dy);
-      
-      if(dist === 1) {
-        enemyAttack(e);
-        updateUI();
-      } else if (dist < 6) { // 視界内なら近づく
-        let nx = e.x, ny = e.y;
-        if(Math.abs(dx) > Math.abs(dy)) nx += dx > 0 ? 1 : -1;
-        else ny += dy > 0 ? 1 : -1;
-        
-        // 移動可能かチェック
-        if(state.map[ny][nx] === 0 && 
-           !(nx === state.player.x && ny === state.player.y) &&
-           !state.enemies.some(oe => oe.x === nx && oe.y === ny)) {
-          e.x = nx; e.y = ny;
-          updateEntityPos(e.el, e.x, e.y);
+      // 仲間になる判定
+      if(Math.random() < MONSTERS[enemy.icon].rate){
+        if(state.party.length < 3){
+          state.party.push(enemy.icon);
+          log(`✨ ${MONSTERS[enemy.icon].name} が仲間になった！(HP/攻UP)`);
+          calcStats();
+          state.hp = state.maxHp; // 仲間になったら全回復
         }
       }
-    });
+    }
+  } else {
+    // 移動
+    state.x = nx; state.y = ny;
   }
+  
+  enemyTurn();
 
-  function levelUp() {
-    state.player.level++;
-    state.player.exp -= state.player.nextExp;
-    state.player.nextExp = Math.floor(state.player.nextExp * 1.5);
-    state.player.baseHp += 10;
-    state.player.baseAtk += 2;
-    state.player.baseDef += 1;
-    calcPlayerStats();
-    state.player.hp = state.player.maxHp; // 全回復
-    addLog(`🎉 レベルアップ！ Lv.${state.player.level}になった！`, true);
-  }
-
-  function nextFloor() {
+  // ゴール判定
+  if(state.x === state.exit.x && state.y === state.exit.y && state.enemies.length === 0){
     state.floor++;
-    addLog(`地下${state.floor}階へ進んだ...`);
-    generateMap();
-    renderMap();
-    spawnEntities();
-    updateUI();
+    state.lv++;
+    state.baseHp += 10;
+    state.baseAtk += 2;
+    calcStats();
+    state.hp = state.maxHp;
+    log(`地下${state.floor}階へ進んだ！`);
+    genFloor();
+    return;
   }
+  draw();
+}
 
-  // --- Controls Setup ---
-  window.addEventListener('keydown', e => {
-    if(!state.isRunning) return;
-    if(e.key === 'ArrowUp' || e.key === 'w') playerMove(0, -1);
-    if(e.key === 'ArrowDown' || e.key === 's') playerMove(0, 1);
-    if(e.key === 'ArrowLeft' || e.key === 'a') playerMove(-1, 0);
-    if(e.key === 'ArrowRight' || e.key === 'd') playerMove(1, 0);
-    if(e.key === ' ' || e.key === 'Enter') enemiesTurn(); // Wait
-  });
+function enemyTurn(){
+  for(const e of state.enemies){
+    let dx = state.x - e.x, dy = state.y - e.y;
+    let dist = Math.abs(dx) + Math.abs(dy);
 
-  const bindBtn = (id, action) => {
-    const btn = document.getElementById(id);
-    const trigger = (e) => { e.preventDefault(); action(); };
-    btn.addEventListener('touchstart', trigger);
-    btn.addEventListener('mousedown', trigger);
-  };
-  bindBtn('btnUp', () => playerMove(0, -1));
-  bindBtn('btnDown', () => playerMove(0, 1));
-  bindBtn('btnLeft', () => playerMove(-1, 0));
-  bindBtn('btnRight', () => playerMove(1, 0));
-  bindBtn('btnWait', () => enemiesTurn());
+    // 隣接時は攻撃
+    if(dist === 1){
+      let eAtk = MONSTERS[e.icon].atk + state.floor;
+      state.hp -= eAtk;
+      log(`${MONSTERS[e.icon].name}の攻撃！ ${eAtk}ダメージ！`);
+      if(state.hp <= 0){ 
+        alert(`力尽きた... 到達階層: ${state.floor}F`); 
+        restart(); 
+        return; 
+      }
+      continue;
+    }
 
-  // --- Init ---
-  function startGame() {
-    document.getElementById('startScreen').style.display = 'none';
-    state.isRunning = true;
-    generateMap();
-    renderMap();
-    spawnEntities();
-    calcPlayerStats();
-    updateUI();
+    // AIロジック (参考元の動きを継承)
+    if(e.type === "slime"){
+      if(dist < 5){
+        if(Math.abs(dx) > Math.abs(dy)) e.x += Math.sign(dx);
+        else e.y += Math.sign(dy);
+      }
+    } else if(e.type === "wolf"){
+      for(let i=0; i<2; i++){
+        let nx = state.x - e.x, ny = state.y - e.y;
+        if(Math.abs(nx) + Math.abs(ny) === 1) break; // 密着したら止まる
+        if(Math.abs(nx) > Math.abs(ny)) e.x += Math.sign(nx);
+        else e.y += Math.sign(ny);
+      }
+    } else if(e.type === "archer"){
+      if(dist < 4){
+        let eAtk = MONSTERS[e.icon].atk;
+        state.hp -= eAtk; // ドラゴンの遠距離ブレス
+        log(`ドラゴンの炎！ ${eAtk}ダメージ！`);
+        if(state.hp <= 0){ alert("力尽きた..."); restart(); return; }
+      } else {
+        if(Math.abs(dx) > Math.abs(dy)) e.x += Math.sign(dx);
+        else e.y += Math.sign(dy);
+      }
+    }
   }
+}
+
+// PCキーボード操作
+window.addEventListener("keydown", e => {
+  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
+  if(e.key === "ArrowUp" || e.key === "w") move(0,-1);
+  if(e.key === "ArrowDown" || e.key === "s") move(0,1);
+  if(e.key === "ArrowLeft" || e.key === "a") move(-1,0);
+  if(e.key === "ArrowRight" || e.key === "d") move(1,0);
+  if(e.key === " ") move(0,0); // スペースで待機
+});
+
+restart();
 </script>
 </body>
 </html>
