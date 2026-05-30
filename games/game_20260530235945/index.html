@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ボンバーマン</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 80vh;
+            max-height: 700px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+        }
+
+        #startScreen, #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 10;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #gameScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #ff0000;
+            animation: pulse 1.5s infinite;
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 30px;
+            color: #ffcc00;
+        }
+
+        .btn {
+            background: linear-gradient(to bottom, #ff3300, #b30000);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            margin: 10px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        #scoreBoard {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1.2rem;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 10px;
+            z-index: 5;
+        }
+
+        #gameBoard {
+            display: grid;
+            grid-template-columns: repeat(15, 1fr);
+            grid-template-rows: repeat(15, 1fr);
+            width: 100%;
+            height: 100%;
+            gap: 1px;
+            padding: 10px;
+        }
+
+        .cell {
+            background: #333;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .wall {
+            background: linear-gradient(135deg, #8B4513, #A0522D);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .breakable {
+            background: linear-gradient(135deg, #D2B48C, #F5DEB3);
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .player {
+            background: radial-gradient(circle, #00FFFF, #008080);
+            border-radius: 50%;
+            width: 80%;
+            height: 80%;
+            box-shadow: 0 0 10px #00FFFF;
+            z-index: 2;
+        }
+
+        .bomb {
+            background: radial-gradient(circle, #FF0000, #8B0000);
+            border-radius: 50%;
+            width: 70%;
+            height: 70%;
+            animation: bombPulse 0.5s infinite alternate;
+            z-index: 3;
+        }
+
+        .explosion {
+            background: radial-gradient(circle, #FFFF00, #FFA500);
+            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+            animation: explosion 0.3s forwards;
+            z-index: 4;
+        }
+
+        .powerup {
+            background: radial-gradient(circle, #00FF00, #008000);
+            border-radius: 50%;
+            width: 60%;
+            height: 60%;
+            animation: powerupPulse 1s infinite;
+            z-index: 2;
+        }
+
+        @keyframes bombPulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.2); }
+        }
+
+        @keyframes explosion {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        @keyframes powerupPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            z-index: 5;
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #bombBtn {
+            background: rgba(255, 0, 0, 0.3);
+            width: 70px;
+            height: 70px;
+            font-size: 2rem;
+        }
+
+        .instructions {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            max-width: 80%;
+        }
+
+        .instructions p {
+            margin: 5px 0;
+        }
+
+        .highlight {
+            color: #ffcc00;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="startScreen">
+            <h1>💣 ボンバーマン 💣</h1>
+            <h2>爆破ゲーム</h2>
+            <button id="startBtn" class="btn">スタート</button>
+            <div class="instructions">
+                <p>🎯 <span class="highlight">矢印キー</span> または <span class="highlight">タッチ操作</span>で移動</p>
+                <p>💣 <span class="highlight">スペースキー</span> または <span class="highlight">ボムボタン</span>で爆弾を設置</p>
+                <p>💥 爆弾が爆発する前に逃げましょう！</p>
+            </div>
+        </div>
+
+        <div id="gameOverScreen" style="display: none;">
+            <h1>ゲームオーバー</h1>
+            <h2>スコア: <span id="finalScore">0</span></h2>
+            <button id="restartBtn" class="btn">リスタート</button>
+        </div>
+
+        <div id="gameScreen">
+            <div id="scoreBoard">スコア: <span id="score">0</span></div>
+            <div id="gameBoard"></div>
+            <div id="controls">
+                <div class="control-btn" id="upBtn">⬆️</div>
+                <div class="control-btn" id="leftBtn">⬅️</div>
+                <div class="control-btn" id="downBtn">⬇️</div>
+                <div class="control-btn" id="rightBtn">➡️</div>
+                <div class="control-btn" id="bombBtn">💣</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ゲーム状態
+        const gameState = {
+            score: 0,
+            playerX: 1,
+            playerY: 1,
+            bombs: [],
+            explosions: [],
+            gameBoard: [],
+            gameRunning: false,
+            playerSpeed: 100,
+            bombTimer: 2000,
+            explosionDuration: 300
+        };
+
+        // ボードサイズ
+        const boardSize = 15;
+        const cellTypes = {
+            EMPTY: 0,
+            WALL: 1,
+            BREAKABLE: 2
+        };
+
+        // DOM要素
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const gameScreen = document.getElementById('gameScreen');
+        const gameBoard = document.getElementById('gameBoard');
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const scoreElement = document.getElementById('score');
+        const finalScoreElement = document.getElementById('finalScore');
+        const upBtn = document.getElementById('upBtn');
+        const leftBtn = document.getElementById('leftBtn');
+        const downBtn = document.getElementById('downBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        const bombBtn = document.getElementById('bombBtn');
+
+        // ゲーム初期化
+        function initGame() {
+            // ボード生成
+            gameState.gameBoard = [];
+            for (let y = 0; y < boardSize; y++) {
+                gameState.gameBoard[y] = [];
+                for (let x = 0; x < boardSize; x++) {
+                    if (x === 0 || y === 0 || x === boardSize - 1 || y === boardSize - 1) {
+                        gameState.gameBoard[y][x] = cellTypes.WALL;
+                    } else if (x % 2 === 0 && y % 2 === 0) {
+                        gameState.gameBoard[y][x] = cellTypes.WALL;
+                    } else if (Math.random() < 0.3) {
+                        gameState.gameBoard[y][x] = cellTypes.BREAKABLE;
+                    } else {
+                        gameState.gameBoard[y][x] = cellTypes.EMPTY;
+                    }
+                }
+            }
+
+            // プレイヤー初期位置
+            gameState.playerX = 1;
+            gameState.playerY = 1;
+            gameState.bombs = [];
+            gameState.explosions = [];
+            gameState.score = 0;
+            scoreElement.textContent = gameState.score;
+
+            // ボード描画
+            renderBoard();
+        }
+
+        // ボード描画
+        function renderBoard() {
+            gameBoard.innerHTML = '';
+            for (let y = 0; y < boardSize; y++) {
+                for (let x = 0; x < boardSize; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+
+                    // セルタイプに応じてクラスを追加
+                    if (gameState.gameBoard[y][x] === cellTypes.WALL) {
+                        cell.classList.add('wall');
+                    } else if (gameState.gameBoard[y][x] === cellTypes.BREAKABLE) {
+                        cell.classList.add('breakable');
+                    }
+
+                    // プレイヤー位置にプレイヤーを表示
+                    if (x === gameState.playerX && y === gameState.playerY) {
+                        const player = document.createElement('div');
+                        player.className = 'player';
+                        cell.appendChild(player);
+                    }
+
+                    // 爆弾を表示
+                    const bomb = gameState.bombs.find(b => b.x === x && b.y === y);
+                    if (bomb) {
+                        const bombElement = document.createElement('div');
+                        bombElement.className = 'bomb';
+                        cell.appendChild(bombElement);
+                    }
+
+                    // 爆発を表示
+                    const explosion = gameState.explosions.find(e => e.x === x && e.y === y);
+                    if (explosion) {
+                        const explosionElement = document.createElement('div');
+                        explosionElement.className = 'explosion';
+                        cell.appendChild(explosionElement);
+                    }
+
+                    gameBoard.appendChild(cell);
+                }
+            }
+        }
+
+        // 移動処理
+        function movePlayer(dx, dy) {
+            if (!gameState.gameRunning) return;
+
+            const newX = gameState.playerX + dx;
+            const newY = gameState.playerY + dy;
+
+            // 壁やブロックに衝突しないか確認
+            if (newX >= 0 && newX < boardSize && newY >= 0 && newY < boardSize) {
+                if (gameState.gameBoard[newY][newX] !== cellTypes.WALL && 
+                    gameState.gameBoard[newY][newX] !== cellTypes.BREAKABLE) {
+                    gameState.playerX = newX;
+                    gameState.playerY = newY;
+                    renderBoard();
+                }
+            }
+        }
+
+        // 爆弾設置
+        function placeBomb() {
+            if (!gameState.gameRunning) return;
+
+            // 既に爆弾があるか確認
+            const existingBomb = gameState.bombs.find(b => b.x === gameState.playerX && b.y === gameState.playerY);
+            if (existingBomb) return;
+
+            // 爆弾を設置
+            gameState.bombs.push({
+                x: gameState.playerX,
+                y: gameState.playerY,
+                timer: setTimeout(() => {
+                    explodeBomb(gameState.playerX, gameState.playerY);
+                }, gameState.bombTimer)
+            });
+
+            renderBoard();
+        }
+
+        // 爆発処理
+        function explodeBomb(x, y) {
+            if (!gameState.gameRunning) return;
+
+            // 爆発範囲を計算
+            const explosionRange = 2;
+            const explosionPositions = [];
+
+            // 中心
+            explosionPositions.push({x, y});
+
+            // 上下左右
+            for (let i = 1; i <= explosionRange; i++) {
+                if (y - i >= 0 && gameState.gameBoard[y - i][x] !== cellTypes.WALL) {
+                    explosionPositions.push({x, y: y - i});
+                    if (gameState.gameBoard[y - i][x] === cellTypes.BREAKABLE) break;
+                }
+                if (y + i < boardSize && gameState.gameBoard[y + i][x] !== cellTypes.WALL) {
+                    explosionPositions.push({x, y: y + i});
+                    if (gameState.gameBoard[y + i][x] === cellTypes.BREAKABLE) break;
+                }
+                if (x - i >= 0 && gameState.gameBoard[y][x - i] !== cellTypes.WALL) {
+                    explosionPositions.push({x: x - i, y});
+                    if (gameState.gameBoard[y][x - i] === cellTypes.BREAKABLE) break;
+                }
+                if (x + i < boardSize && gameState.gameBoard[y][x + i] !== cellTypes.WALL) {
+                    explosionPositions.push({x: x + i, y});
+                    if (gameState.gameBoard[y][x + i] === cellTypes.BREAKABLE) break;
+                }
+            }
+
+            // 爆発を表示
+            explosionPositions.forEach(pos => {
+                gameState.explosions.push({
+                    x: pos.x,
+                    y: pos.y,
+                    timer: setTimeout(() => {
+                        gameState.explosions = gameState.explosions.filter(e => !(e.x === pos.x && e.y === pos.y));
+                        if (gameState.gameBoard[pos.y][pos.x] === cellTypes.BREAKABLE) {
+                            gameState.gameBoard[pos.y][pos.x] = cellTypes.EMPTY;
+                            gameState.score += 10;
+                            scoreElement.textContent = gameState.score;
+                        }
+                        renderBoard();
+                    }, gameState.explosionDuration)
+                });
+            });
+
+            // 爆弾を削除
+            gameState.bombs = gameState.bombs.filter(b => !(b.x === x && b.y === y));
+
+            renderBoard();
+        }
+
+        // ゲーム開始
+        function startGame() {
+            startScreen.style.display = 'none';
+            gameScreen.style.display = 'block';
+            gameState.gameRunning = true;
+            initGame();
+
+            // キーボード入力
+            document.addEventListener('keydown', (e) => {
+                switch (e.key) {
+                    case 'ArrowUp':
+                        movePlayer(0, -1);
+                        break;
+                    case 'ArrowDown':
+                        movePlayer(0, 1);
+                        break;
+                    case 'ArrowLeft':
+                        movePlayer(-1, 0);
+                        break;
+                    case 'ArrowRight':
+                        movePlayer(1, 0);
+                        break;
+                    case ' ':
+                        placeBomb();
+                        break;
+                }
+            });
+
+            // タッチ操作
+            upBtn.addEventListener('click', () => movePlayer(0, -1));
+            downBtn.addEventListener('click', () => movePlayer(0, 1));
+            leftBtn.addEventListener('click', () => movePlayer(-1, 0));
+            rightBtn.addEventListener('click', () => movePlayer(1, 0));
+            bombBtn.addEventListener('click', placeBomb);
+        }
+
+        // ゲームオーバー
+        function gameOver() {
+            gameState.gameRunning = false;
+            finalScoreElement.textContent = gameState.score;
+            gameOverScreen.style.display = 'block';
+        }
+
+        // リスタート
+        function restartGame() {
+            gameOverScreen.style.display = 'none';
+            startGame();
+        }
+
+        // イベントリスナー
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', restartGame);
+
+        // 初期状態
+        initGame();
+    </script>
+</body>
+</html>
