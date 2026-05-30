@@ -80,7 +80,8 @@
   .cell.mountain { background: #6a625a; }
   .cell.water { background: #4b8fa5; }
 
-  .terrain-mark { position: absolute; inset: auto 4px 3px auto; color: rgba(255,255,255,0.78); font-size: 0.9rem; text-shadow: 0 1px 1px rgba(0,0,0,0.42); pointer-events: none; }
+  /* 変更点: 地形マーク（🛡️や🚫など）をはっきり表示 */
+  .terrain-mark { position: absolute; inset: auto 4px 3px auto; color: rgba(255,255,255,0.85); font-size: 0.85rem; text-shadow: 0 1px 2px rgba(0,0,0,0.9); pointer-events: none; white-space: nowrap;}
 
   .cell.move::after, .cell.attack::after, .cell.skill-area::after, .cell.danger::after, .cell.selected::after { content: ""; position: absolute; inset: 0; pointer-events: none; }
   .cell.move::after { background: rgba(40, 106, 166, 0.36); box-shadow: inset 0 0 0 3px rgba(107, 196, 255, 0.75); }
@@ -100,8 +101,6 @@
   .mini-hp i { display: block; height: 100%; background: #62d66f; }
   
   .damage-pop { position: absolute; z-index: 5; top: 8px; left: 50%; transform: translateX(-50%); padding: 2px 7px; color: #fff; background: #2b1c15; border: 2px solid var(--gold-light); border-radius: 999px; font-size: 0.85rem; font-weight: 900; animation: float-pop 820ms ease forwards; pointer-events: none; }
-  
-  /* EXPポップアップ用追加 */
   .exp-pop { position: absolute; z-index: 6; top: -15px; left: 50%; transform: translateX(-50%); padding: 2px 7px; color: #fff; background: #286aa6; border: 2px solid #6bc4ff; border-radius: 999px; font-size: 0.85rem; font-weight: 900; animation: float-pop-exp 1000ms ease forwards; pointer-events: none; }
 
   .roster { display: grid; gap: 8px; max-height: 260px; overflow: auto; padding-right: 2px; }
@@ -172,7 +171,7 @@
         </div>
       </div>
       <div class="stats" id="statGrid"></div>
-      <div class="triangle">敵への攻撃や撃破でEXPを獲得！LvUPで全回復＆能力UP！<br>青マスへ移動後、赤い敵へ攻撃、または「技を使う」で奥義発動！</div>
+      <div class="triangle">敵への攻撃や撃破でEXPを獲得！LvUPで全回復＆能力UP！<br>空き地をタップすると画面下のヒント欄に地形の効果が表示されます。</div>
     </section>
 
     <section class="board-wrap" aria-label="戦場">
@@ -190,7 +189,7 @@
   </main>
 
   <footer class="command-bar">
-    <div class="hint" id="hintText">味方を選んで、青いマスへ進軍しよう。</div>
+    <div class="hint" id="hintText">味方を選んで、青いマスへ進軍しよう。空き地タップで地形解説。</div>
     <button class="cmd-btn secondary" id="skillBtn" type="button" disabled>💥 技を使う</button>
     <button class="cmd-btn secondary" id="waitBtn" type="button" disabled>🛡️ 待機</button>
     <button class="cmd-btn secondary" id="dangerBtn" type="button">⚠️ 危険</button>
@@ -212,13 +211,14 @@
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const bestKey = "crestTacticsBestScore";
 
+  // 変更点: 地形の視覚的アイコンと解説テキストを拡張
   const terrain = {
-    G: { name: "草原", mark: "", css: "grass", cost: 1, def: 0, heal: 0, pass: true },
-    F: { name: "森", mark: "♣", css: "forest", cost: 2, def: 2, heal: 0, pass: true },
-    T: { name: "砦", mark: "◆", css: "fort", cost: 1, def: 2, heal: 5, pass: true },
-    R: { name: "道", mark: "·", css: "road", cost: 1, def: 0, heal: 0, pass: true },
-    M: { name: "山", mark: "▲", css: "mountain", cost: 99, def: 0, heal: 0, pass: false },
-    W: { name: "川", mark: "≈", css: "water", cost: 99, def: 0, heal: 0, pass: false }
+    G: { name: "草原", mark: "", css: "grass", cost: 1, def: 0, heal: 0, pass: true, desc: "平坦な土地。地形効果なし。" },
+    F: { name: "森", mark: "🌲🛡️", css: "forest", cost: 2, def: 2, heal: 0, pass: true, desc: "身を隠せる。敵のダメージを2軽減。" },
+    T: { name: "砦", mark: "🏰🛡️💖", css: "fort", cost: 1, def: 2, heal: 5, pass: true, desc: "強固な陣地。ダメージ2軽減＆ターン開始時HP5回復。" },
+    R: { name: "道", mark: "🛣️", css: "road", cost: 1, def: 0, heal: 0, pass: true, desc: "歩きやすい道。地形効果なし。" },
+    M: { name: "山", mark: "⛰️🚫", css: "mountain", cost: 99, def: 0, heal: 0, pass: false, desc: "険しい山。誰も通行できない。" },
+    W: { name: "川", mark: "🌊🚫", css: "water", cost: 99, def: 0, heal: 0, pass: false, desc: "深い川。誰も通行できない。" }
   };
 
   const maps = [
@@ -274,7 +274,6 @@
   function unitClass(unit) { return classes[unit.classId]; }
 
   function addUnit(x, y, baseClassId, team, name, boss = false) {
-    // 敵のステージ進化判定
     let classId = baseClassId;
     if (team === "enemy" && state.stage >= 3) {
       if (classes[baseClassId + "_v2"]) classId = baseClassId + "_v2";
@@ -295,7 +294,6 @@
     state.phase = "player"; state.turn = 1; state.selectedId = null;
     state.selectionMoved = false; state.selectedSkill = false; state.locked = false;
     
-    // 味方の配置位置（リセット用）
     const startPositions = [{x:0, y:7}, {x:1, y:6}, {x:2, y:7}, {x:0, y:5}];
 
     if (state.stage === 1 || state.units.length === 0) {
@@ -305,12 +303,11 @@
       addUnit(startPositions[2].x, startPositions[2].y, "archer", "player", "ノア");
       addUnit(startPositions[3].x, startPositions[3].y, "mage", "player", "ミオ");
     } else {
-      // ステージクリア後、味方のみ引き継ぎ、位置をリセット
       const currentPlayers = aliveUnits("player");
       state.units = [];
       currentPlayers.forEach((p, index) => {
         p.acted = false;
-        p.hp = p.maxHp; // 全回復
+        p.hp = p.maxHp; 
         if (startPositions[index]) {
           p.x = startPositions[index].x;
           p.y = startPositions[index].y;
@@ -444,7 +441,7 @@
   function gainExp(unit, amount) {
     if (unit.team !== "player") return;
     unit.exp += amount;
-    unit.popExp = `+${amount} EXP`; // 視覚的ポップアップ
+    unit.popExp = `+${amount} EXP`;
     
     if (unit.exp >= 100) {
       unit.level++;
@@ -455,9 +452,9 @@
       pushLog(`🎉 【LvUP】${unit.name}がLv.${unit.level}に上がった！`);
       
       const cls = unitClass(unit);
-      if (unit.level >= 3 && cls.nextClass) {
+      if (unit.level >= 3 && cls.nextClass && unit.classId !== cls.nextClass) {
         unit.classId = cls.nextClass;
-        pushLog(`✨ 【クラスチェンジ】${unit.name}が「${classes[cls.nextClass].label}」へ進化した！`);
+        pushLog(`✨ 【進化】${unit.name}が「${classes[cls.nextClass].label}」へクラスチェンジ！`);
       }
     }
   }
@@ -477,7 +474,7 @@
     else pushLog(`${counter ? "反撃" : "攻撃"}: ${attacker.name}が${defender.name}へ${result.value}ダメージ${result.crit ? "。必殺！" : "。"}`);
     
     if (attacker.team === "player") {
-      gainExp(attacker, defender.hp <= 0 ? 60 : 20); // トドメなら60EXP, 攻撃のみなら20EXP
+      gainExp(attacker, defender.hp <= 0 ? 60 : 20); 
     }
 
     updateAll();
@@ -562,7 +559,16 @@
     const clicked = getUnitAt(x, y);
     const unit = selectedUnit();
 
-    if (!unit) { if (clicked) selectUnit(clicked); return; }
+    // 変更点: 空き地タップで地形解説を表示
+    if (!unit) { 
+      if (clicked) {
+        selectUnit(clicked); 
+      } else {
+        const land = terrainAt(x, y);
+        pushHint(`【${land.name}】 ${land.desc}`);
+      }
+      return; 
+    }
     if (clicked && clicked.id === unit.id) { endSelectedAction(); return; }
 
     if (state.selectedSkill) {
@@ -603,6 +609,7 @@
     await runEnemyTurn();
   }
 
+  // 変更点: 敵AIをアグレッシブに（攻撃可能マスへ最優先移動）
   async function runEnemyTurn() {
     state.locked = true;
     const enemies = aliveUnits("enemy");
@@ -629,16 +636,32 @@
 
   function moveEnemyToward(enemy, target) {
     const reachable = getReachable(enemy, true);
-    const candidates = reachable.filter(pos => {
+    let bestCell = { x: enemy.x, y: enemy.y };
+    let bestScore = -Infinity;
+
+    reachable.forEach(pos => {
       const occupant = getUnitAt(pos.x, pos.y);
-      return !occupant || occupant.id === enemy.id;
+      if (occupant && occupant.id !== enemy.id) return;
+
+      const canHit = attackCellsFrom(enemy, pos.x, pos.y).some(cell => cell.x === target.x && cell.y === target.y);
+      const dist = Math.abs(pos.x - target.x) + Math.abs(pos.y - target.y);
+      
+      let score = -dist; // 基本は近づく
+      if (canHit) score += 100; // 攻撃できるなら最優先
+      
+      // 弓や魔法の場合、反撃を受けないように距離を取る（最大射程を好む）
+      if (canHit && enemy.max > 1 && dist === enemy.max) score += 10;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestCell = pos;
+      }
     });
-    candidates.sort((a, b) => {
-      const attackA = attackCellsFrom(enemy, a.x, a.y).some(cell => cell.x === target.x && cell.y === target.y) ? -6 : 0;
-      const attackB = attackCellsFrom(enemy, b.x, b.y).some(cell => cell.x === target.x && cell.y === target.y) ? -6 : 0;
-      return (Math.abs(a.x - target.x) + Math.abs(a.y - target.y) + attackA) - (Math.abs(b.x - target.x) + Math.abs(b.y - target.y) + attackB);
-    });
-    if (candidates[0]) { enemy.x = candidates[0].x; enemy.y = candidates[0].y; pushLog(`${enemy.name}が前進。`); }
+
+    if (bestCell.x !== enemy.x || bestCell.y !== enemy.y) {
+      enemy.x = bestCell.x; enemy.y = bestCell.y;
+      pushLog(`${enemy.name}が進軍。`);
+    }
   }
 
   function startPlayerTurn() {
@@ -714,7 +737,7 @@
         cell.type = "button"; cell.className = cellClass(x, y, unit, reachable, attacks, danger);
         cell.setAttribute("aria-label", `${land.name} ${x + 1}-${y + 1}`);
         cell.addEventListener("click", () => onCellClick(x, y));
-        if (land.mark) { const mark = document.createElement("span"); mark.className = "terrain-mark"; mark.textContent = land.mark; cell.appendChild(mark); }
+        if (land.mark) { const mark = document.createElement("span"); mark.className = "terrain-mark"; mark.innerHTML = land.mark; cell.appendChild(mark); }
         if (occupant) {
           const cls = unitClass(occupant);
           const token = document.createElement("div");
