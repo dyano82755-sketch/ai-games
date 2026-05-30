@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>ブロック崩しゲーム</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: manipulation;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      color: white;
+    }
+
+    #game-container {
+      width: 100%;
+      max-width: 500px;
+      height: 90vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      position: relative;
+    }
+
+    .screen {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      position: absolute;
+      top: 0;
+      left: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    h2 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    p {
+      font-size: 1.2rem;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+
+    .btn {
+      background: linear-gradient(to right, #ff6b6b, #ffa502);
+      border: none;
+      padding: 15px 40px;
+      font-size: 1.2rem;
+      border-radius: 50px;
+      cursor: pointer;
+      margin: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+      color: white;
+      font-weight: bold;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    #game-board {
+      width: 100%;
+      height: 60vh;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    #paddle {
+      position: absolute;
+      bottom: 20px;
+      width: 100px;
+      height: 15px;
+      background: #ff6b6b;
+      border-radius: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    #ball {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: #4ecdc4;
+      border-radius: 50%;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .brick {
+      position: absolute;
+      width: 70px;
+      height: 20px;
+      background: #45b7d1;
+      border-radius: 5px;
+    }
+
+    #score-display {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 10px 20px;
+      border-radius: 20px;
+    }
+
+    #lives-display {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .life {
+      width: 20px;
+      height: 20px;
+      background: #ff6b6b;
+      border-radius: 50%;
+    }
+
+    #instructions {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+      font-size: 1rem;
+    }
+
+    #final-score {
+      font-size: 2rem;
+      margin: 20px 0;
+      color: #ffd166;
+    }
+
+    #game-over-message {
+      font-size: 2rem;
+      margin: 20px 0;
+      color: #ff6b6b;
+    }
+
+    @media (max-width: 500px) {
+      h1 {
+        font-size: 2rem;
+      }
+      
+      h2 {
+        font-size: 1.5rem;
+      }
+      
+      .btn {
+        padding: 12px 30px;
+        font-size: 1rem;
+      }
+      
+      #game-board {
+        height: 50vh;
+      }
+      
+      #paddle {
+        width: 80px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <div id="start-screen" class="screen">
+      <h1>ブロック崩し</h1>
+      <p>ボールをパドルで弾き、すべてのブロックを破壊しよう！</p>
+      
+      <div id="instructions">
+        <p>← → キーでパドルを移動</p>
+        <p>マウスでパドルを移動</p>
+        <p>ボールが下に落ちるとライフが減ります</p>
+      </div>
+      
+      <button id="start-btn" class="btn">ゲーム開始</button>
+      
+      <div style="margin-top: 30px;">
+        <p>🎯 ブロックを破壊するとポイントが入ります</p>
+        <p>❤️ ライフを惜しまないで！</p>
+      </div>
+    </div>
+
+    <div id="game-screen" class="screen hidden">
+      <div id="score-display">スコア: 0</div>
+      <div id="lives-display">
+        <div class="life"></div>
+        <div class="life"></div>
+        <div class="life"></div>
+      </div>
+      
+      <div id="game-board">
+        <div id="paddle"></div>
+        <div id="ball"></div>
+      </div>
+      
+      <button id="pause-btn" class="btn">一時停止</button>
+      <button id="back-btn" class="btn">戻る</button>
+    </div>
+
+    <div id="game-over-screen" class="screen hidden">
+      <h2>ゲームオーバー</h2>
+      <div id="game-over-message">ゲームクリア！</div>
+      <div id="final-score">最終スコア: 0</div>
+      
+      <button id="restart-btn" class="btn">もう一度遊ぶ</button>
+      <button id="home-btn" class="btn">ホームに戻る</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // ゲーム状態
+      const gameState = {
+        isPlaying: false,
+        isPaused: false,
+        score: 0,
+        lives: 3,
+        bricks: [],
+        paddle: {
+          x: 0,
+          width: 100
+        },
+        ball: {
+          x: 0,
+          y: 0,
+          dx: 0,
+          dy: 0,
+          radius: 10
+        },
+        keys: {
+          ArrowLeft: false,
+          ArrowRight: false
+        }
+      };
+
+      // DOM要素
+      const startScreen = document.getElementById('start-screen');
+      const gameScreen = document.getElementById('game-screen');
+      const gameOverScreen = document.getElementById('game-over-screen');
+      const startBtn = document.getElementById('start-btn');
+      const pauseBtn = document.getElementById('pause-btn');
+      const backBtn = document.getElementById('back-btn');
+      const restartBtn = document.getElementById('restart-btn');
+      const homeBtn = document.getElementById('home-btn');
+      const gameBoard = document.getElementById('game-board');
+      const paddle = document.getElementById('paddle');
+      const ball = document.getElementById('ball');
+      const scoreDisplay = document.getElementById('score-display');
+      const livesDisplay = document.getElementById('lives-display');
+      const finalScore = document.getElementById('final-score');
+      const gameOverMessage = document.getElementById('game-over-message');
+
+      // ゲーム初期化
+      function initGame() {
+        gameState.isPlaying = true;
+        gameState.isPaused = false;
+        gameState.score = 0;
+        gameState.lives = 3;
+        gameState.bricks = [];
+        
+        updateScore();
+        updateLives();
+        
+        // パドル初期位置
+        gameState.paddle.x = gameBoard.offsetWidth / 2 - gameState.paddle.width / 2;
+        paddle.style.left = gameState.paddle.x + 'px';
+        
+        // ボール初期位置と速度
+        gameState.ball.x = gameBoard.offsetWidth / 2;
+        gameState.ball.y = gameBoard.offsetHeight - 50;
+        gameState.ball.dx = 3;
+        gameState.ball.dy = -3;
+        ball.style.left = gameState.ball.x + 'px';
+        ball.style.top = gameState.ball.y + 'px';
+        
+        // ブロック生成
+        createBricks();
+        
+        // ゲームループ開始
+        if (gameLoopId) {
+          cancelAnimationFrame(gameLoopId);
+        }
+        gameLoopId = requestAnimationFrame(gameLoop);
+        
+        pauseBtn.textContent = '一時停止';
+      }
+
+      // ブロック生成
+      function createBricks() {
+        const brickRows = 5;
+        const brickCols = 7;
+        const brickWidth = 70;
+        const brickHeight = 20;
+        const brickPadding = 10;
+        const brickOffsetTop = 60;
+        const brickOffsetLeft = 30;
+        
+        // ブロックを削除
+        document.querySelectorAll('.brick').forEach(brick => brick.remove());
+        
+        for (let r = 0; r < brickRows; r++) {
+          for (let c = 0; c < brickCols; c++) {
+            const brick = document.createElement('div');
+            brick.className = 'brick';
+            brick.style.left = (c * (brickWidth + brickPadding) + brickOffsetLeft) + 'px';
+            brick.style.top = (r * (brickHeight + brickPadding) + brickOffsetTop) + 'px';
+            
+            // 色をランダムに設定
+            const colors = ['#45b7d1', '#ff6b6b', '#ffd166', '#06d6a0', '#118ab2'];
+            brick.style.background = colors[r % colors.length];
+            
+            gameBoard.appendChild(brick);
+            gameState.bricks.push({
+              x: parseInt(brick.style.left),
+              y: parseInt(brick.style.top),
+              width: brickWidth,
+              height: brickHeight,
+              element: brick,
+              destroyed: false
+            });
+          }
+        }
+      }
+
+      // スコア更新
+      function updateScore() {
+        scoreDisplay.textContent = 'スコア: ' + gameState.score;
+      }
+
+      // ライフ更新
+      function updateLives() {
+        livesDisplay.innerHTML = '';
+        for (let i = 0; i < gameState.lives; i++) {
+          const life = document.createElement('div');
+          life.className = 'life';
+          livesDisplay.appendChild(life);
+        }
+      }
+
+      // ボールとパドルの衝突判定
+      function collisionDetection() {
+        // ボールとブロックの衝突
+        for (let i = 0; i < gameState.bricks.length; i++) {
+          const brick = gameState.bricks[i];
+          if (!brick.destroyed) {
+            if (gameState.ball.x > brick.x && 
+                gameState.ball.x < brick.x + brick.width &&
+                gameState.ball.y > brick.y && 
+                gameState.ball.y < brick.y + brick.height) {
+              
+              gameState.ball.dy = -gameState.ball.dy;
+              brick.destroyed = true;
+              brick.element.style.display = 'none';
+              gameState.score += 10;
+              updateScore();
+              
+              // 全てのブロックを破壊したかチェック
+              const allDestroyed = gameState.bricks.every(b => b.destroyed);
+              if (allDestroyed) {
+                endGame(true);
+              }
+            }
+          }
+        }
+      }
+
+      // ゲームオーバー
+      function endGame(isWin = false) {
+        gameState.isPlaying = false;
+        cancelAnimationFrame(gameLoopId);
+        
+        if (isWin) {
+          gameOverMessage.textContent = 'ゲームクリア！';
+        } else {
+          gameOverMessage.textContent = 'ゲームオーバー';
+        }
+        
+        finalScore.textContent = '最終スコア: ' + gameState.score;
+        gameOverScreen.classList.remove('hidden');
+      }
+
+      // ゲームループ
+      let gameLoopId;
+      function gameLoop() {
+        if (!gameState.isPlaying || gameState.isPaused) {
+          return;
+        }
+
+        // パドル移動
+        if (gameState.keys.ArrowLeft && gameState.paddle.x > 0) {
+          gameState.paddle.x -= 5;
+        }
+        if (gameState.keys.ArrowRight && gameState.paddle.x < gameBoard.offsetWidth - gameState.paddle.width) {
+          gameState.paddle.x += 5;
+        }
+        paddle.style.left = gameState.paddle.x + 'px';
+
+        // ボール移動
+        gameState.ball.x += gameState.ball.dx;
+        gameState.ball.y += gameState.ball.dy;
+
+        // 壁との衝突判定
+        if (gameState.ball.x + gameState.ball.radius > gameBoard.offsetWidth || 
+            gameState.ball.x - gameState.ball.radius < 0) {
+          gameState.ball.dx = -gameState.ball.dx;
+        }
+
+        if (gameState.ball.y - gameState.ball.radius < 0) {
+          gameState.ball.dy = -gameState.ball.dy;
+        }
+
+        // パドルとの衝突判定
+        if (gameState.ball.y + gameState.ball.radius > gameBoard.offsetHeight - 30 &&
+            gameState.ball.x > gameState.paddle.x &&
+            gameState.ball.x < gameState.paddle.x + gameState.paddle.width) {
+          // ボールの速度を調整
+          const hitPosition = (gameState.ball.x - (gameState.paddle.x + gameState.paddle.width / 2)) / (gameState.paddle.width / 2);
+          gameState.ball.dx = hitPosition * 3;
+          gameState.ball.dy = -Math.abs(gameState.ball.dy);
+        }
+
+        // ボールが下に落ちた場合
+        if (gameState.ball.y + gameState.ball.radius > gameBoard.offsetHeight) {
+          gameState.lives--;
+          updateLives();
+          
+          if (gameState.lives <= 0) {
+            endGame(false);
+            return;
+          }
+          
+          // ボールをリセット
+          gameState.ball.x = gameBoard.offsetWidth / 2;
+          gameState.ball.y = gameBoard.offsetHeight - 50;
+          gameState.ball.dx = 3;
+          gameState.ball.dy = -3;
+        }
+
+        // 衝突判定
+        collisionDetection();
+
+        // ボール位置更新
+        ball.style.left = gameState.ball.x + 'px';
+        ball.style.top = gameState.ball.y + 'px';
+
+        // 次のフレームでゲームループを呼び出す
+        gameLoopId = requestAnimationFrame(gameLoop);
+      }
+
+      // イベントリスナー
+      startBtn.addEventListener('click', () => {
+        startScreen.classList.add('hidden');
+        gameScreen.classList.remove('hidden');
+        initGame();
+      });
+
+      pauseBtn.addEventListener('click', () => {
+        if (!gameState.isPlaying) return;
+        
+        gameState.isPaused = !gameState.isPaused;
+        pauseBtn.textContent = gameState.isPaused ? '再開' : '一時停止';
+        
+        if (!gameState.isPaused) {
+          gameLoopId = requestAnimationFrame(gameLoop);
+        }
+      });
+
+      backBtn.addEventListener('click', () => {
+        gameScreen.classList.add('hidden');
+        startScreen.classList.remove('hidden');
+        cancelAnimationFrame(gameLoopId);
+      });
+
+      restartBtn.addEventListener('click', () => {
+        gameOverScreen.classList.add('hidden');
+        gameScreen.classList.remove('hidden');
+        initGame();
+      });
+
+      homeBtn.addEventListener('click', () => {
+        gameOverScreen.classList.add('hidden');
+        startScreen.classList.remove('hidden');
+        cancelAnimationFrame(gameLoopId);
+      });
+
+      // キーボードイベント
+      document.addEventListener('keydown', (e) => {
+        if (gameState.keys.hasOwnProperty(e.key)) {
+          gameState.keys[e.key] = true;
+        }
+      });
+
+      document.addEventListener('keyup', (e) => {
+        if (gameState.keys.hasOwnProperty(e.key)) {
+          gameState.keys[e.key] = false;
+        }
+      });
+
+      // マウスイベント
+      gameBoard.addEventListener('mousemove', (e) => {
+        if (!gameState.isPlaying || gameState.isPaused) return;
+        
+        const rect = gameBoard.getBoundingClientRect();
+        const relativeX = e.clientX - rect.left;
+        
+        if (relativeX > 0 && relativeX < gameBoard.offsetWidth) {
+          gameState.paddle.x = relativeX - gameState.paddle.width / 2;
+          
+          // ゲーム画面外に出ないように制限
+          if (gameState.paddle.x < 0) {
+            gameState.paddle.x = 0;
+          }
+          if (gameState.paddle.x > gameBoard.offsetWidth - gameState.paddle.width) {
+            gameState.paddle.x = gameBoard.offsetWidth - gameState.paddle.width;
+          }
+          
+          paddle.style.left = gameState.paddle.x + 'px';
+        }
+      });
+
+      // タッチイベント（スマホ対応）
+      gameBoard.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (!gameState.isPlaying || gameState.isPaused) return;
+        
+        const rect = gameBoard.getBoundingClientRect();
+        const touch = e.touches[0];
+        const relativeX = touch.clientX - rect.left;
+        
+        if (relativeX > 0 && relativeX < gameBoard.offsetWidth) {
+          gameState.paddle.x = relativeX - gameState.paddle.width / 2;
+          
+          if (gameState.paddle.x < 0) {
+            gameState.paddle.x = 0;
+          }
+          if (gameState.paddle.x > gameBoard.offsetWidth - gameState.paddle.width) {
+            gameState.paddle.x = gameBoard.offsetWidth - gameState.paddle.width;
+          }
+          
+          paddle.style.left = gameState.paddle.x + 'px';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
