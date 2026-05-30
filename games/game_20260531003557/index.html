@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ぷよぷよ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            height: 600px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+        
+        /* スタート画面 */
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            z-index: 10;
+        }
+        
+        #start-screen h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+        
+        #start-screen p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        
+        #start-button {
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            background: linear-gradient(45deg, #ff6b6b, #ffa502);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+        
+        #start-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.6);
+        }
+        
+        /* ゲーム画面 */
+        #game-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+        
+        #game-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        #game-board {
+            position: relative;
+            width: 100%;
+            height: calc(100% - 60px);
+            background: rgba(0, 0, 0, 0.3);
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(12, 1fr);
+            gap: 1px;
+            padding: 2px;
+        }
+        
+        .cell {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+        }
+        
+        .cell.filled {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        #next-piece {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+        }
+        
+        /* ゲームオーバー画面 */
+        #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            z-index: 10;
+        }
+        
+        #game-over-screen h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #ff6b6b;
+        }
+        
+        #final-score {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+        }
+        
+        #restart-button {
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            background: linear-gradient(45deg, #4ecdc4, #45b7d1);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(78, 205, 196, 0.4);
+        }
+        
+        #restart-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(78, 205, 196, 0.6);
+        }
+        
+        /* タッチ操作用のヒント */
+        .touch-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+        
+        /* レスポンシブ対応 */
+        @media (max-width: 480px) {
+            #game-container {
+                height: 90vh;
+                max-width: 95vw;
+            }
+            
+            #start-screen h1 {
+                font-size: 2rem;
+            }
+            
+            #start-screen p {
+                font-size: 1rem;
+            }
+            
+            #start-button {
+                padding: 12px 30px;
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- スタート画面 -->
+        <div id="start-screen">
+            <h1>ぷよぷよ</h1>
+            <p>ぷよを落とし、同じ色のぷよを3つ以上つなげて消そう！<br>タッチまたはクリックで操作できます</p>
+            <button id="start-button">スタート</button>
+            <div class="touch-hint">※タッチ操作でプレイ</div>
+        </div>
+        
+        <!-- ゲーム画面 -->
+        <div id="game-screen">
+            <div id="game-header">
+                <div>スコア: <span id="score">0</span></div>
+                <div>レベル: <span id="level">1</span></div>
+            </div>
+            <div id="game-board"></div>
+            <div id="next-piece">🧺</div>
+        </div>
+        
+        <!-- ゲームオーバー画面 -->
+        <div id="game-over-screen">
+            <h2>ゲームオーバー</h2>
+            <div id="final-score">スコア: 0</div>
+            <button id="restart-button">もう一度</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ゲーム状態管理
+            const gameState = {
+                score: 0,
+                level: 1,
+                board: [],
+                currentPiece: null,
+                nextPiece: null,
+                isPlaying: false,
+                gameLoop: null
+            };
+            
+            // DOM要素
+            const startScreen = document.getElementById('start-screen');
+            const gameScreen = document.getElementById('game-screen');
+            const gameOverScreen = document.getElementById('game-over-screen');
+            const startButton = document.getElementById('start-button');
+            const restartButton = document.getElementById('restart-button');
+            const scoreElement = document.getElementById('score');
+            const levelElement = document.getElementById('level');
+            const finalScoreElement = document.getElementById('final-score');
+            const gameBoard = document.getElementById('game-board');
+            const nextPieceElement = document.getElementById('next-piece');
+            
+            // ぷよの色定義
+            const COLORS = ['🔴', '🔵', '🟢', '🟡', '🟣'];
+            const EMPTY = ' ';
+            
+            // ゲーム初期化
+            function initGame() {
+                // ボード初期化
+                gameState.board = Array(12).fill().map(() => Array(6).fill(EMPTY));
+                
+                // スコアとレベル初期化
+                gameState.score = 0;
+                gameState.level = 1;
+                updateScore();
+                
+                // ピース初期化
+                gameState.currentPiece = generateRandomPiece();
+                gameState.nextPiece = generateRandomPiece();
+                updateNextPiece();
+                
+                // ゲーム画面表示
+                startScreen.style.display = 'none';
+                gameScreen.style.display = 'block';
+                gameOverScreen.style.display = 'none';
+                
+                // ボード描画
+                renderBoard();
+                
+                // ゲームループ開始
+                if (gameState.gameLoop) clearInterval(gameState.gameLoop);
+                gameState.gameLoop = setInterval(gameLoop, 1000);
+                
+                gameState.isPlaying = true;
+            }
+            
+            // ランダムなぷよを生成
+            function generateRandomPiece() {
+                return {
+                    type: COLORS[Math.floor(Math.random() * COLORS.length)],
+                    x: 2,
+                    y: 0
+                };
+            }
+            
+            // ボード描画
+            function renderBoard() {
+                gameBoard.innerHTML = '';
+                
+                for (let y = 0; y < 12; y++) {
+                    for (let x = 0; x < 6; x++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.x = x;
+                        cell.dataset.y = y;
+                        
+                        if (gameState.board[y][x] !== EMPTY) {
+                            cell.textContent = gameState.board[y][x];
+                            cell.classList.add('filled');
+                        }
+                        
+                        // 現在のぷよを描画
+                        if (gameState.currentPiece && 
+                            x === gameState.currentPiece.x && 
+                            y === gameState.currentPiece.y) {
+                            cell.textContent = gameState.currentPiece.type;
+                        }
+                        
+                        gameBoard.appendChild(cell);
+                    }
+                }
+            }
+            
+            // 次のぷよを表示
+            function updateNextPiece() {
+                nextPieceElement.textContent = gameState.nextPiece.type;
+            }
+            
+            // スコア更新
+            function updateScore() {
+                scoreElement.textContent = gameState.score;
+                levelElement.textContent = gameState.level;
+            }
+            
+            // ゲームループ
+            function gameLoop() {
+                if (!gameState.isPlaying) return;
+                
+                // ぷよを下に移動
+                movePieceDown();
+                
+                // ボード更新
+                renderBoard();
+            }
+            
+            // ぷよを下に移動
+            function movePieceDown() {
+                if (!gameState.currentPiece) return;
+                
+                // 位置を下に移動
+                gameState.currentPiece.y += 1;
+                
+                // 衝突判定
+                if (isCollision()) {
+                    // 衝突した場合は現在のぷよをボードに固定
+                    placePiece();
+                    
+                    // ボードをチェックして消去
+                    checkAndClearLines();
+                    
+                    // 次のぷよをセット
+                    gameState.currentPiece = gameState.nextPiece;
+                    gameState.nextPiece = generateRandomPiece();
+                    updateNextPiece();
+                    
+                    // ゲームオーバー判定
+                    if (isCollision()) {
+                        gameOver();
+                    }
+                }
+            }
+            
+            // 衝突判定
+            function isCollision() {
+                if (!gameState.currentPiece) return false;
+                
+                const { x, y } = gameState.currentPiece;
+                
+                // ボードの境界外判定
+                if (x < 0 || x >= 6 || y >= 12) return true;
+                
+                // ボード上にすでにぷよがあるか判定
+                if (y >= 0 && y < 12 && x >= 0 && x < 6) {
+                    if (gameState.board[y][x] !== EMPTY) return true;
+                }
+                
+                return false;
+            }
+            
+            // ぷよをボードに固定
+            function placePiece() {
+                if (!gameState.currentPiece) return;
+                
+                const { x, y, type } = gameState.currentPiece;
+                
+                if (y >= 0 && y < 12 && x >= 0 && x < 6) {
+                    gameState.board[y][x] = type;
+                }
+            }
+            
+            // 行をチェックして消去
+            function checkAndClearLines() {
+                let linesCleared = 0;
+                
+                for (let y = 11; y >= 0; y--) {
+                    let isFull = true;
+                    
+                    for (let x = 0; x < 6; x++) {
+                        if (gameState.board[y][x] === EMPTY) {
+                            isFull = false;
+                            break;
+                        }
+                    }
+                    
+                    if (isFull) {
+                        // 行を消去
+                        for (let row = y; row > 0; row--) {
+                            for (let x = 0; x < 6; x++) {
+                                gameState.board[row][x] = gameState.board[row - 1][x];
+                            }
+                        }
+                        
+                        // 最上行を空にする
+                        for (let x = 0; x < 6; x++) {
+                            gameState.board[0][x] = EMPTY;
+                        }
+                        
+                        linesCleared++;
+                        y++; // 消した行の位置を再チェック
+                    }
+                }
+                
+                // スコア計算
+                if (linesCleared > 0) {
+                    gameState.score += linesCleared * 100 * gameState.level;
+                    gameState.level = Math.floor(gameState.score / 1000) + 1;
+                    updateScore();
+                }
+            }
+            
+            // ゲームオーバー
+            function gameOver() {
+                gameState.isPlaying = false;
+                clearInterval(gameState.gameLoop);
+                
+                finalScoreElement.textContent = `スコア: ${gameState.score}`;
+                gameScreen.style.display = 'none';
+                gameOverScreen.style.display = 'flex';
+            }
+            
+            // タッチ/クリックイベント
+            gameBoard.addEventListener('click', (e) => {
+                if (!gameState.isPlaying) return;
+                
+                // ぷよを左に移動
+                if (gameState.currentPiece) {
+                    gameState.currentPiece.x = Math.max(0, gameState.currentPiece.x - 1);
+                    renderBoard();
+                }
+            });
+            
+            // タッチ操作対応
+            gameBoard.addEventListener('touchstart', (e) => {
+                if (!gameState.isPlaying) return;
+                
+                e.preventDefault();
+                // ぷよを右に移動
+                if (gameState.currentPiece) {
+                    gameState.currentPiece.x = Math.min(5, gameState.currentPiece.x + 1);
+                    renderBoard();
+                }
+            });
+            
+            // ボタンイベント
+            startButton.addEventListener('click', initGame);
+            restartButton.addEventListener('click', initGame);
+            
+            // 初期画面表示
+            startScreen.style.display = 'flex';
+        });
+    </script>
+</body>
+</html>
