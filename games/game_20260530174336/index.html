@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>オセロゲーム</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .score-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 8px;
+            min-width: 120px;
+        }
+        
+        .score-title {
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+        
+        .score-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        
+        .status {
+            font-size: 1.4rem;
+            margin: 20px 0;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            min-height: 40px;
+        }
+        
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+            background: #5d4037;
+            border: 3px solid #3e2723;
+            border-radius: 4px;
+            margin: 0 auto 20px;
+            max-width: 500px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+        }
+        
+        .cell {
+            aspect-ratio: 1;
+            background: #4caf50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .cell:hover {
+            background: #66bb6a;
+            transform: scale(1.05);
+        }
+        
+        .cell.valid-move::before {
+            content: "";
+            position: absolute;
+            width: 25%;
+            height: 25%;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+        }
+        
+        .piece {
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .piece.black {
+            background: radial-gradient(circle at 30% 30%, #555, #000);
+            border: 1px solid #333;
+        }
+        
+        .piece.white {
+            background: radial-gradient(circle at 30% 30%, #fff, #ddd);
+            border: 1px solid #ccc;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            background: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        button:hover {
+            background: #ffa726;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .result {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .win {
+            color: #4caf50;
+            text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+        
+        .lose {
+            color: #f44336;
+            text-shadow: 0 0 10px rgba(244, 67, 54, 0.5);
+        }
+        
+        .draw {
+            color: #ff9800;
+            text-shadow: 0 0 10px rgba(255, 152, 0, 0.5);
+        }
+        
+        .instructions {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            text-align: left;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .instructions h2 {
+            margin-top: 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 10px;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 600px) {
+            .game-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .board {
+                max-width: 90vw;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>オセロゲーム</h1>
+        <p class="subtitle">黒石が先手です。相手の石を挟んで反転させましょう！</p>
+        
+        <div class="game-info">
+            <div class="score-box">
+                <div class="score-title">プレイヤー</div>
+                <div class="score-value" id="player-score">2</div>
+            </div>
+            <div class="score-box">
+                <div class="score-title">CPU</div>
+                <div class="score-value" id="cpu-score">2</div>
+            </div>
+        </div>
+        
+        <div class="status" id="status">あなたのターン</div>
+        
+        <div class="board" id="board"></div>
+        
+        <div class="controls">
+            <button id="start-btn">新規ゲーム</button>
+            <button id="reset-btn">リセット</button>
+        </div>
+        
+        <div class="result" id="result" style="display: none;"></div>
+        
+        <div class="instructions">
+            <h2>ゲームのルール</h2>
+            <ul>
+                <li>黒石が先手、白石が後手です</li>
+                <li>石を置くと、横、縦、斜めの自分の石で挟んだ相手の石が反転します</li>
+                <li>自分の石で挟む必要があります（1つの石だけでは反転しません）</li>
+                <li>置ける場所がない場合、パスになります</li>
+                <li>すべての石が置かれたら、石が多い方が勝ちです</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ゲーム状態
+            const gameState = {
+                board: Array(8).fill().map(() => Array(8).fill(null)),
+                currentPlayer: 'black',
+                playerScore: 2,
+                cpuScore: 2,
+                gameOver: false
+            };
+            
+            // DOM要素
+            const boardElement = document.getElementById('board');
+            const playerScoreElement = document.getElementById('player-score');
+            const cpuScoreElement = document.getElementById('cpu-score');
+            const statusElement = document.getElementById('status');
+            const startButton = document.getElementById('start-btn');
+            const resetButton = document.getElementById('reset-btn');
+            const resultElement = document.getElementById('result');
+            
+            // 初期化
+            function initGame() {
+                // ボードの初期化
+                gameState.board = Array(8).fill().map(() => Array(8).fill(null));
+                gameState.currentPlayer = 'black';
+                gameState.playerScore = 2;
+                gameState.cpuScore = 2;
+                gameState.gameOver = false;
+                
+                // 初期石の配置
+                gameState.board[3][3] = 'white';
+                gameState.board[3][4] = 'black';
+                gameState.board[4][3] = 'black';
+                gameState.board[4][4] = 'white';
+                
+                // UI更新
+                updateBoard();
+                updateScores();
+                updateStatus();
+                resultElement.style.display = 'none';
+            }
+            
+            // ボードの描画
+            function updateBoard() {
+                boardElement.innerHTML = '';
+                
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.row = row;
+                        cell.dataset.col = col;
+                        
+                        // 石の描画
+                        if (gameState.board[row][col]) {
+                            const piece = document.createElement('div');
+                            piece.className = `piece ${gameState.board[row][col]}`;
+                            cell.appendChild(piece);
+                        }
+                        
+                        // 有効手の表示
+                        if (isValidMove(row, col, gameState.currentPlayer)) {
+                            cell.classList.add('valid-move');
+                        }
+                        
+                        cell.addEventListener('click', () => handleCellClick(row, col));
+                        boardElement.appendChild(cell);
+                    }
+                }
+            }
+            
+            // スコアの更新
+            function updateScores() {
+                playerScoreElement.textContent = gameState.playerScore;
+                cpuScoreElement.textContent = gameState.cpuScore;
+            }
+            
+            // ステータスの更新
+            function updateStatus() {
+                if (gameState.gameOver) {
+                    if (gameState.playerScore > gameState.cpuScore) {
+                        statusElement.textContent = 'おめでとう！あなたの勝ちです！';
+                    } else if (gameState.playerScore < gameState.cpuScore) {
+                        statusElement.textContent = '残念！CPUの勝ちです。';
+                    } else {
+                        statusElement.textContent = '引き分けです！';
+                    }
+                } else {
+                    statusElement.textContent = gameState.currentPlayer === 'black' ? 'あなたのターン' : 'CPUのターン';
+                }
+            }
+            
+            // 有効な手かどうかを判定
+            function isValidMove(row, col, player) {
+                // 空のマスか？
+                if (gameState.board[row][col] !== null) return false;
+                
+                // 8方向のチェック
+                const directions = [
+                    [-1, -1], [-1, 0], [-1, 1],
+                    [0, -1],           [0, 1],
+                    [1, -1],  [1, 0],  [1, 1]
+                ];
+                
+                for (const [dx, dy] of directions) {
+                    let x = row + dx;
+                    let y = col + dy;
+                    let foundOpponent = false;
+                    
+                    // 連続する相手の石をチェック
+                    while (x >= 0 && x < 8 && y >= 0 && y < 8) {
+                        if (gameState.board[x][y] === null) break;
+                        if (gameState.board[x][y] === player) {
+                            if (foundOpponent) return true;
+                            break;
+                        }
+                        foundOpponent = true;
+                        x += dx;
+                        y += dy;
+                    }
+                }
+                
+                return false;
+            }
+            
+            // 手を処理
+            function handleCellClick(row, col) {
+                if (gameState.gameOver || gameState.currentPlayer !== 'black') return;
+                
+                if (isValidMove(row, col, 'black')) {
+                    makeMove(row, col, 'black');
+                    updateBoard();
+                    updateScores();
+                    updateStatus();
+                    
+                    // CPUの手を待つ
+                    setTimeout(() => {
+                        if (!gameState.gameOver) {
+                            cpuMove();
+                        }
+                    }, 500);
+                }
+            }
+            
+            // 手を実行
+            function makeMove(row, col, player) {
+                gameState.board[row][col] = player;
+                
+                // 8方向のチェック
+                const directions = [
+                    [-1, -1], [-1, 0], [-1, 1],
+                    [0, -1],           [0, 1],
+                    [1, -1],  [1, 0],  [1, 1]
+                ];
+                
+                let flippedCount = 0;
+                
+                for (const [dx, dy] of directions) {
+                    let x = row + dx;
+                    let y = col + dy;
+                    let toFlip = [];
+                    
+                    // 相手の石を追跡
+                    while (x >= 0 && x < 8 && y >= 0 && y < 8) {
+                        if (gameState.board[x][y] === null) break;
+                        if (gameState.board[x][y] === player) {
+                            // 自分の石に到達した場合、反転する石を確定
+                            for (const [fx, fy] of toFlip) {
+                                gameState.board[fx][fy] = player;
+                                flippedCount++;
+                            }
+                            break;
+                        }
+                        toFlip.push([x, y]);
+                        x += dx;
+                        y += dy;
+                    }
+                }
+                
+                // スコア更新
+                if (player === 'black') {
+                    gameState.playerScore += 1 + flippedCount;
+                    gameState.cpuScore -= flippedCount;
+                } else {
+                    gameState.cpuScore += 1 + flippedCount;
+                    gameState.playerScore -= flippedCount;
+                }
+                
+                // ゲーム終了チェック
+                checkGameOver();
+            }
+            
+            // CPUの手
+            function cpuMove() {
+                if (gameState.gameOver) return;
+                
+                const validMoves = [];
+                
+                // 有効な手を見つける
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        if (isValidMove(row, col, 'white')) {
+                            validMoves.push({ row, col });
+                        }
+                    }
+                }
+                
+                if (validMoves.length > 0) {
+                    // ランダムに手を選ぶ
+                    const move = validMoves[Math.floor(Math.random() * validMoves.length)];
+                    makeMove(move.row, move.col, 'white');
+                    updateBoard();
+                    updateScores();
+                    updateStatus();
+                } else {
+                    // 手がない場合、パス
+                    gameState.currentPlayer = 'black';
+                    updateStatus();
+                    
+                    // 両方パスした場合ゲーム終了
+                    checkGameOver();
+                }
+            }
+            
+            // ゲーム終了チェック
+            function checkGameOver() {
+                // すべてのマスが埋まっているか？
+                let isBoardFull = true;
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        if (gameState.board[row][col] === null) {
+                            isBoardFull = false;
+                            break;
+                        }
+                    }
+                    if (!isBoardFull) break;
+                }
+                
+                if (isBoardFull) {
+                    gameState.gameOver = true;
+                    updateStatus();
+                    showResult();
+                    return;
+                }
+                
+                // どちらかのプレイヤーが手を打てるか？
+                let hasValidMove = false;
+                
+                // プレイヤーの手をチェック
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        if (isValidMove(row, col, 'black')) {
+                            hasValidMove = true;
+                            break;
+                        }
+                    }
+                    if (hasValidMove) break;
+                }
+                
+                if (!hasValidMove) {
+                    // プレイヤーが手を打てない場合、CPUの手をチェック
+                    for (let row = 0; row < 8; row++) {
+                        for (let col = 0; col < 8; col++) {
+                            if (isValidMove(row, col, 'white')) {
+                                hasValidMove = true;
+                                break;
+                            }
+                        }
+                        if (hasValidMove) break;
+                    }
+                    
+                    if (!hasValidMove) {
+                        gameState.gameOver = true;
+                        updateStatus();
+                        showResult();
+                    }
+                }
+            }
+            
+            // 結果を表示
+            function showResult() {
+                resultElement.style.display = 'block';
+                if (gameState.playerScore > gameState.cpuScore) {
+                    resultElement.textContent = 'おめでとう！あなたの勝ちです！';
+                    resultElement.className = 'result win';
+                } else if (gameState.playerScore < gameState.cpuScore) {
+                    resultElement.textContent = '残念！CPUの勝ちです。';
+                    resultElement.className = 'result lose';
+                } else {
+                    resultElement.textContent = '引き分けです！';
+                    resultElement.className = 'result draw';
+                }
+            }
+            
+            // イベントリスナー
+            startButton.addEventListener('click', initGame);
+            resetButton.addEventListener('click', initGame);
+            
+            // 初期化
+            initGame();
+        });
+    </script>
+</body>
+</html>
