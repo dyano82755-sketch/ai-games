@@ -56,20 +56,90 @@
             gap: 10px;
             justify-content: center;
             align-items: flex-start;
-            flex-wrap: wrap; /* スマホでは縦並びを許容 */
+            flex-wrap: wrap; 
         }
         
+        /* 演出用にキャンバスを包むラッパー */
+        #board-wrapper {
+            position: relative;
+            display: flex;
+            justify-content: center;
+        }
+
         #game-board {
             border: 4px solid #34495e;
             background-color: #000;
             border-radius: 6px;
             box-shadow: 0 0 15px rgba(0,0,0,0.6);
-            /* スマホ画面の高さに収まるように計算 */
             height: min(600px, 50vh); 
             width: auto;
             aspect-ratio: 1 / 2;
         }
         
+        /* --- 爽快感演出用のアニメーション --- */
+        #effect-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 42px;
+            font-weight: 900;
+            text-align: center;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 10;
+        }
+
+        .anim-tetris {
+            animation: tetris-pop 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            color: #f1c40f;
+            text-shadow: 0 0 10px #e74c3c, 0 0 20px #e74c3c, 3px 3px 0 #000;
+        }
+
+        .anim-clear {
+            animation: clear-pop 1s ease-out forwards;
+            color: #2ecc71;
+            text-shadow: 0 0 10px #27ae60, 2px 2px 0 #000;
+            font-size: 28px !important;
+        }
+
+        @keyframes tetris-pop {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(-10deg); opacity: 0; }
+            15% { transform: translate(-50%, -50%) scale(1.2) rotate(5deg); opacity: 1; }
+            30% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; text-shadow: 0 0 30px #fff, 0 0 10px #f1c40f, 3px 3px 0 #000; }
+            70% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+            100% { transform: translate(-50%, -150%) scale(1.5); opacity: 0; }
+        }
+
+        @keyframes clear-pop {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            80% { transform: translate(-50%, -80%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -100%) scale(0.8); opacity: 0; }
+        }
+
+        .board-shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(5px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+            40%, 60% { transform: translate3d(8px, 0, 0); }
+        }
+
+        .board-flash {
+            animation: flash 0.3s ease-out;
+        }
+
+        @keyframes flash {
+            0% { background-color: #fff; box-shadow: 0 0 30px #fff; }
+            100% { background-color: #000; box-shadow: 0 0 15px rgba(0,0,0,0.6); }
+        }
+        /* --------------------------------- */
+
         #side-panel {
             display: flex;
             flex-direction: column;
@@ -107,7 +177,6 @@
             box-shadow: 0 0 0 #c0392b;
         }
 
-        /* スマホ用オンスクリーンコントローラー */
         #mobile-controls {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -141,8 +210,10 @@
         #btn-left { grid-column: 1; grid-row: 2; }
         #btn-down { grid-column: 2; grid-row: 2; }
         #btn-right { grid-column: 3; grid-row: 2; }
-        #btn-rotate { grid-column: 2; grid-row: 1; background-color: #3498db; box-shadow: 0 5px 0 #217dbb; }
-        #btn-drop { grid-column: 3; grid-row: 1; background-color: #f1c40f; box-shadow: 0 5px 0 #d4ac0d; color: #333; }
+        
+        /* ★改善：落下と回転の配置を左右逆転しました */
+        #btn-drop { grid-column: 2; grid-row: 1; background-color: #f1c40f; box-shadow: 0 5px 0 #d4ac0d; color: #333; }
+        #btn-rotate { grid-column: 3; grid-row: 1; background-color: #3498db; box-shadow: 0 5px 0 #217dbb; }
 
         @media (max-width: 400px) {
             #game-wrapper { flex-direction: column-reverse; align-items: center; }
@@ -162,7 +233,10 @@
     </div>
     
     <div id="game-wrapper">
-        <canvas id="game-board" width="300" height="600"></canvas>
+        <div id="board-wrapper">
+            <canvas id="game-board" width="300" height="600"></canvas>
+            <div id="effect-text"></div>
+        </div>
         <div id="side-panel">
             <div id="next-piece-container">
                 <canvas id="next-piece" width="90" height="90"></canvas>
@@ -175,15 +249,14 @@
     </div>
     
     <div id="mobile-controls">
-        <button id="btn-rotate" class="control-btn">↻ 回転</button>
         <button id="btn-drop" class="control-btn">⏬ 落下</button>
+        <button id="btn-rotate" class="control-btn">↻ 回転</button>
         <button id="btn-left" class="control-btn">◀</button>
         <button id="btn-down" class="control-btn">▼</button>
         <button id="btn-right" class="control-btn">▶</button>
     </div>
 
     <script>
-        // --- 定数・初期設定 ---
         const COLS = 10;
         const ROWS = 20;
         const BLOCK_SIZE = 30;
@@ -217,7 +290,6 @@
         let player = { pos: {x: 0, y: 0}, matrix: null };
         let nextPiece = null;
         
-        // --- 描画系 ---
         function createBoard() {
             return Array.from(Array(ROWS), () => Array(COLS).fill(0));
         }
@@ -229,7 +301,7 @@
             drawMatrix(board, {x: 0, y: 0});
             
             if (player.matrix) {
-                drawGhost(); // 落下予測位置の表示
+                drawGhost();
                 drawMatrix(player.matrix, player.pos);
             }
         }
@@ -246,7 +318,6 @@
                         if (!isGhost) {
                             ctx.strokeStyle = 'rgba(0,0,0,0.5)';
                             ctx.strokeRect((offset.x + x) * BLOCK_SIZE, (offset.y + y) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-                            // 立体感
                             ctx.fillStyle = 'rgba(255,255,255,0.2)';
                             ctx.fillRect((offset.x + x) * BLOCK_SIZE, (offset.y + y) * BLOCK_SIZE, BLOCK_SIZE, 4);
                         }
@@ -272,9 +343,7 @@
                 const matrix = nextPiece.matrix;
                 const offsetX = (nextCanvas.width / BLOCK_SIZE - matrix[0].length) / 2;
                 const offsetY = (nextCanvas.height / BLOCK_SIZE - matrix.length) / 2;
-                drawMatrix(matrix, {x: offsetX, y: offsetY});
                 
-                // nextPiece専用の描画ハック
                 matrix.forEach((row, y) => {
                     row.forEach((value, x) => {
                         if (value !== 0) {
@@ -290,7 +359,6 @@
             }
         }
         
-        // --- ロジック系 ---
         function createPiece() {
             const rand = Math.floor(Math.random() * 7) + 1;
             return {
@@ -349,7 +417,7 @@
                 player.pos.x += offset;
                 offset = -(offset + (offset > 0 ? 1 : -1));
                 if (offset > matrix[0].length) {
-                    player.matrix = rotate(rotate(rotate(matrix))); // 戻す
+                    player.matrix = rotate(rotate(rotate(matrix)));
                     player.pos.x = pos;
                     return;
                 }
@@ -393,6 +461,29 @@
             }
         }
         
+        // ★改善：演出トリガー関数
+        function triggerEffect(linesCleared) {
+            const boardEl = document.getElementById('game-board');
+            const textEl = document.getElementById('effect-text');
+            
+            // アニメーションのリセット
+            boardEl.classList.remove('board-shake', 'board-flash');
+            textEl.classList.remove('anim-tetris', 'anim-clear');
+            void boardEl.offsetWidth; 
+            void textEl.offsetWidth; 
+            
+            // エフェクト付与
+            boardEl.classList.add('board-flash');
+            if (linesCleared === 4) {
+                boardEl.classList.add('board-shake');
+                textEl.textContent = "TETRIS!";
+                textEl.classList.add('anim-tetris');
+            } else if (linesCleared >= 2) {
+                textEl.textContent = linesCleared + " LINES!";
+                textEl.classList.add('anim-clear');
+            }
+        }
+
         function sweepRows() {
             let rowCount = 0;
             outer: for (let y = board.length - 1; y >= 0; y--) {
@@ -406,6 +497,8 @@
             }
             
             if (rowCount > 0) {
+                triggerEffect(rowCount); // 演出の呼び出し
+
                 lines += rowCount;
                 score += rowCount === 1 ? 100 : rowCount === 2 ? 300 : rowCount === 3 ? 500 : 800;
                 level = Math.floor(lines / 10) + 1;
@@ -443,7 +536,6 @@
             requestAnimationFrame(update);
         }
         
-        // --- イベント制御（長押し対応ボタン） ---
         const addContinuousControl = (btn, action) => {
             let timer;
             let isPressed = false;
@@ -454,12 +546,11 @@
                 isPressed = true;
                 action(); drawBoard();
                 
-                // 押しっぱなしで連続発動
                 timer = setTimeout(() => {
                     timer = setInterval(() => {
                         action(); drawBoard();
-                    }, 80); // 連続移動の速度
-                }, 200); // 最初のタメ時間
+                    }, 80); 
+                }, 200); 
             };
             
             const stop = (e) => {
@@ -493,7 +584,6 @@
         addSingleControl(document.getElementById('btn-rotate'), playerRotate);
         addSingleControl(document.getElementById('btn-drop'), playerHardDrop);
 
-        // --- イベント制御（画面直接スワイプ・タップ） ---
         let touchStartX = 0;
         let touchStartY = 0;
         let lastTouchX = 0;
@@ -517,16 +607,14 @@
             const currentY = e.touches[0].clientY;
             totalMoved += Math.abs(currentX - lastTouchX) + Math.abs(currentY - lastTouchY);
 
-            // 左右スワイプで移動
             if (Math.abs(currentX - touchStartX) > 25) {
                 const steps = Math.trunc((currentX - touchStartX) / 25);
                 if (steps !== 0) {
                     playerMove(Math.sign(steps));
-                    touchStartX += steps * 25; // 基準点を移動
+                    touchStartX += steps * 25; 
                 }
             }
 
-            // 下スワイプで落下
             if (currentY - touchStartY > 25) {
                 const steps = Math.trunc((currentY - touchStartY) / 25);
                 if (steps !== 0) {
@@ -544,23 +632,19 @@
             if(e.cancelable) e.preventDefault();
             if (gameOver || isPaused) return;
 
-            // 移動量が少なければタップ判定（回転）
             if (totalMoved < 10) {
                 playerRotate();
                 drawBoard();
-            } 
-            // 上にフリックで一気に落下（ハードドロップ）
-            else if (lastTouchY - touchStartY < -40) {
+            } else if (lastTouchY - touchStartY < -40) {
                 playerHardDrop();
                 drawBoard();
             }
         }, {passive: false});
 
-        // --- PCキーボード操作 ---
         document.addEventListener('keydown', event => {
             if (gameOver || isPaused) return;
             if ([32, 37, 38, 39, 40].includes(event.keyCode)) {
-                event.preventDefault(); // スクロール防止
+                event.preventDefault(); 
             }
             switch (event.keyCode) {
                 case 37: playerMove(-1); break;
@@ -572,7 +656,6 @@
             drawBoard();
         }, { passive: false });
 
-        // --- システムボタン ---
         document.getElementById('start-button').addEventListener('click', () => {
             if (gameOver) resetGame();
             isPaused = false;
@@ -581,7 +664,6 @@
             isPaused = !isPaused;
         });
         
-        // --- 起動 ---
         resetPlayer();
         updateScore();
         update();
