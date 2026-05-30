@@ -346,6 +346,7 @@
   function getReachable(unit, includeStart = false) {
     const start = keyOf(unit.x, unit.y);
     const costs = new Map([[start, 0]]);
+    const canStop = new Set([start]);
     const queue = [{ x: unit.x, y: unit.y, cost: 0 }];
     const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
 
@@ -357,18 +358,23 @@
         const land = terrainAt(nx, ny);
         if (!land.pass) continue;
         const occupant = getUnitAt(nx, ny);
-        if (occupant && occupant.id !== unit.id) continue;
+        if (occupant && occupant.id !== unit.id && occupant.team !== unit.team) continue;
 
         const nextCost = current.cost + land.cost;
         const key = keyOf(nx, ny);
         if (nextCost <= unit.mov && (!costs.has(key) || nextCost < costs.get(key))) {
-          costs.set(key, nextCost); queue.push({ x: nx, y: ny, cost: nextCost });
+          costs.set(key, nextCost);
+          queue.push({ x: nx, y: ny, cost: nextCost });
+          if (!occupant || occupant.id === unit.id) canStop.add(key);
         }
       }
     }
     return [...costs.keys()].map(key => {
       const [x, y] = key.split(",").map(Number); return { x, y };
-    }).filter(pos => includeStart || pos.x !== unit.x || pos.y !== unit.y);
+    }).filter(pos => {
+      const key = keyOf(pos.x, pos.y);
+      return canStop.has(key) && (includeStart || key !== start);
+    });
   }
 
   function attackCellsFrom(unit, x = unit.x, y = unit.y, customMin, customMax) {
@@ -425,11 +431,17 @@
     return { value: base + (crit ? 6 : 0), crit, advantage };
   }
 
-  function forecastText(attacker, defender, isSkill = false) {
+  function estimateDamage(attacker, defender, isSkill = false) {
     const land = terrainAt(defender.x, defender.y);
+    const magicPierce = attacker.type === "magic" ? Math.floor(land.def / 2) : land.def;
     const advantage = triangleBonus(attacker.type, defender.type);
-    let attackPower = attacker.atk + (isSkill ? unitClass(attacker).skill.bonus : 0);
-    const base = Math.max(1, attackPower + advantage - (attacker.type === "magic" ? Math.floor(land.def / 2) : land.def));
+    const attackPower = attacker.atk + (isSkill ? unitClass(attacker).skill.bonus : 0);
+    return Math.max(1, attackPower + advantage - magicPierce);
+  }
+
+  function forecastText(attacker, defender, isSkill = false) {
+    const advantage = triangleBonus(attacker.type, defender.type);
+    const base = estimateDamage(attacker, defender, isSkill);
     const icon = advantage > 0 ? "有利" : advantage < 0 ? "不利" : "互角";
     return isSkill 
       ? `【技】${unitClass(attacker).skill.name} → ${defender.name}: ${base}Dmg予想（${icon}）`
@@ -643,8 +655,16 @@
     const players = aliveUnits("player");
     const possibleTargets = players.filter(p => canAttack(enemy, p));
     if (possibleTargets.length === 0) return null;
-    // HPが一番低い相手を優先して狙う（トドメを刺しにくる）
-    return possibleTargets.sort((a, b) => a.hp - b.hp)[0];
+    return possibleTargets.sort((a, b) => targetPriority(enemy, b) - targetPriority(enemy, a))[0];
+  }
+
+  function targetPriority(enemy, player) {
+    const damage = estimateDamage(enemy, player, false);
+    const hurtBonus = player.maxHp - player.hp;
+    const heroBonus = player.classId.startsWith("hero") ? 25 : 0;
+    const killBonus = damage >= player.hp ? 90 : 0;
+    const rangeBonus = enemy.max > 1 && distance(enemy, player) === enemy.max ? 8 : 0;
+    return killBonus + heroBonus + damage * 5 + hurtBonus * 1.5 - player.hp + rangeBonus;
   }
 
   function moveEnemySmart(enemy, players) {
@@ -656,31 +676,27 @@
       const occupant = getUnitAt(pos.x, pos.y);
       if (occupant && occupant.id !== enemy.id) return;
 
-      let cellScore = 0;
-      let minDist = Infinity;
-      let canHitSomeone = false;
+      const currentNearest = Math.min(...players.map(p => distance(enemy, p)));
+      let cellScore = -9999;
 
       players.forEach(p => {
         const distToP = Math.abs(pos.x - p.x) + Math.abs(pos.y - p.y);
-        if (distToP < minDist) minDist = distToP;
-        if (distToP >= enemy.min && distToP <= enemy.max) canHitSomeone = true;
+        const currentDistToP = distance(enemy, p);
+        const canHit = distToP >= enemy.min && distToP <= enemy.max;
+        const progress = currentDistToP - distToP;
+        const heroPressure = p.classId.startsWith("hero") ? 20 : 0;
+        const weakPressure = Math.max(0, p.maxHp - p.hp) * 0.6;
+        const rangeSweetSpot = enemy.max > 1 && distToP === enemy.max ? 14 : 0;
+        const attackPosition = canHit ? 1000 + estimateDamage(enemy, p, false) * 8 : 0;
+        const pursuit = progress * 22 - distToP * 12 + heroPressure + weakPressure + rangeSweetSpot;
+        cellScore = Math.max(cellScore, attackPosition + pursuit);
       });
 
-      cellScore -= minDist; // 近づくほどスコアが高い
-
-      if (canHitSomeone) {
-        cellScore += 100; // 攻撃できるマスは最優先
-        if (enemy.max > 1) { // 弓や魔法は反撃を受けない最大射程を好む
-          players.forEach(p => {
-            const d = Math.abs(pos.x - p.x) + Math.abs(pos.y - p.y);
-            if (d === enemy.max) cellScore += 10;
-          });
-        }
-      }
-      
-      // 地形効果（森や砦など防御が上がるマス）を好む
       const land = terrainAt(pos.x, pos.y);
-      cellScore += land.def * 2;
+      cellScore += land.def * 1.5 + land.heal * 0.4;
+
+      if (pos.x === enemy.x && pos.y === enemy.y) cellScore -= 28;
+      if (Math.min(...players.map(p => Math.abs(pos.x - p.x) + Math.abs(pos.y - p.y))) < currentNearest) cellScore += 12;
 
       if (cellScore > bestScore) {
         bestScore = cellScore;
