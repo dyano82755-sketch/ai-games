@@ -1,500 +1,1263 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ぷよぷよ</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            touch-action: manipulation;
-        }
-        
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
-        
-        #game-container {
-            position: relative;
-            width: 100%;
-            max-width: 400px;
-            height: 600px;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            overflow: hidden;
-        }
-        
-        /* スタート画面 */
-        #start-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            z-index: 10;
-        }
-        
-        #start-screen h1 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px #ff00ff;
-        }
-        
-        #start-screen p {
-            font-size: 1.2rem;
-            margin-bottom: 30px;
-            text-align: center;
-            line-height: 1.6;
-        }
-        
-        #start-button {
-            padding: 15px 40px;
-            font-size: 1.5rem;
-            background: linear-gradient(45deg, #ff6b6b, #ffa502);
-            border: none;
-            border-radius: 50px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
-        }
-        
-        #start-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.6);
-        }
-        
-        /* ゲーム画面 */
-        #game-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none;
-        }
-        
-        #game-header {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 15px;
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            font-size: 1.2rem;
-        }
-        
-        #game-board {
-            position: relative;
-            width: 100%;
-            height: calc(100% - 60px);
-            background: rgba(0, 0, 0, 0.3);
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            grid-template-rows: repeat(12, 1fr);
-            gap: 1px;
-            padding: 2px;
-        }
-        
-        .cell {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.2rem;
-        }
-        
-        .cell.filled {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        
-        #next-piece {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.5rem;
-        }
-        
-        /* ゲームオーバー画面 */
-        #game-over-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            z-index: 10;
-        }
-        
-        #game-over-screen h2 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            color: #ff6b6b;
-        }
-        
-        #final-score {
-            font-size: 1.5rem;
-            margin-bottom: 30px;
-        }
-        
-        #restart-button {
-            padding: 15px 40px;
-            font-size: 1.5rem;
-            background: linear-gradient(45deg, #4ecdc4, #45b7d1);
-            border: none;
-            border-radius: 50px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 5px 15px rgba(78, 205, 196, 0.4);
-        }
-        
-        #restart-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 20px rgba(78, 205, 196, 0.6);
-        }
-        
-        /* タッチ操作用のヒント */
-        .touch-hint {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            width: 100%;
-            text-align: center;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.9rem;
-        }
-        
-        /* レスポンシブ対応 */
-        @media (max-width: 480px) {
-            #game-container {
-                height: 90vh;
-                max-width: 95vw;
-            }
-            
-            #start-screen h1 {
-                font-size: 2rem;
-            }
-            
-            #start-screen p {
-                font-size: 1rem;
-            }
-            
-            #start-button {
-                padding: 12px 30px;
-                font-size: 1.2rem;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>すうどくラボ</title>
+<style>
+  :root {
+    --ink: #253039;
+    --muted: #6b7885;
+    --paper: #f7f2e8;
+    --paper-deep: #e2cda6;
+    --line: #253039;
+    --thin: rgba(37, 48, 57, 0.2);
+    --blue: #2e77b8;
+    --blue-soft: #d9ecfb;
+    --green: #2f8a61;
+    --green-soft: #dff2e8;
+    --red: #c94842;
+    --red-soft: #ffe2df;
+    --gold: #d9a43a;
+    --shadow: rgba(22, 28, 34, 0.22);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+    overflow-x: hidden;
+    color: var(--ink);
+    background:
+      linear-gradient(135deg, rgba(46, 119, 184, 0.16), rgba(47, 138, 97, 0.14)),
+      repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0 8px, rgba(0,0,0,0.035) 8px 16px),
+      #26313a;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+  }
+
+  button,
+  select {
+    font: inherit;
+  }
+
+  button {
+    touch-action: manipulation;
+  }
+
+  .app {
+    width: min(1180px, 100%);
+    min-height: 100dvh;
+    margin: 0 auto;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .topbar,
+  .panel,
+  .controls,
+  .modal-card {
+    border: 2px solid rgba(37, 48, 57, 0.78);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px var(--shadow);
+  }
+
+  .topbar {
+    min-height: 70px;
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) repeat(4, auto);
+    gap: 8px;
+    align-items: center;
+    padding: 9px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.42), rgba(255,255,255,0.06)),
+      var(--paper);
+  }
+
+  .brand {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .brand-mark {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 2px;
+    padding: 6px;
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    background: #fffaf0;
+  }
+
+  .brand-mark i {
+    display: block;
+    border-radius: 3px;
+    background: var(--blue);
+  }
+
+  .brand-mark i:nth-child(2n) {
+    background: var(--green);
+  }
+
+  .brand-title {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+  }
+
+  .brand-title strong {
+    font-size: 1.24rem;
+    line-height: 1.1;
+  }
+
+  .brand-title span {
+    color: var(--muted);
+    font-size: 0.84rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .stat {
+    min-width: 84px;
+    min-height: 46px;
+    display: grid;
+    align-content: center;
+    gap: 2px;
+    padding: 6px 9px;
+    text-align: center;
+    border: 1px solid var(--thin);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.48);
+  }
+
+  .stat span {
+    color: var(--muted);
+    font-size: 0.72rem;
+    line-height: 1;
+  }
+
+  .stat b {
+    font-size: 1rem;
+    line-height: 1.1;
+  }
+
+  .main {
+    display: grid;
+    grid-template-columns: minmax(320px, 1fr) minmax(260px, 320px);
+    gap: 10px;
+    align-items: stretch;
+    min-height: 0;
+  }
+
+  .board-zone {
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    place-items: center;
+  }
+
+  .board-frame {
+    width: min(100%, calc(100dvh - 200px), 650px);
+    min-width: 300px;
+    aspect-ratio: 1;
+    padding: 8px;
+    border: 3px solid #101820;
+    border-radius: 8px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.18), rgba(0,0,0,0.16)),
+      #d9c49c;
+    box-shadow: 0 14px 32px rgba(0,0,0,0.36);
+  }
+
+  .sudoku-board {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+    border: 3px solid var(--line);
+    background: var(--line);
+  }
+
+  .cell {
+    position: relative;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-right: 1px solid rgba(37, 48, 57, 0.42);
+    border-bottom: 1px solid rgba(37, 48, 57, 0.42);
+    border-radius: 0;
+    background: #fffdf7;
+    color: var(--blue);
+    cursor: pointer;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    font-weight: 800;
+    font-size: clamp(1.15rem, 5.4vmin, 2.25rem);
+  }
+
+  .cell:nth-child(3n) {
+    border-right-width: 3px;
+    border-right-color: var(--line);
+  }
+
+  .cell:nth-child(n+19):nth-child(-n+27),
+  .cell:nth-child(n+46):nth-child(-n+54) {
+    border-bottom-width: 3px;
+    border-bottom-color: var(--line);
+  }
+
+  .cell:nth-child(9n) {
+    border-right: 0;
+  }
+
+  .cell:nth-child(n+73) {
+    border-bottom: 0;
+  }
+
+  .cell.given {
+    color: var(--ink);
+    background: #f0e5d1;
+  }
+
+  .cell.selected {
+    background: #ffe7a6;
+    box-shadow: inset 0 0 0 3px var(--gold);
+  }
+
+  .cell.peer {
+    background: var(--blue-soft);
+  }
+
+  .cell.same {
+    background: var(--green-soft);
+  }
+
+  .cell.error {
+    color: var(--red);
+    background: var(--red-soft);
+  }
+
+  .cell.hinted {
+    color: var(--green);
+  }
+
+  .notes {
+    width: 86%;
+    height: 86%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 1px;
+    color: #789;
+    font-size: clamp(0.46rem, 1.8vmin, 0.82rem);
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .notes span {
+    display: grid;
+    place-items: center;
+  }
+
+  .panel {
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto auto auto 1fr;
+    gap: 10px;
+    padding: 12px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.34), rgba(255,255,255,0.04)),
+      var(--paper);
+    overflow: hidden;
+  }
+
+  .panel h2 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .difficulty {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .mini-btn,
+  .action-btn,
+  .num-btn {
+    min-height: 42px;
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    background: linear-gradient(180deg, #fff8e8, var(--paper-deep));
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(37,48,57,0.44);
+  }
+
+  .mini-btn.active,
+  .action-btn.blue,
+  .num-btn.active {
+    color: #fff;
+    background: linear-gradient(180deg, #4fa4df, var(--blue));
+  }
+
+  .action-btn.green {
+    color: #fff;
+    background: linear-gradient(180deg, #4fbf82, var(--green));
+  }
+
+  .action-btn.red {
+    color: #fff;
+    background: linear-gradient(180deg, #e66a61, var(--red));
+  }
+
+  .mini-btn:active,
+  .action-btn:active,
+  .num-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(37,48,57,0.44);
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .tips {
+    margin: 0;
+    padding: 9px 10px;
+    color: #52606c;
+    background: rgba(255,255,255,0.44);
+    border: 1px solid var(--thin);
+    border-radius: 8px;
+    line-height: 1.48;
+    font-size: 0.88rem;
+  }
+
+  .history {
+    min-height: 0;
+    overflow: auto;
+  }
+
+  .history ul {
+    display: grid;
+    gap: 7px;
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .history li {
+    padding: 7px 8px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.44);
+    color: #52606c;
+    font-size: 0.84rem;
+    line-height: 1.35;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: minmax(170px, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    min-height: 92px;
+    padding: 10px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0.04)),
+      var(--paper-deep);
+  }
+
+  .hint-text {
+    min-width: 0;
+    color: #473824;
+    font-weight: 750;
+    line-height: 1.36;
+  }
+
+  .number-pad {
+    display: grid;
+    grid-template-columns: repeat(9, minmax(38px, 1fr));
+    gap: 6px;
+    width: min(620px, 62vw);
+  }
+
+  .num-btn {
+    min-width: 0;
+    aspect-ratio: 1;
+    min-height: 44px;
+    font-size: 1.1rem;
+  }
+
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: none;
+    place-items: center;
+    padding: 16px;
+    background: rgba(20, 24, 28, 0.55);
+  }
+
+  .modal.show {
+    display: grid;
+  }
+
+  .modal-card {
+    width: min(520px, 100%);
+    padding: 18px;
+    text-align: center;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.44), rgba(255,255,255,0.05)),
+      var(--paper);
+  }
+
+  .modal-card strong {
+    display: block;
+    font-size: 1.9rem;
+    line-height: 1.12;
+  }
+
+  .modal-card p {
+    margin: 10px auto 0;
+    max-width: 430px;
+    color: #586571;
+    line-height: 1.55;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  @media (max-width: 900px) {
+    body {
+      overflow: auto;
+    }
+
+    .app {
+      min-height: 100dvh;
+    }
+
+    .topbar {
+      grid-template-columns: 1fr repeat(2, auto);
+    }
+
+    .topbar .stat:nth-of-type(n+4) {
+      display: none;
+    }
+
+    .main {
+      grid-template-columns: 1fr;
+    }
+
+    .board-frame {
+      width: min(94vw, 62dvh, 650px);
+    }
+
+    .panel {
+      grid-template-rows: auto;
+      overflow: visible;
+    }
+
+    .history {
+      display: none;
+    }
+
+    .controls {
+      grid-template-columns: 1fr;
+    }
+
+    .number-pad {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .app {
+      gap: 7px;
+      padding: 7px;
+    }
+
+    .topbar {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      min-height: 0;
+    }
+
+    .brand {
+      grid-column: 1 / -1;
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      padding: 5px;
+    }
+
+    .brand-title strong {
+      font-size: 1.05rem;
+    }
+
+    .stat {
+      min-width: 0;
+      min-height: 38px;
+      padding: 5px 4px;
+    }
+
+    .board-frame {
+      width: min(96vw, 48dvh);
+      min-width: 280px;
+      padding: 5px;
+    }
+
+    .panel {
+      padding: 8px;
+      gap: 7px;
+    }
+
+    .panel h2 {
+      display: none;
+    }
+
+    .difficulty,
+    .actions {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .mini-btn,
+    .action-btn {
+      min-height: 34px;
+      padding: 3px 4px;
+      font-size: 0.78rem;
+    }
+
+    .tips {
+      display: none;
+    }
+
+    .controls {
+      padding: 7px;
+    }
+
+    .number-pad {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .num-btn {
+      aspect-ratio: 1.45;
+      min-height: 34px;
+    }
+  }
+</style>
 </head>
 <body>
-    <div id="game-container">
-        <!-- スタート画面 -->
-        <div id="start-screen">
-            <h1>ぷよぷよ</h1>
-            <p>ぷよを落とし、同じ色のぷよを3つ以上つなげて消そう！<br>タッチまたはクリックで操作できます</p>
-            <button id="start-button">スタート</button>
-            <div class="touch-hint">※タッチ操作でプレイ</div>
-        </div>
-        
-        <!-- ゲーム画面 -->
-        <div id="game-screen">
-            <div id="game-header">
-                <div>スコア: <span id="score">0</span></div>
-                <div>レベル: <span id="level">1</span></div>
-            </div>
-            <div id="game-board"></div>
-            <div id="next-piece">🧺</div>
-        </div>
-        
-        <!-- ゲームオーバー画面 -->
-        <div id="game-over-screen">
-            <h2>ゲームオーバー</h2>
-            <div id="final-score">スコア: 0</div>
-            <button id="restart-button">もう一度</button>
-        </div>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      </div>
+      <div class="brand-title">
+        <strong>すうどくラボ</strong>
+        <span id="statusText">数字のつながりを見つけよう</span>
+      </div>
     </div>
+    <div class="stat"><span>TIME</span><b id="timerText">00:00</b></div>
+    <div class="stat"><span>LEVEL</span><b id="levelText">ふつう</b></div>
+    <div class="stat"><span>MISS</span><b id="mistakeText">0</b></div>
+    <div class="stat"><span>HINT</span><b id="hintCountText">0</b></div>
+  </header>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // ゲーム状態管理
-            const gameState = {
-                score: 0,
-                level: 1,
-                board: [],
-                currentPiece: null,
-                nextPiece: null,
-                isPlaying: false,
-                gameLoop: null
-            };
-            
-            // DOM要素
-            const startScreen = document.getElementById('start-screen');
-            const gameScreen = document.getElementById('game-screen');
-            const gameOverScreen = document.getElementById('game-over-screen');
-            const startButton = document.getElementById('start-button');
-            const restartButton = document.getElementById('restart-button');
-            const scoreElement = document.getElementById('score');
-            const levelElement = document.getElementById('level');
-            const finalScoreElement = document.getElementById('final-score');
-            const gameBoard = document.getElementById('game-board');
-            const nextPieceElement = document.getElementById('next-piece');
-            
-            // ぷよの色定義
-            const COLORS = ['🔴', '🔵', '🟢', '🟡', '🟣'];
-            const EMPTY = ' ';
-            
-            // ゲーム初期化
-            function initGame() {
-                // ボード初期化
-                gameState.board = Array(12).fill().map(() => Array(6).fill(EMPTY));
-                
-                // スコアとレベル初期化
-                gameState.score = 0;
-                gameState.level = 1;
-                updateScore();
-                
-                // ピース初期化
-                gameState.currentPiece = generateRandomPiece();
-                gameState.nextPiece = generateRandomPiece();
-                updateNextPiece();
-                
-                // ゲーム画面表示
-                startScreen.style.display = 'none';
-                gameScreen.style.display = 'block';
-                gameOverScreen.style.display = 'none';
-                
-                // ボード描画
-                renderBoard();
-                
-                // ゲームループ開始
-                if (gameState.gameLoop) clearInterval(gameState.gameLoop);
-                gameState.gameLoop = setInterval(gameLoop, 1000);
-                
-                gameState.isPlaying = true;
-            }
-            
-            // ランダムなぷよを生成
-            function generateRandomPiece() {
-                return {
-                    type: COLORS[Math.floor(Math.random() * COLORS.length)],
-                    x: 2,
-                    y: 0
-                };
-            }
-            
-            // ボード描画
-            function renderBoard() {
-                gameBoard.innerHTML = '';
-                
-                for (let y = 0; y < 12; y++) {
-                    for (let x = 0; x < 6; x++) {
-                        const cell = document.createElement('div');
-                        cell.className = 'cell';
-                        cell.dataset.x = x;
-                        cell.dataset.y = y;
-                        
-                        if (gameState.board[y][x] !== EMPTY) {
-                            cell.textContent = gameState.board[y][x];
-                            cell.classList.add('filled');
-                        }
-                        
-                        // 現在のぷよを描画
-                        if (gameState.currentPiece && 
-                            x === gameState.currentPiece.x && 
-                            y === gameState.currentPiece.y) {
-                            cell.textContent = gameState.currentPiece.type;
-                        }
-                        
-                        gameBoard.appendChild(cell);
-                    }
-                }
-            }
-            
-            // 次のぷよを表示
-            function updateNextPiece() {
-                nextPieceElement.textContent = gameState.nextPiece.type;
-            }
-            
-            // スコア更新
-            function updateScore() {
-                scoreElement.textContent = gameState.score;
-                levelElement.textContent = gameState.level;
-            }
-            
-            // ゲームループ
-            function gameLoop() {
-                if (!gameState.isPlaying) return;
-                
-                // ぷよを下に移動
-                movePieceDown();
-                
-                // ボード更新
-                renderBoard();
-            }
-            
-            // ぷよを下に移動
-            function movePieceDown() {
-                if (!gameState.currentPiece) return;
-                
-                // 位置を下に移動
-                gameState.currentPiece.y += 1;
-                
-                // 衝突判定
-                if (isCollision()) {
-                    // 衝突した場合は現在のぷよをボードに固定
-                    placePiece();
-                    
-                    // ボードをチェックして消去
-                    checkAndClearLines();
-                    
-                    // 次のぷよをセット
-                    gameState.currentPiece = gameState.nextPiece;
-                    gameState.nextPiece = generateRandomPiece();
-                    updateNextPiece();
-                    
-                    // ゲームオーバー判定
-                    if (isCollision()) {
-                        gameOver();
-                    }
-                }
-            }
-            
-            // 衝突判定
-            function isCollision() {
-                if (!gameState.currentPiece) return false;
-                
-                const { x, y } = gameState.currentPiece;
-                
-                // ボードの境界外判定
-                if (x < 0 || x >= 6 || y >= 12) return true;
-                
-                // ボード上にすでにぷよがあるか判定
-                if (y >= 0 && y < 12 && x >= 0 && x < 6) {
-                    if (gameState.board[y][x] !== EMPTY) return true;
-                }
-                
-                return false;
-            }
-            
-            // ぷよをボードに固定
-            function placePiece() {
-                if (!gameState.currentPiece) return;
-                
-                const { x, y, type } = gameState.currentPiece;
-                
-                if (y >= 0 && y < 12 && x >= 0 && x < 6) {
-                    gameState.board[y][x] = type;
-                }
-            }
-            
-            // 行をチェックして消去
-            function checkAndClearLines() {
-                let linesCleared = 0;
-                
-                for (let y = 11; y >= 0; y--) {
-                    let isFull = true;
-                    
-                    for (let x = 0; x < 6; x++) {
-                        if (gameState.board[y][x] === EMPTY) {
-                            isFull = false;
-                            break;
-                        }
-                    }
-                    
-                    if (isFull) {
-                        // 行を消去
-                        for (let row = y; row > 0; row--) {
-                            for (let x = 0; x < 6; x++) {
-                                gameState.board[row][x] = gameState.board[row - 1][x];
-                            }
-                        }
-                        
-                        // 最上行を空にする
-                        for (let x = 0; x < 6; x++) {
-                            gameState.board[0][x] = EMPTY;
-                        }
-                        
-                        linesCleared++;
-                        y++; // 消した行の位置を再チェック
-                    }
-                }
-                
-                // スコア計算
-                if (linesCleared > 0) {
-                    gameState.score += linesCleared * 100 * gameState.level;
-                    gameState.level = Math.floor(gameState.score / 1000) + 1;
-                    updateScore();
-                }
-            }
-            
-            // ゲームオーバー
-            function gameOver() {
-                gameState.isPlaying = false;
-                clearInterval(gameState.gameLoop);
-                
-                finalScoreElement.textContent = `スコア: ${gameState.score}`;
-                gameScreen.style.display = 'none';
-                gameOverScreen.style.display = 'flex';
-            }
-            
-            // タッチ/クリックイベント
-            gameBoard.addEventListener('click', (e) => {
-                if (!gameState.isPlaying) return;
-                
-                // ぷよを左に移動
-                if (gameState.currentPiece) {
-                    gameState.currentPiece.x = Math.max(0, gameState.currentPiece.x - 1);
-                    renderBoard();
-                }
-            });
-            
-            // タッチ操作対応
-            gameBoard.addEventListener('touchstart', (e) => {
-                if (!gameState.isPlaying) return;
-                
-                e.preventDefault();
-                // ぷよを右に移動
-                if (gameState.currentPiece) {
-                    gameState.currentPiece.x = Math.min(5, gameState.currentPiece.x + 1);
-                    renderBoard();
-                }
-            });
-            
-            // ボタンイベント
-            startButton.addEventListener('click', initGame);
-            restartButton.addEventListener('click', initGame);
-            
-            // 初期画面表示
-            startScreen.style.display = 'flex';
-        });
-    </script>
+  <main class="main">
+    <section class="board-zone" aria-label="数独盤面">
+      <div class="board-frame">
+        <div id="board" class="sudoku-board" role="grid" aria-label="9x9 数独盤面"></div>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <h2>難易度</h2>
+      <div class="difficulty" id="difficultyButtons">
+        <button class="mini-btn" data-difficulty="easy" type="button">やさしい</button>
+        <button class="mini-btn active" data-difficulty="normal" type="button">ふつう</button>
+        <button class="mini-btn" data-difficulty="hard" type="button">むずかしい</button>
+        <button class="mini-btn" data-difficulty="expert" type="button">達人</button>
+      </div>
+
+      <div class="actions">
+        <button class="action-btn blue" id="newBtn" type="button">新しい問題</button>
+        <button class="action-btn" id="noteBtn" type="button">メモ OFF</button>
+        <button class="action-btn" id="eraseBtn" type="button">消す</button>
+        <button class="action-btn" id="undoBtn" type="button">戻す</button>
+        <button class="action-btn green" id="hintBtn" type="button">ヒント</button>
+        <button class="action-btn red" id="checkBtn" type="button">チェック</button>
+        <button class="action-btn" id="pauseBtn" type="button">一時停止</button>
+        <button class="action-btn" id="solveBtn" type="button">答え表示</button>
+      </div>
+
+      <p class="tips">
+        行・列・3x3の箱に1から9を一度ずつ入れるパズルです。メモONで候補数字を小さく記録できます。
+      </p>
+
+      <section class="history">
+        <h2>ログ</h2>
+        <ul id="logList"></ul>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="controls">
+    <div class="hint-text" id="hintText">マスを選んで数字を入れよう。キーボードの1-9、Backspace、N、Hも使えます。</div>
+    <div class="number-pad" id="numberPad" aria-label="数字入力"></div>
+  </footer>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <strong id="modalTitle">すうどくラボ</strong>
+    <p id="modalText">落ち着いて、同じ数字が重ならない場所を探しましょう。</p>
+    <div class="modal-actions" id="modalActions"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const SIZE = 9;
+  const BOX = 3;
+  const DIFFICULTIES = {
+    easy: { label: "やさしい", removals: 38 },
+    normal: { label: "ふつう", removals: 46 },
+    hard: { label: "むずかしい", removals: 52 },
+    expert: { label: "達人", removals: 57 }
+  };
+
+  const el = {
+    board: document.getElementById("board"),
+    numberPad: document.getElementById("numberPad"),
+    difficultyButtons: document.getElementById("difficultyButtons"),
+    timer: document.getElementById("timerText"),
+    level: document.getElementById("levelText"),
+    mistakes: document.getElementById("mistakeText"),
+    hints: document.getElementById("hintCountText"),
+    status: document.getElementById("statusText"),
+    hintText: document.getElementById("hintText"),
+    log: document.getElementById("logList"),
+    newBtn: document.getElementById("newBtn"),
+    noteBtn: document.getElementById("noteBtn"),
+    eraseBtn: document.getElementById("eraseBtn"),
+    undoBtn: document.getElementById("undoBtn"),
+    hintBtn: document.getElementById("hintBtn"),
+    checkBtn: document.getElementById("checkBtn"),
+    pauseBtn: document.getElementById("pauseBtn"),
+    solveBtn: document.getElementById("solveBtn"),
+    modal: document.getElementById("modal"),
+    modalTitle: document.getElementById("modalTitle"),
+    modalText: document.getElementById("modalText"),
+    modalActions: document.getElementById("modalActions")
+  };
+
+  const state = {
+    difficulty: "normal",
+    puzzle: Array(81).fill(0),
+    solution: Array(81).fill(0),
+    values: Array(81).fill(0),
+    givens: Array(81).fill(false),
+    notes: Array.from({ length: 81 }, () => new Set()),
+    hinted: new Set(),
+    selected: 0,
+    noteMode: false,
+    mistakes: 0,
+    hints: 0,
+    history: [],
+    logs: [],
+    startedAt: 0,
+    pausedAt: 0,
+    pausedTotal: 0,
+    timerId: null,
+    paused: false,
+    complete: false
+  };
+
+  function rowOf(index) {
+    return Math.floor(index / SIZE);
+  }
+
+  function colOf(index) {
+    return index % SIZE;
+  }
+
+  function boxOf(index) {
+    return Math.floor(rowOf(index) / BOX) * BOX + Math.floor(colOf(index) / BOX);
+  }
+
+  function secondsElapsed() {
+    if (!state.startedAt) return 0;
+    const end = state.paused ? state.pausedAt : Date.now();
+    return Math.max(0, Math.floor((end - state.startedAt - state.pausedTotal) / 1000));
+  }
+
+  function formatTime(sec) {
+    const m = String(Math.floor(sec / 60)).padStart(2, "0");
+    const s = String(sec % 60).padStart(2, "0");
+    return `${m}:${s}`;
+  }
+
+  function shuffle(array) {
+    const arr = array.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function makeSolvedGrid() {
+    const pattern = (r, c) => (BOX * (r % BOX) + Math.floor(r / BOX) + c) % SIZE;
+    const rows = shuffle([0, 1, 2]).flatMap(group => shuffle([0, 1, 2]).map(row => group * BOX + row));
+    const cols = shuffle([0, 1, 2]).flatMap(group => shuffle([0, 1, 2]).map(col => group * BOX + col));
+    const nums = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    const grid = [];
+    rows.forEach(r => {
+      cols.forEach(c => grid.push(nums[pattern(r, c)]));
+    });
+    return grid;
+  }
+
+  function canPlace(grid, index, value) {
+    const r = rowOf(index);
+    const c = colOf(index);
+    const br = Math.floor(r / BOX) * BOX;
+    const bc = Math.floor(c / BOX) * BOX;
+
+    for (let i = 0; i < SIZE; i++) {
+      if (grid[r * SIZE + i] === value) return false;
+      if (grid[i * SIZE + c] === value) return false;
+    }
+
+    for (let y = 0; y < BOX; y++) {
+      for (let x = 0; x < BOX; x++) {
+        if (grid[(br + y) * SIZE + bc + x] === value) return false;
+      }
+    }
+    return true;
+  }
+
+  function countSolutions(grid, limit = 2) {
+    let count = 0;
+    const work = grid.slice();
+
+    function chooseCell() {
+      let best = -1;
+      let bestOptions = null;
+      for (let i = 0; i < 81; i++) {
+        if (work[i] !== 0) continue;
+        const options = [];
+        for (let n = 1; n <= 9; n++) {
+          if (canPlace(work, i, n)) options.push(n);
+        }
+        if (options.length === 0) return { index: i, options };
+        if (!bestOptions || options.length < bestOptions.length) {
+          best = i;
+          bestOptions = options;
+          if (options.length === 1) break;
+        }
+      }
+      return best === -1 ? null : { index: best, options: shuffle(bestOptions) };
+    }
+
+    function solve() {
+      if (count >= limit) return;
+      const next = chooseCell();
+      if (!next) {
+        count++;
+        return;
+      }
+      if (next.options.length === 0) return;
+      for (const n of next.options) {
+        work[next.index] = n;
+        solve();
+        work[next.index] = 0;
+        if (count >= limit) return;
+      }
+    }
+
+    solve();
+    return count;
+  }
+
+  function makePuzzle(difficulty) {
+    const solution = makeSolvedGrid();
+    const puzzle = solution.slice();
+    const target = DIFFICULTIES[difficulty].removals;
+    const positions = shuffle([...Array(81).keys()]);
+    let removed = 0;
+    let attempts = 0;
+
+    while (positions.length && removed < target && attempts < 160) {
+      attempts++;
+      const index = positions.pop();
+      if (puzzle[index] === 0) continue;
+      const backup = puzzle[index];
+      puzzle[index] = 0;
+      if (countSolutions(puzzle, 2) === 1) {
+        removed++;
+      } else {
+        puzzle[index] = backup;
+      }
+    }
+
+    return { puzzle, solution };
+  }
+
+  function pushLog(text) {
+    state.logs.unshift(text);
+    state.logs = state.logs.slice(0, 6);
+  }
+
+  function setHint(text) {
+    el.hintText.textContent = text;
+  }
+
+  function newGame(difficulty = state.difficulty) {
+    showModal("問題を作成中", "少しだけ待ってください。解ける数独を用意しています。", []);
+    window.setTimeout(() => {
+      state.difficulty = difficulty;
+      const generated = makePuzzle(difficulty);
+      state.puzzle = generated.puzzle;
+      state.solution = generated.solution;
+      state.values = generated.puzzle.slice();
+      state.givens = generated.puzzle.map(Boolean);
+      state.notes = Array.from({ length: 81 }, () => new Set());
+      state.hinted = new Set();
+      state.selected = state.values.findIndex(value => value === 0);
+      if (state.selected < 0) state.selected = 0;
+      state.noteMode = false;
+      state.mistakes = 0;
+      state.hints = 0;
+      state.history = [];
+      state.logs = [];
+      state.paused = false;
+      state.complete = false;
+      state.startedAt = Date.now();
+      state.pausedAt = 0;
+      state.pausedTotal = 0;
+      pushLog(`${DIFFICULTIES[difficulty].label} の問題を開始。`);
+      setHint("空いているマスを選び、数字を入れよう。迷ったらメモON。");
+      hideModal();
+      startTimer();
+      updateAll();
+    }, 40);
+  }
+
+  function startTimer() {
+    if (state.timerId) clearInterval(state.timerId);
+    state.timerId = setInterval(updateTimer, 500);
+    updateTimer();
+  }
+
+  function updateTimer() {
+    el.timer.textContent = formatTime(secondsElapsed());
+  }
+
+  function selectCell(index) {
+    if (state.paused || state.complete) return;
+    state.selected = index;
+    const value = state.values[index];
+    if (state.givens[index]) {
+      setHint(`最初から入っている ${value} です。同じ数字を確認できます。`);
+    } else {
+      setHint("数字を入れるか、メモONで候補を記録できます。");
+    }
+    renderBoard();
+  }
+
+  function peersOf(index) {
+    const peers = new Set();
+    const r = rowOf(index);
+    const c = colOf(index);
+    const br = Math.floor(r / BOX) * BOX;
+    const bc = Math.floor(c / BOX) * BOX;
+    for (let i = 0; i < SIZE; i++) {
+      peers.add(r * SIZE + i);
+      peers.add(i * SIZE + c);
+    }
+    for (let y = 0; y < BOX; y++) {
+      for (let x = 0; x < BOX; x++) peers.add((br + y) * SIZE + bc + x);
+    }
+    peers.delete(index);
+    return peers;
+  }
+
+  function conflicts(index, value = state.values[index]) {
+    if (!value) return false;
+    return [...peersOf(index)].some(peer => state.values[peer] === value);
+  }
+
+  function saveHistory(index) {
+    state.history.push({
+      index,
+      values: state.values.slice(),
+      notes: state.notes.map(set => [...set]),
+      mistakes: state.mistakes,
+      hints: state.hints,
+      hinted: [...state.hinted]
+    });
+    state.history = state.history.slice(-80);
+  }
+
+  function inputNumber(number) {
+    if (state.paused || state.complete) return;
+    const index = state.selected;
+    if (index < 0 || state.givens[index]) return;
+    saveHistory(index);
+
+    if (state.noteMode) {
+      if (state.values[index]) state.values[index] = 0;
+      if (state.notes[index].has(number)) {
+        state.notes[index].delete(number);
+      } else {
+        state.notes[index].add(number);
+      }
+      pushLog(`${rowOf(index) + 1}行${colOf(index) + 1}列にメモ ${number}。`);
+      setHint("候補メモを更新しました。");
+    } else {
+      state.values[index] = number;
+      state.notes[index].clear();
+      state.hinted.delete(index);
+      cleanupNotes(index, number);
+      if (number !== state.solution[index]) {
+        state.mistakes++;
+        pushLog(`${rowOf(index) + 1}行${colOf(index) + 1}列は見直しが必要。`);
+        setHint("赤い数字は答えと違います。消して考え直せます。");
+      } else {
+        pushLog(`${number} を入力。`);
+        setHint("正解です。同じ行・列・箱の候補も少し整理しました。");
+      }
+    }
+
+    updateAll();
+    checkComplete();
+  }
+
+  function cleanupNotes(index, number) {
+    peersOf(index).forEach(peer => state.notes[peer].delete(number));
+  }
+
+  function eraseCell() {
+    if (state.paused || state.complete) return;
+    const index = state.selected;
+    if (index < 0 || state.givens[index]) return;
+    if (!state.values[index] && state.notes[index].size === 0) return;
+    saveHistory(index);
+    state.values[index] = 0;
+    state.notes[index].clear();
+    state.hinted.delete(index);
+    pushLog("選択中のマスを消しました。");
+    setHint("消しました。メモを使って候補を絞りましょう。");
+    updateAll();
+  }
+
+  function undo() {
+    if (state.paused || state.complete || !state.history.length) return;
+    const last = state.history.pop();
+    state.values = last.values;
+    state.notes = last.notes.map(arr => new Set(arr));
+    state.mistakes = last.mistakes;
+    state.hints = last.hints;
+    state.hinted = new Set(last.hinted);
+    state.selected = last.index;
+    pushLog("1手戻しました。");
+    setHint("前の状態に戻しました。");
+    updateAll();
+  }
+
+  function giveHint() {
+    if (state.paused || state.complete) return;
+    let index = state.selected;
+    if (index < 0 || state.givens[index] || state.values[index] === state.solution[index]) {
+      index = state.values.findIndex((value, i) => !state.givens[i] && value !== state.solution[i]);
+    }
+    if (index < 0) return;
+    saveHistory(index);
+    state.selected = index;
+    state.values[index] = state.solution[index];
+    state.notes[index].clear();
+    state.hinted.add(index);
+    state.hints++;
+    cleanupNotes(index, state.values[index]);
+    pushLog(`${rowOf(index) + 1}行${colOf(index) + 1}列にヒント。`);
+    setHint("ヒントを入れました。なぜその数字になるか周りを見てみよう。");
+    updateAll();
+    checkComplete();
+  }
+
+  function checkBoard() {
+    if (state.paused || state.complete) return;
+    const wrong = state.values.reduce((count, value, index) => {
+      return count + (value && value !== state.solution[index] ? 1 : 0);
+    }, 0);
+    const empty = state.values.filter(value => value === 0).length;
+    if (wrong) {
+      setHint(`違う数字が ${wrong} 個あります。赤いマスを見直そう。`);
+      pushLog(`チェック: 違う数字 ${wrong} 個。`);
+    } else if (empty) {
+      setHint(`今のところ矛盾なし。残り ${empty} マスです。`);
+      pushLog(`チェック: 矛盾なし、残り ${empty} マス。`);
+    } else {
+      checkComplete(true);
+    }
+    updateAll();
+  }
+
+  function showSolution() {
+    if (state.paused || state.complete) return;
+    showModal("答えを表示しますか？", "答えを表示すると、この問題はクリア扱いになりません。", [
+      { label: "表示する", className: "red", action: () => {
+        state.values = state.solution.slice();
+        state.notes = Array.from({ length: 81 }, () => new Set());
+        state.complete = true;
+        hideModal();
+        pushLog("答えを表示しました。");
+        setHint("答えを表示しました。次の問題で再挑戦できます。");
+        updateAll();
+      }},
+      { label: "戻る", className: "gray", action: hideModal }
+    ]);
+  }
+
+  function checkComplete(force = false) {
+    const complete = state.values.every((value, index) => value === state.solution[index]);
+    if (!complete && !force) return;
+    if (!complete) return;
+    state.complete = true;
+    if (state.timerId) clearInterval(state.timerId);
+    const seconds = secondsElapsed();
+    const bestKey = `sudokuBest:${state.difficulty}`;
+    const best = Number(localStorage.getItem(bestKey) || 0);
+    const isBest = !best || seconds < best;
+    if (isBest) localStorage.setItem(bestKey, String(seconds));
+    updateAll();
+    showModal("クリア！", `タイム ${formatTime(seconds)}。ミス ${state.mistakes}、ヒント ${state.hints}。${isBest ? "この難易度のベスト更新です。" : "いい集中でした。"}`, [
+      { label: "次の問題", className: "blue", action: () => newGame(state.difficulty) },
+      { label: "難易度を変える", className: "gray", action: hideModal }
+    ]);
+  }
+
+  function toggleNotes() {
+    if (state.paused || state.complete) return;
+    state.noteMode = !state.noteMode;
+    el.noteBtn.textContent = state.noteMode ? "メモ ON" : "メモ OFF";
+    el.noteBtn.classList.toggle("blue", state.noteMode);
+    setHint(state.noteMode ? "メモON。数字を押すと候補を書き込みます。" : "メモOFF。数字を押すと大きく入力します。");
+  }
+
+  function togglePause() {
+    if (state.complete) return;
+    if (!state.paused) {
+      state.paused = true;
+      state.pausedAt = Date.now();
+      showModal("一時停止", "盤面を隠しています。再開するとタイマーが動きます。", [
+        { label: "再開", className: "blue", action: togglePause },
+        { label: "新しい問題", className: "gray", action: () => newGame(state.difficulty) }
+      ]);
+    } else {
+      state.pausedTotal += Date.now() - state.pausedAt;
+      state.pausedAt = 0;
+      state.paused = false;
+      hideModal();
+      updateAll();
+    }
+    el.pauseBtn.textContent = state.paused ? "再開" : "一時停止";
+    updateTimer();
+  }
+
+  function renderBoard() {
+    const selected = state.selected;
+    const selectedValue = state.values[selected];
+    const selectedPeers = peersOf(selected);
+    el.board.innerHTML = "";
+
+    for (let i = 0; i < 81; i++) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "cell";
+      button.setAttribute("role", "gridcell");
+      button.setAttribute("aria-label", `${rowOf(i) + 1}行 ${colOf(i) + 1}列`);
+      if (state.givens[i]) button.classList.add("given");
+      if (i === selected) button.classList.add("selected");
+      else if (selectedPeers.has(i)) button.classList.add("peer");
+      if (selectedValue && state.values[i] === selectedValue && i !== selected) button.classList.add("same");
+      if (state.values[i] && state.values[i] !== state.solution[i]) button.classList.add("error");
+      if (state.hinted.has(i)) button.classList.add("hinted");
+
+      const value = state.values[i];
+      if (value) {
+        button.textContent = value;
+      } else if (state.notes[i].size) {
+        const notes = document.createElement("div");
+        notes.className = "notes";
+        for (let n = 1; n <= 9; n++) {
+          const span = document.createElement("span");
+          span.textContent = state.notes[i].has(n) ? n : "";
+          notes.appendChild(span);
+        }
+        button.appendChild(notes);
+      }
+      button.addEventListener("click", () => selectCell(i));
+      el.board.appendChild(button);
+    }
+  }
+
+  function renderPad() {
+    el.numberPad.innerHTML = "";
+    for (let n = 1; n <= 9; n++) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "num-btn";
+      button.textContent = n;
+      if (state.values[state.selected] === n) button.classList.add("active");
+      button.addEventListener("click", () => inputNumber(n));
+      el.numberPad.appendChild(button);
+    }
+  }
+
+  function renderLogs() {
+    el.log.innerHTML = "";
+    state.logs.forEach(line => {
+      const li = document.createElement("li");
+      li.textContent = line;
+      el.log.appendChild(li);
+    });
+  }
+
+  function updateStats() {
+    el.level.textContent = DIFFICULTIES[state.difficulty].label;
+    el.mistakes.textContent = state.mistakes;
+    el.hints.textContent = state.hints;
+    const filled = state.values.filter(Boolean).length;
+    el.status.textContent = state.complete ? "完成しました" : `残り ${81 - filled} マス`;
+    document.querySelectorAll("[data-difficulty]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.difficulty === state.difficulty);
+    });
+    el.noteBtn.textContent = state.noteMode ? "メモ ON" : "メモ OFF";
+    el.noteBtn.classList.toggle("blue", state.noteMode);
+    el.pauseBtn.textContent = state.paused ? "再開" : "一時停止";
+    updateTimer();
+  }
+
+  function updateAll() {
+    updateStats();
+    renderBoard();
+    renderPad();
+    renderLogs();
+  }
+
+  function showModal(title, text, actions) {
+    el.modalTitle.textContent = title;
+    el.modalText.textContent = text;
+    el.modalActions.innerHTML = "";
+    actions.forEach(action => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `action-btn ${action.className || ""}`;
+      button.textContent = action.label;
+      button.addEventListener("click", action.action);
+      el.modalActions.appendChild(button);
+    });
+    el.modal.classList.add("show");
+  }
+
+  function hideModal() {
+    el.modal.classList.remove("show");
+  }
+
+  el.difficultyButtons.addEventListener("click", event => {
+    const button = event.target.closest("[data-difficulty]");
+    if (!button) return;
+    const difficulty = button.dataset.difficulty;
+    if (difficulty === state.difficulty) return;
+    showModal("難易度を変更しますか？", "現在の問題を終了して、新しい問題を作ります。", [
+      { label: "変更する", className: "blue", action: () => newGame(difficulty) },
+      { label: "戻る", className: "gray", action: hideModal }
+    ]);
+  });
+
+  el.newBtn.addEventListener("click", () => {
+    showModal("新しい問題", "現在の問題を終了して、新しい問題を作ります。", [
+      { label: "始める", className: "blue", action: () => newGame(state.difficulty) },
+      { label: "戻る", className: "gray", action: hideModal }
+    ]);
+  });
+  el.noteBtn.addEventListener("click", toggleNotes);
+  el.eraseBtn.addEventListener("click", eraseCell);
+  el.undoBtn.addEventListener("click", undo);
+  el.hintBtn.addEventListener("click", giveHint);
+  el.checkBtn.addEventListener("click", checkBoard);
+  el.pauseBtn.addEventListener("click", togglePause);
+  el.solveBtn.addEventListener("click", showSolution);
+
+  document.addEventListener("keydown", event => {
+    const key = event.key;
+    if (key >= "1" && key <= "9") {
+      event.preventDefault();
+      inputNumber(Number(key));
+    } else if (key === "Backspace" || key === "Delete" || key === "0") {
+      event.preventDefault();
+      eraseCell();
+    } else if (key === "n" || key === "N") {
+      event.preventDefault();
+      toggleNotes();
+    } else if (key === "h" || key === "H") {
+      event.preventDefault();
+      giveHint();
+    } else if (key === "Escape") {
+      event.preventDefault();
+      if (el.modal.classList.contains("show") && !state.paused) hideModal();
+    } else if (key.startsWith("Arrow")) {
+      event.preventDefault();
+      const r = rowOf(state.selected);
+      const c = colOf(state.selected);
+      let nr = r;
+      let nc = c;
+      if (key === "ArrowUp") nr = Math.max(0, r - 1);
+      if (key === "ArrowDown") nr = Math.min(8, r + 1);
+      if (key === "ArrowLeft") nc = Math.max(0, c - 1);
+      if (key === "ArrowRight") nc = Math.min(8, c + 1);
+      selectCell(nr * 9 + nc);
+    }
+  }, { passive: false });
+
+  showModal("すうどくラボ", "行・列・3x3の箱に1から9を一度ずつ入れます。候補はメモONで小さく書けます。", [
+    { label: "はじめる", className: "blue", action: () => newGame("normal") }
+  ]);
+  updateAll();
+})();
+</script>
 </body>
 </html>
