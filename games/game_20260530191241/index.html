@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>海賊船アドベンチャー</title>
+  <title>海賊船アドベンチャー (Gemini改良版)</title>
   <style>
     * {
       margin: 0;
@@ -36,7 +36,8 @@
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     }
 
-    #startScreen, #gameOverScreen {
+    /* 画面オーバーレイ (スタート / ゲームオーバー / クリア) */
+    .screen-overlay {
       position: absolute;
       top: 0;
       left: 0;
@@ -46,41 +47,31 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.85);
       z-index: 10;
       text-align: center;
     }
 
-    #gameOverScreen {
+    #gameOverScreen, #gameClearScreen {
       display: none;
     }
 
-    h1 {
-      font-size: 2.5rem;
-      margin-bottom: 20px;
-      color: #FFD700;
-    }
-
-    p {
-      font-size: 1.2rem;
-      margin: 10px 0;
-    }
+    h1 { font-size: 2.5rem; margin-bottom: 20px; color: #FFD700; text-shadow: 2px 2px 4px #000; }
+    p { font-size: 1.2rem; margin: 10px 0; }
 
     button {
       margin-top: 20px;
       padding: 12px 30px;
       font-size: 1.2rem;
       background: #FFD700;
+      color: #000;
+      font-weight: bold;
       border: none;
       border-radius: 50px;
       cursor: pointer;
       transition: all 0.3s;
     }
-
-    button:hover {
-      background: #FFA500;
-      transform: scale(1.05);
-    }
+    button:hover { background: #FFA500; transform: scale(1.05); }
 
     #ui {
       position: absolute;
@@ -97,18 +88,22 @@
       padding: 8px 12px;
       border-radius: 5px;
       font-size: 1rem;
+      font-weight: bold;
     }
 
+    /* ゲーム要素 */
     #playerShip {
       position: absolute;
       font-size: 3rem;
       z-index: 3;
-      transition: transform 0.1s;
+      /* 中心を軸に回転させる */
+      transform-origin: center center; 
+      transition: transform 0.1s ease-out;
     }
 
     .island {
       position: absolute;
-      font-size: 3rem;
+      font-size: 4rem; /* 島を少し大きく */
       z-index: 2;
     }
 
@@ -132,6 +127,7 @@
       z-index: 4;
     }
 
+    /* コントロール */
     #controls {
       position: absolute;
       bottom: 20px;
@@ -146,7 +142,7 @@
     .control-btn {
       width: 60px;
       height: 60px;
-      background: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.2);
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -154,477 +150,301 @@
       font-size: 2rem;
       cursor: pointer;
       user-select: none;
-      border: 2px solid white;
+      border: 2px solid rgba(255, 255, 255, 0.5);
     }
+    .control-btn:active { background: rgba(255, 255, 255, 0.5); }
 
-    #fireBtn {
-      width: 70px;
-      height: 70px;
-      font-size: 2.5rem;
-      background: rgba(255, 0, 0, 0.5);
-    }
+    #fireBtn { width: 70px; height: 70px; font-size: 2.5rem; background: rgba(255, 0, 0, 0.4); border-color: #ffcccc; }
+    #fireBtn:active { background: rgba(255, 0, 0, 0.7); }
 
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.2); }
-      100% { transform: scale(1); }
-    }
-
-    @keyframes float {
-      0% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-      100% { transform: translateY(0); }
-    }
-
+    /* アップグレードパネル */
     #upgradePanel {
       position: absolute;
       bottom: 100px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.8);
       padding: 15px;
       border-radius: 10px;
       display: flex;
       gap: 10px;
       z-index: 5;
       display: none;
+      border: 2px solid #FFD700;
     }
 
     #upgradePanel button {
       padding: 8px 15px;
       font-size: 0.9rem;
+      margin-top: 0;
     }
 
-    .upgrade-btn {
-      background: #4CAF50;
-    }
-
-    .upgrade-btn:hover {
-      background: #45a049;
-    }
-
-    .upgrade-btn:disabled {
-      background: #666;
-      cursor: not-allowed;
-    }
-
-    .game-field {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-    }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+    @keyframes float { 0% { transform: translateY(0); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0); } }
+    
+    .game-field { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
   </style>
 </head>
 <body>
   <div id="gameContainer">
-    <div id="startScreen">
+    
+    <div id="startScreen" class="screen-overlay">
       <h1>海賊船アドベンチャー</h1>
-      <p>宝を収集し、敵を倒してボスを撃破せよ！</p>
+      <p>目標: 海に散らばる宝箱をすべて回収せよ！</p>
+      <p>※島(🏝️)にはぶつかるので注意</p>
       <p>PC: WASDで移動、Spaceで発射</p>
-      <p>スマホ: 画面のボタンで操作</p>
-      <button id="startBtn">スタート</button>
+      <button id="startBtn">大航海へ出発</button>
     </div>
 
-    <div id="gameOverScreen">
-      <h1>ゲームオーバー</h1>
-      <p>宝箱: <span id="finalTreasures">0</span></p>
-      <p>所持金: <span id="finalMoney">0</span></p>
-      <button id="restartBtn">再挑戦</button>
+    <div id="gameOverScreen" class="screen-overlay">
+      <h1 style="color: #ff4444;">船が沈没した...</h1>
+      <p>回収した宝箱: <span id="finalTreasures">0</span> / 15</p>
+      <button id="restartBtn">リトライ</button>
+    </div>
+
+    <div id="gameClearScreen" class="screen-overlay">
+      <h1 style="color: #44ff44;">伝説の海賊王！</h1>
+      <p>すべての宝を回収し、海を制覇した！</p>
+      <p>最終HP: <span id="clearHp">0</span></p>
+      <button id="clearRestartBtn">もう一度遊ぶ</button>
     </div>
 
     <div id="ui">
       <div>HP: <span id="hp">100</span></div>
-      <div>所持金: <span id="money">0</span></div>
-      <div>宝箱: <span id="treasures">0</span></div>
+      <div>所持金: <span id="money">0</span> 💰</div>
+      <div>宝箱: <span id="treasures">0</span> / 15</div>
     </div>
 
     <div class="game-field" id="gameField"></div>
 
     <div id="controls">
-      <div class="control-btn" id="upBtn">↑</div>
       <div class="control-btn" id="leftBtn">←</div>
+      <div class="control-btn" id="upBtn">↑</div>
       <div class="control-btn" id="downBtn">↓</div>
       <div class="control-btn" id="rightBtn">→</div>
       <div class="control-btn" id="fireBtn">💣</div>
     </div>
 
     <div id="upgradePanel">
-      <button class="upgrade-btn" id="upgradeHp">HPアップ (+10)</button>
-      <button class="upgrade-btn" id="upgradeSpeed">スピードアップ</button>
+      <button id="upgradeHp">HP回復・強化 (50💰)</button>
+      <button id="upgradeSpeed">船速アップ (100💰)</button>
     </div>
   </div>
 
   <script>
-    // ゲーム状態管理
     const gameState = {
-      player: {
-        x: 400,
-        y: 300,
-        angle: 0,
-        speed: 3,
-        hp: 100,
-        money: 0,
-        treasures: 0,
-        isMoving: false
-      },
-      enemies: [],
-      bullets: [],
-      treasures: [],
-      islands: [],
-      isGameRunning: false,
-      keys: {},
-      touchControls: {
-        up: false,
-        down: false,
-        left: false,
-        right: false,
-        fire: false
-      },
-      lastTime: 0,
-      upgradeCosts: {
-        hp: 50,
-        speed: 100
-      }
+      player: { x: 400, y: 300, vx: 0, vy: 0, angle: 0, speed: 3, hp: 100, money: 0, treasures: 0, maxTreasures: 15 },
+      enemies: [], bullets: [], treasures: [], islands: [],
+      isGameRunning: false, keys: {}, lastTime: 0,
+      touchControls: { up: false, down: false, left: false, right: false, fire: false }
     };
 
-    // DOM要素
-    const gameContainer = document.getElementById('gameContainer');
-    const gameField = document.getElementById('gameField');
-    const startScreen = document.getElementById('startScreen');
-    const gameOverScreen = document.getElementById('gameOverScreen');
-    const startBtn = document.getElementById('startBtn');
-    const restartBtn = document.getElementById('restartBtn');
-    const hpDisplay = document.getElementById('hp');
-    const moneyDisplay = document.getElementById('money');
-    const treasuresDisplay = document.getElementById('treasures');
-    const finalTreasures = document.getElementById('finalTreasures');
-    const finalMoney = document.getElementById('finalMoney');
-    const upgradePanel = document.getElementById('upgradePanel');
-    const upgradeHpBtn = document.getElementById('upgradeHp');
-    const upgradeSpeedBtn = document.getElementById('upgradeSpeed');
+    const DOM = {
+      container: document.getElementById('gameContainer'), field: document.getElementById('gameField'),
+      start: document.getElementById('startScreen'), gameOver: document.getElementById('gameOverScreen'), gameClear: document.getElementById('gameClearScreen'),
+      hp: document.getElementById('hp'), money: document.getElementById('money'), treasures: document.getElementById('treasures'),
+      finalT: document.getElementById('finalTreasures'), clearHp: document.getElementById('clearHp'),
+      upgPanel: document.getElementById('upgradePanel')
+    };
 
-    // ゲーム初期化
     function initGame() {
-      gameState.player = {
-        x: 400,
-        y: 300,
-        angle: 0,
-        speed: 3,
-        hp: 100,
-        money: 0,
-        treasures: 0,
-        isMoving: false
-      };
-      gameState.enemies = [];
-      gameState.bullets = [];
-      gameState.treasures = [];
-      gameState.islands = [];
+      gameState.player = { x: 400, y: 300, vx: 1, vy: 0, angle: 0, speed: 3, hp: 100, money: 0, treasures: 0, maxTreasures: 15 };
+      gameState.enemies = []; gameState.bullets = []; gameState.treasures = []; gameState.islands = [];
+      DOM.field.innerHTML = ''; updateUI(); DOM.upgPanel.style.display = 'none';
 
-      gameField.innerHTML = '';
-      updateUI();
-
-      // 島の配置
-      for (let i = 0; i < 8; i++) {
-        const island = document.createElement('div');
-        island.className = 'island';
-        island.textContent = '🏝️';
-        island.style.left = `${Math.random() * 700 + 50}px`;
-        island.style.top = `${Math.random() * 500 + 50}px`;
-        gameField.appendChild(island);
-        gameState.islands.push({
-          x: parseInt(island.style.left),
-          y: parseInt(island.style.top),
-          element: island
-        });
+      // 島の配置 (当たり判定用に少し調整)
+      for (let i = 0; i < 6; i++) {
+        createEntity('island', '🏝️', Math.random() * 650 + 50, Math.random() * 450 + 50, gameState.islands);
       }
-
-      // 宝の配置
-      for (let i = 0; i < 15; i++) {
-        const treasure = document.createElement('div');
-        treasure.className = 'treasure';
-        treasure.textContent = '💰';
-        treasure.style.left = `${Math.random() * 700 + 50}px`;
-        treasure.style.top = `${Math.random() * 500 + 50}px`;
-        gameField.appendChild(treasure);
-        gameState.treasures.push({
-          x: parseInt(treasure.style.left),
-          y: parseInt(treasure.style.top),
-          element: treasure
-        });
+      for (let i = 0; i < gameState.player.maxTreasures; i++) {
+        createEntity('treasure', '💰', Math.random() * 700 + 30, Math.random() * 500 + 30, gameState.treasures);
       }
-
-      // 敵の配置
       for (let i = 0; i < 5; i++) {
-        const enemy = document.createElement('div');
-        enemy.className = 'enemy';
-        enemy.textContent = '🏴‍☠️';
-        enemy.style.left = `${Math.random() * 700 + 50}px`;
-        enemy.style.top = `${Math.random() * 500 + 50}px`;
-        gameField.appendChild(enemy);
-        gameState.enemies.push({
-          x: parseInt(enemy.style.left),
-          y: parseInt(enemy.style.top),
-          element: enemy,
-          hp: 50,
-          speed: 1 + Math.random() * 1
-        });
+        let e = createEntity('enemy', '🏴‍☠️', Math.random() * 700 + 50, Math.random() * 500 + 50, gameState.enemies);
+        e.hp = 50; e.speed = 1 + Math.random();
       }
 
-      // プレイヤーの船
-      const playerShip = document.createElement('div');
-      playerShip.id = 'playerShip';
-      playerShip.textContent = '🏴‍☠️';
-      gameField.appendChild(playerShip);
-      gameState.player.element = playerShip;
+      const ship = document.createElement('div');
+      ship.id = 'playerShip'; ship.textContent = '🚢';
+      DOM.field.appendChild(ship);
+      gameState.player.element = ship;
     }
 
-    // UI更新
+    function createEntity(className, icon, x, y, array) {
+      const el = document.createElement('div');
+      el.className = className; el.textContent = icon;
+      el.style.left = `${x}px`; el.style.top = `${y}px`;
+      DOM.field.appendChild(el);
+      const obj = { x, y, element: el };
+      array.push(obj);
+      return obj;
+    }
+
     function updateUI() {
-      hpDisplay.textContent = gameState.player.hp;
-      moneyDisplay.textContent = gameState.player.money;
-      treasuresDisplay.textContent = gameState.player.treasures;
+      DOM.hp.textContent = gameState.player.hp; DOM.money.textContent = gameState.player.money;
+      DOM.treasures.textContent = gameState.player.treasures;
     }
 
-    // ゲーム開始
-    startBtn.addEventListener('click', () => {
-      startScreen.style.display = 'none';
-      gameState.isGameRunning = true;
-      initGame();
-      requestAnimationFrame(gameLoop);
+    document.getElementById('startBtn').addEventListener('click', startGame);
+    document.getElementById('restartBtn').addEventListener('click', startGame);
+    document.getElementById('clearRestartBtn').addEventListener('click', startGame);
+
+    function startGame() {
+      DOM.start.style.display = 'none'; DOM.gameOver.style.display = 'none'; DOM.gameClear.style.display = 'none';
+      gameState.isGameRunning = true; initGame(); requestAnimationFrame(gameLoop);
+    }
+
+    ['upBtn', 'downBtn', 'leftBtn', 'rightBtn', 'fireBtn'].forEach(id => {
+      const btn = document.getElementById(id);
+      const key = id.replace('Btn', '');
+      btn.addEventListener('touchstart', (e) => { e.preventDefault(); gameState.touchControls[key] = true; });
+      btn.addEventListener('touchend', (e) => { e.preventDefault(); gameState.touchControls[key] = false; });
+      btn.addEventListener('mousedown', () => gameState.touchControls[key] = true);
+      btn.addEventListener('mouseup', () => gameState.touchControls[key] = false);
     });
 
-    // 再挑戦
-    restartBtn.addEventListener('click', () => {
-      gameOverScreen.style.display = 'none';
-      gameState.isGameRunning = true;
-      initGame();
-      requestAnimationFrame(gameLoop);
-    });
+    window.addEventListener('keydown', e => { gameState.keys[e.key.toLowerCase()] = true; });
+    window.addEventListener('keyup', e => { gameState.keys[e.key.toLowerCase()] = false; });
 
-    // キーボード操作
-    window.addEventListener('keydown', (e) => {
-      gameState.keys[e.key] = true;
-    });
-
-    window.addEventListener('keyup', (e) => {
-      gameState.keys[e.key] = false;
-    });
-
-    // タッチ操作
-    document.getElementById('upBtn').addEventListener('touchstart', () => gameState.touchControls.up = true);
-    document.getElementById('upBtn').addEventListener('touchend', () => gameState.touchControls.up = false);
-    document.getElementById('downBtn').addEventListener('touchstart', () => gameState.touchControls.down = true);
-    document.getElementById('downBtn').addEventListener('touchend', () => gameState.touchControls.down = false);
-    document.getElementById('leftBtn').addEventListener('touchstart', () => gameState.touchControls.left = true);
-    document.getElementById('leftBtn').addEventListener('touchend', () => gameState.touchControls.left = false);
-    document.getElementById('rightBtn').addEventListener('touchstart', () => gameState.touchControls.right = true);
-    document.getElementById('rightBtn').addEventListener('touchend', () => gameState.touchControls.right = false);
-    document.getElementById('fireBtn').addEventListener('touchstart', () => gameState.touchControls.fire = true);
-    document.getElementById('fireBtn').addEventListener('touchend', () => gameState.touchControls.fire = false);
-
-    // マウス操作
-    document.getElementById('upBtn').addEventListener('mousedown', () => gameState.touchControls.up = true);
-    document.getElementById('upBtn').addEventListener('mouseup', () => gameState.touchControls.up = false);
-    document.getElementById('downBtn').addEventListener('mousedown', () => gameState.touchControls.down = true);
-    document.getElementById('downBtn').addEventListener('mouseup', () => gameState.touchControls.down = false);
-    document.getElementById('leftBtn').addEventListener('mousedown', () => gameState.touchControls.left = true);
-    document.getElementById('leftBtn').addEventListener('mouseup', () => gameState.touchControls.left = false);
-    document.getElementById('rightBtn').addEventListener('mousedown', () => gameState.touchControls.right = true);
-    document.getElementById('rightBtn').addEventListener('mouseup', () => gameState.touchControls.right = false);
-    document.getElementById('fireBtn').addEventListener('mousedown', () => gameState.touchControls.fire = true);
-    document.getElementById('fireBtn').addEventListener('mouseup', () => gameState.touchControls.fire = false);
-
-    // 強化ボタン
-    upgradeHpBtn.addEventListener('click', () => {
-      if (gameState.player.money >= gameState.upgradeCosts.hp) {
-        gameState.player.money -= gameState.upgradeCosts.hp;
-        gameState.player.hp += 10;
-        updateUI();
-        upgradePanel.style.display = 'none';
-      }
-    });
-
-    upgradeSpeedBtn.addEventListener('click', () => {
-      if (gameState.player.money >= gameState.upgradeCosts.speed) {
-        gameState.player.money -= gameState.upgradeCosts.speed;
-        gameState.player.speed += 1;
-        updateUI();
-        upgradePanel.style.display = 'none';
-      }
-    });
-
-    // ゲームループ
+    let lastFireTime = 0;
     function gameLoop(timestamp) {
       if (!gameState.isGameRunning) return;
-
-      const deltaTime = timestamp - gameState.lastTime;
-      gameState.lastTime = timestamp;
-
-      if (gameState.keys[' '] || gameState.touchControls.fire) {
-        fireBullet();
+      
+      if ((gameState.keys[' '] || gameState.touchControls.fire) && timestamp - lastFireTime > 300) {
+        fireBullet(); lastFireTime = timestamp;
       }
 
-      movePlayer();
-      moveEnemies();
-      updateBullets();
-      checkCollisions();
-      updateUI();
-
+      movePlayer(); moveEnemies(); updateBullets(); checkCollisions(); updateUI();
       requestAnimationFrame(gameLoop);
     }
 
-    // プレイヤー移動
     function movePlayer() {
-      const player = gameState.player;
+      const p = gameState.player;
+      let nextX = p.x; let nextY = p.y;
+      let moved = false;
 
-      if (gameState.keys['w'] || gameState.touchControls.up) {
-        player.y -= player.speed;
-        player.isMoving = true;
-      }
-      if (gameState.keys['s'] || gameState.touchControls.down) {
-        player.y += player.speed;
-        player.isMoving = true;
-      }
-      if (gameState.keys['a'] || gameState.touchControls.left) {
-        player.x -= player.speed;
-        player.isMoving = true;
-      }
-      if (gameState.keys['d'] || gameState.touchControls.right) {
-        player.x += player.speed;
-        player.isMoving = true;
+      if (gameState.keys['w'] || gameState.touchControls.up) { nextY -= p.speed; p.vy = -1; p.vx = 0; moved = true; p.angle = -90; }
+      if (gameState.keys['s'] || gameState.touchControls.down) { nextY += p.speed; p.vy = 1; p.vx = 0; moved = true; p.angle = 90; }
+      if (gameState.keys['a'] || gameState.touchControls.left) { nextX -= p.speed; p.vx = -1; p.vy = 0; moved = true; p.angle = 180; }
+      if (gameState.keys['d'] || gameState.touchControls.right) { nextX += p.speed; p.vx = 1; p.vy = 0; moved = true; p.angle = 0; }
+
+      // 島との当たり判定（移動先で判定）
+      let hitIsland = false;
+      for (let island of gameState.islands) {
+        if (Math.hypot(nextX - island.x, nextY - island.y) < 50) hitIsland = true;
       }
 
-      // 境界チェック
-      player.x = Math.max(20, Math.min(780, player.x));
-      player.y = Math.max(20, Math.min(580, player.y));
+      if (!hitIsland) {
+        p.x = Math.max(10, Math.min(750, nextX));
+        p.y = Math.max(10, Math.min(550, nextY));
+      }
 
-      // 船の位置更新
-      player.element.style.left = `${player.x}px`;
-      player.element.style.top = `${player.y}px`;
+      p.element.style.left = `${p.x}px`;
+      p.element.style.top = `${p.y}px`;
+      if(moved) p.element.style.transform = `rotate(${p.angle}deg)`;
     }
 
-    // 敵の移動
     function moveEnemies() {
-      gameState.enemies.forEach(enemy => {
-        // 簡単なAI: プレイヤーの方向に向かって移動
-        const dx = gameState.player.x - enemy.x;
-        const dy = gameState.player.y - enemy.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance > 0) {
-          enemy.x += (dx / distance) * enemy.speed;
-          enemy.y += (dy / distance) * enemy.speed;
+      gameState.enemies.forEach(e => {
+        const angle = Math.atan2(gameState.player.y - e.y, gameState.player.x - e.x);
+        let nextX = e.x + Math.cos(angle) * e.speed;
+        let nextY = e.y + Math.sin(angle) * e.speed;
+        
+        let hitIsland = false;
+        for (let island of gameState.islands) {
+          if (Math.hypot(nextX - island.x, nextY - island.y) < 40) hitIsland = true;
         }
 
-        enemy.element.style.left = `${enemy.x}px`;
-        enemy.element.style.top = `${enemy.y}px`;
+        if(!hitIsland) { e.x = nextX; e.y = nextY; }
+        e.element.style.left = `${e.x}px`; e.element.style.top = `${e.y}px`;
       });
     }
 
-    // 弾の発射
     function fireBullet() {
-      const player = gameState.player;
-      const bullet = document.createElement('div');
-      bullet.className = 'bullet';
-      bullet.textContent = '🔥';
-      bullet.style.left = `${player.x}px`;
-      bullet.style.top = `${player.y}px`;
-      gameField.appendChild(bullet);
-
-      gameState.bullets.push({
-        x: player.x,
-        y: player.y,
-        element: bullet,
-        speed: 8
-      });
+      const p = gameState.player;
+      const b = createEntity('bullet', '🔥', p.x + 15, p.y + 15, gameState.bullets);
+      // 向いている方向に飛ぶようにベクトルを設定
+      b.vx = p.vx === 0 && p.vy === 0 ? 1 : p.vx; 
+      b.vy = p.vy;
     }
 
-    // 弾の移動
     function updateBullets() {
       for (let i = gameState.bullets.length - 1; i >= 0; i--) {
-        const bullet = gameState.bullets[i];
-        bullet.x += bullet.speed;
-
-        if (bullet.x > 800) {
-          bullet.element.remove();
-          gameState.bullets.splice(i, 1);
+        const b = gameState.bullets[i];
+        b.x += b.vx * 8; b.y += b.vy * 8;
+        if (b.x < -20 || b.x > 820 || b.y < -20 || b.y > 620) {
+          b.element.remove(); gameState.bullets.splice(i, 1);
         } else {
-          bullet.element.style.left = `${bullet.x}px`;
+          b.element.style.left = `${b.x}px`; b.element.style.top = `${b.y}px`;
         }
       }
     }
 
-    // 衝突判定
     function checkCollisions() {
-      // プレイヤーと宝の衝突
+      const p = gameState.player;
+      
+      // 宝箱回収
       for (let i = gameState.treasures.length - 1; i >= 0; i--) {
-        const treasure = gameState.treasures[i];
-        const dx = gameState.player.x - treasure.x;
-        const dy = gameState.player.y - treasure.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance < 30) {
-          treasure.element.remove();
-          gameState.treasures.splice(i, 1);
-          gameState.player.money += 10;
-          gameState.player.treasures++;
+        if (Math.hypot(p.x - gameState.treasures[i].x, p.y - gameState.treasures[i].y) < 40) {
+          gameState.treasures[i].element.remove(); gameState.treasures.splice(i, 1);
+          p.money += 20; p.treasures++;
         }
       }
 
-      // プレイヤーと敵の衝突
-      gameState.enemies.forEach((enemy, index) => {
-        const dx = gameState.player.x - enemy.x;
-        const dy = gameState.player.y - enemy.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+      // クリア判定
+      if (p.treasures >= p.maxTreasures) {
+        gameState.isGameRunning = false;
+        DOM.clearHp.textContent = p.hp;
+        DOM.gameClear.style.display = 'flex';
+        return;
+      }
 
-        if (distance < 40) {
-          gameState.player.hp -= 5;
-          if (gameState.player.hp <= 0) {
-            gameOver();
+      // 被弾
+      gameState.enemies.forEach(e => {
+        if (Math.hypot(p.x - e.x, p.y - e.y) < 40) {
+          p.hp -= 1; // 連続で当たるのでダメージ減らして継続ダメージ化
+          if (p.hp <= 0) {
+            gameState.isGameRunning = false;
+            DOM.finalT.textContent = p.treasures;
+            DOM.gameOver.style.display = 'flex';
           }
         }
       });
 
-      // 弾と敵の衝突
+      // 弾の命中
       for (let i = gameState.bullets.length - 1; i >= 0; i--) {
-        const bullet = gameState.bullets[i];
         for (let j = gameState.enemies.length - 1; j >= 0; j--) {
-          const enemy = gameState.enemies[j];
-          const dx = bullet.x - enemy.x;
-          const dy = bullet.y - enemy.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-
-          if (distance < 30) {
-            enemy.element.remove();
-            gameState.enemies.splice(j, 1);
-            bullet.element.remove();
-            gameState.bullets.splice(i, 1);
-            gameState.player.money += 20;
+          const b = gameState.bullets[i]; const e = gameState.enemies[j];
+          if (b && e && Math.hypot(b.x - e.x, b.y - e.y) < 35) {
+            e.hp -= 25;
+            b.element.remove(); gameState.bullets.splice(i, 1);
+            if (e.hp <= 0) {
+              e.element.remove(); gameState.enemies.splice(j, 1);
+              p.money += 30;
+              // 敵を再配置
+              setTimeout(() => {
+                if(gameState.isGameRunning) {
+                  let ne = createEntity('enemy', '🏴‍☠️', Math.random() * 700, Math.random() * 500, gameState.enemies);
+                  ne.hp = 50; ne.speed = 1.5;
+                }
+              }, 2000);
+            }
             break;
           }
         }
       }
 
-      // 一定の所持金で強化パネル表示
-      if (gameState.player.money >= 50 && gameState.player.money < 100) {
-        upgradePanel.style.display = 'flex';
-      } else if (gameState.player.money >= 100) {
-        upgradePanel.style.display = 'flex';
-      }
+      // アップグレードUI表示
+      DOM.upgPanel.style.display = (p.money >= 50) ? 'flex' : 'none';
     }
 
-    // ゲームオーバー
-    function gameOver() {
-      gameState.isGameRunning = false;
-      finalTreasures.textContent = gameState.player.treasures;
-      finalMoney.textContent = gameState.player.money;
-      gameOverScreen.style.display = 'block';
-    }
-
-    // 初期化
-    initGame();
+    // アップグレード処理
+    document.getElementById('upgradeHp').addEventListener('click', () => {
+      if (gameState.player.money >= 50) { gameState.player.money -= 50; gameState.player.hp += 30; updateUI(); }
+    });
+    document.getElementById('upgradeSpeed').addEventListener('click', () => {
+      if (gameState.player.money >= 100) { gameState.player.money -= 100; gameState.player.speed += 1; updateUI(); }
+    });
   </script>
 </body>
 </html>
