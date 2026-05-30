@@ -3,518 +3,1598 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Tactical Heroes Lite</title>
+<title>星紋のブレイブ隊</title>
 <style>
-  :root { --cell-size: 12vw; --max-cell: 60px; }
-  * { box-sizing: border-box; user-select: none; touch-action: manipulation; }
-  body { margin: 0; background: #1a1a24; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
-  
-  #header { width: 100%; max-width: 500px; padding: 10px; background: #2a2a35; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #daa520; }
-  #turn-display { font-size: 1.2rem; font-weight: bold; color: #4da8da; }
-  
-  #game-board { 
-    display: grid; grid-template-columns: repeat(8, minmax(var(--cell-size), var(--max-cell))); 
-    grid-template-rows: repeat(8, minmax(var(--cell-size), var(--max-cell))); 
-    gap: 1px; background: #000; border: 3px solid #333; margin-top: 15px; position: relative;
+  :root {
+    --ink: #231f20;
+    --paper: #f2e4c8;
+    --paper-deep: #dcc091;
+    --gold: #d8a93d;
+    --gold-light: #f5d980;
+    --red: #b83b35;
+    --blue: #286aa6;
+    --green: #2f7b4c;
+    --iron: #3d434a;
+    --shadow: rgba(19, 16, 12, 0.32);
+    --cell-gap: 3px;
   }
-  
-  .cell { display: flex; align-items: center; justify-content: center; position: relative; font-size: 1.5rem; }
-  .plain { background: #7cb342; }
-  .forest { background: #33691e; }
-  .mountain { background: #5d4037; }
-  .castle { background: #607d8b; }
-  
-  /* Overlays for movement and attack */
-  .move-area::after { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:rgba(0,150,255,0.4); pointer-events:none; }
-  .atk-area::after { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:rgba(255,0,0,0.4); pointer-events:none; }
 
-  /* Units */
-  .unit { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; z-index: 10; transition: all 0.2s; cursor: pointer; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5)); }
-  .player { background: rgba(50, 100, 255, 0.3); border-radius: 50%; }
-  .enemy { background: rgba(255, 50, 50, 0.3); border-radius: 50%; }
-  .acted { filter: grayscale(100%) brightness(0.6); }
+  * {
+    box-sizing: border-box;
+    user-select: none;
+    touch-action: manipulation;
+  }
 
-  /* HP Bars */
-  .hp-bar { position: absolute; bottom: 2px; left: 10%; width: 80%; height: 4px; background: #333; border-radius: 2px; }
-  .hp-fill { height: 100%; background: #00e676; border-radius: 2px; transition: width 0.2s; }
-  .hp-fill.low { background: #ff1744; }
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+  }
 
-  #footer-info { width: 100%; max-width: 500px; padding: 15px; margin-top: auto; background: #2a2a35; min-height: 120px; border-top: 2px solid #daa520; }
-  .info-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; color: #daa520; }
-  .info-stats { display: flex; gap: 15px; font-size: 0.9rem; color: #ccc; }
-  .info-desc { margin-top: 5px; font-size: 0.85rem; color: #aaa; }
+  body {
+    color: var(--ink);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+    background:
+      linear-gradient(135deg, rgba(216, 169, 61, 0.18), rgba(184, 59, 53, 0.08)),
+      repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0 8px, rgba(0,0,0,0.03) 8px 16px),
+      #242424;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
 
-  /* Messages */
-  #message-banner { position: absolute; top: 30%; left: 0; width: 100%; background: rgba(0,0,0,0.8); color: #fff; text-align: center; padding: 20px; font-size: 2rem; font-weight: bold; z-index: 100; display: none; text-shadow: 2px 2px 0 #000; border-top: 2px solid #daa520; border-bottom: 2px solid #daa520; }
+  button {
+    font: inherit;
+  }
 
-  .btn { background: #daa520; color: #000; border: none; padding: 10px 20px; font-size: 1rem; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 10px; }
-  .btn:active { transform: scale(0.95); }
+  .app {
+    width: min(1180px, 100%);
+    min-height: 100dvh;
+    margin: 0 auto;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .topbar,
+  .command-bar,
+  .panel {
+    border: 2px solid rgba(35, 31, 32, 0.8);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px var(--shadow);
+  }
+
+  .topbar {
+    min-height: 72px;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.36), rgba(255,255,255,0.06)),
+      var(--paper);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .crest {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    color: #fff;
+    background:
+      conic-gradient(from 45deg, var(--red), var(--gold), var(--blue), var(--red));
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    font-size: 1.55rem;
+    box-shadow: inset 0 0 0 3px rgba(255,255,255,0.28);
+  }
+
+  .brand-title {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .brand-title strong {
+    font-size: 1.18rem;
+    line-height: 1.1;
+  }
+
+  .brand-title span {
+    color: #66543b;
+    font-size: 0.82rem;
+  }
+
+  .phase-pill {
+    min-width: 132px;
+    padding: 10px 12px;
+    text-align: center;
+    color: #fff;
+    background: linear-gradient(180deg, #3e8bcc, var(--blue));
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    font-weight: 800;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+
+  .phase-pill.enemy {
+    background: linear-gradient(180deg, #d95d54, var(--red));
+  }
+
+  .icon-btn,
+  .cmd-btn {
+    min-height: 42px;
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    color: var(--ink);
+    background: linear-gradient(180deg, #fff4d9, var(--gold));
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(35,31,32,0.45);
+  }
+
+  .icon-btn {
+    width: 48px;
+    font-size: 1.25rem;
+  }
+
+  .icon-btn:active,
+  .cmd-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(35,31,32,0.45);
+  }
+
+  .cmd-btn:disabled {
+    cursor: default;
+    color: #756b61;
+    background: #b8aa92;
+    box-shadow: none;
+    opacity: 0.72;
+  }
+
+  .battlefield {
+    display: grid;
+    grid-template-columns: minmax(220px, 260px) minmax(320px, 1fr) minmax(220px, 280px);
+    gap: 10px;
+    align-items: stretch;
+    min-height: 0;
+  }
+
+  .panel {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0.04)),
+      var(--paper);
+    padding: 12px;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .panel h2 {
+    margin: 0 0 8px;
+    font-size: 1rem;
+    line-height: 1.2;
+    color: #3d2f1d;
+  }
+
+  .mission {
+    display: grid;
+    gap: 8px;
+  }
+
+  .mission-line {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px;
+    align-items: center;
+    padding: 8px;
+    border: 1px solid rgba(35,31,32,0.32);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.36);
+  }
+
+  .mission-line b {
+    font-size: 0.9rem;
+  }
+
+  .mission-line span {
+    color: #5c4e3d;
+    font-size: 0.84rem;
+  }
+
+  .unit-card {
+    display: grid;
+    grid-template-columns: 58px 1fr;
+    gap: 10px;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 2px solid rgba(35,31,32,0.18);
+  }
+
+  .portrait {
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    background:
+      linear-gradient(160deg, rgba(255,255,255,0.52), rgba(255,255,255,0.08)),
+      var(--gold);
+    font-size: 1.75rem;
+  }
+
+  .unit-meta {
+    min-width: 0;
+  }
+
+  .unit-meta strong {
+    display: block;
+    font-size: 1rem;
+    line-height: 1.1;
+  }
+
+  .unit-meta small {
+    display: block;
+    margin-top: 2px;
+    color: #66543b;
+  }
+
+  .hp-shell {
+    width: 100%;
+    height: 9px;
+    margin-top: 8px;
+    border: 1px solid var(--ink);
+    border-radius: 999px;
+    background: #5b4634;
+    overflow: hidden;
+  }
+
+  .hp-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #37c36b, #b9ec72);
+    transition: width 180ms ease;
+  }
+
+  .hp-fill.low {
+    background: linear-gradient(90deg, #c6332f, #ff9a4d);
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .stat {
+    min-height: 40px;
+    display: grid;
+    align-content: center;
+    padding: 6px 8px;
+    border: 1px solid rgba(35,31,32,0.24);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.35);
+  }
+
+  .stat span {
+    font-size: 0.74rem;
+    color: #6c5c46;
+  }
+
+  .stat b {
+    font-size: 0.96rem;
+  }
+
+  .triangle {
+    margin-top: 12px;
+    padding: 8px;
+    border: 1px solid rgba(35,31,32,0.28);
+    border-radius: 8px;
+    background: rgba(61,67,74,0.08);
+    font-size: 0.86rem;
+    line-height: 1.45;
+  }
+
+  .board-wrap {
+    display: grid;
+    place-items: center;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .board-frame {
+    width: min(72dvh, 100%, 650px);
+    min-width: 310px;
+    aspect-ratio: 1;
+    padding: 8px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.18), rgba(0,0,0,0.2)),
+      #33271f;
+    border: 3px solid #171313;
+    border-radius: 8px;
+    box-shadow: 0 14px 30px rgba(0,0,0,0.38);
+  }
+
+  #gameBoard {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: var(--cell-gap);
+    background: #171313;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .cell {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    place-items: center;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    overflow: hidden;
+  }
+
+  .cell::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(135deg, rgba(255,255,255,0.16), transparent 45%),
+      linear-gradient(315deg, rgba(0,0,0,0.08), transparent 42%);
+    pointer-events: none;
+  }
+
+  .cell.grass {
+    background: #70a64d;
+  }
+
+  .cell.forest {
+    background: #2f7445;
+  }
+
+  .cell.fort {
+    background: #92734c;
+  }
+
+  .cell.road {
+    background: #bc965e;
+  }
+
+  .cell.mountain {
+    background: #6a625a;
+  }
+
+  .cell.water {
+    background: #4b8fa5;
+  }
+
+  .terrain-mark {
+    position: absolute;
+    inset: auto 4px 3px auto;
+    color: rgba(255,255,255,0.78);
+    font-size: 0.9rem;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.42);
+    pointer-events: none;
+  }
+
+  .cell.move::after,
+  .cell.attack::after,
+  .cell.danger::after,
+  .cell.selected::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .cell.move::after {
+    background: rgba(40, 106, 166, 0.36);
+    box-shadow: inset 0 0 0 3px rgba(107, 196, 255, 0.75);
+  }
+
+  .cell.attack::after {
+    background: rgba(184, 59, 53, 0.32);
+    box-shadow: inset 0 0 0 3px rgba(255, 181, 85, 0.82);
+  }
+
+  .cell.danger::after {
+    background:
+      linear-gradient(45deg, rgba(184,59,53,0.2) 25%, transparent 25% 50%, rgba(184,59,53,0.2) 50% 75%, transparent 75%);
+    background-size: 14px 14px;
+  }
+
+  .cell.selected::after {
+    box-shadow: inset 0 0 0 4px var(--gold-light);
+  }
+
+  .unit-token {
+    position: relative;
+    z-index: 2;
+    width: 74%;
+    height: 74%;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    color: #fff;
+    font-size: 1.45rem;
+    text-shadow: 0 2px 0 rgba(0,0,0,0.52);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.38);
+    transform: translateZ(0);
+    transition: transform 160ms ease, filter 160ms ease;
+  }
+
+  .unit-token.player {
+    background:
+      radial-gradient(circle at 35% 25%, rgba(255,255,255,0.38), transparent 30%),
+      linear-gradient(180deg, #4aa3e0, var(--blue));
+  }
+
+  .unit-token.enemy {
+    background:
+      radial-gradient(circle at 35% 25%, rgba(255,255,255,0.34), transparent 30%),
+      linear-gradient(180deg, #e76b5f, var(--red));
+  }
+
+  .unit-token.acted {
+    filter: grayscale(0.8) brightness(0.62);
+  }
+
+  .unit-token.hit {
+    animation: hit-wobble 260ms ease;
+  }
+
+  .unit-token.flash {
+    animation: flash-strike 360ms ease;
+  }
+
+  .mini-hp {
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    bottom: -8px;
+    height: 6px;
+    border: 1px solid rgba(35,31,32,0.82);
+    border-radius: 99px;
+    background: #3b2c22;
+    overflow: hidden;
+  }
+
+  .mini-hp i {
+    display: block;
+    height: 100%;
+    background: #62d66f;
+  }
+
+  .damage-pop {
+    position: absolute;
+    z-index: 5;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 2px 7px;
+    color: #fff;
+    background: #2b1c15;
+    border: 2px solid var(--gold-light);
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 900;
+    animation: float-pop 820ms ease forwards;
+    pointer-events: none;
+  }
+
+  .roster {
+    display: grid;
+    gap: 8px;
+    max-height: 260px;
+    overflow: auto;
+    padding-right: 2px;
+  }
+
+  .roster button {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 34px 1fr auto;
+    gap: 8px;
+    align-items: center;
+    min-height: 48px;
+    padding: 7px;
+    border: 1px solid rgba(35,31,32,0.28);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.38);
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .roster button.is-selected {
+    outline: 3px solid rgba(216,169,61,0.72);
+  }
+
+  .roster-icon {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: #fff;
+    background: var(--blue);
+    border: 2px solid var(--ink);
+  }
+
+  .roster button.enemy .roster-icon {
+    background: var(--red);
+  }
+
+  .roster-name {
+    display: grid;
+    min-width: 0;
+  }
+
+  .roster-name b,
+  .roster-name span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .roster-name span {
+    color: #66543b;
+    font-size: 0.78rem;
+  }
+
+  .log {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 2px solid rgba(35,31,32,0.18);
+  }
+
+  .log-list {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-height: 210px;
+    overflow: auto;
+  }
+
+  .log-list li {
+    padding: 7px 8px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.34);
+    color: #4c3d2f;
+    font-size: 0.86rem;
+    line-height: 1.35;
+  }
+
+  .command-bar {
+    display: grid;
+    grid-template-columns: minmax(160px, 1fr) auto auto auto;
+    gap: 8px;
+    align-items: center;
+    padding: 10px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0.02)),
+      var(--paper-deep);
+  }
+
+  .hint {
+    min-width: 0;
+    color: #4a3928;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .cmd-btn {
+    min-width: 98px;
+    padding: 8px 12px;
+  }
+
+  .cmd-btn.secondary {
+    background: linear-gradient(180deg, #f7f1e1, #cdb58d);
+  }
+
+  .cmd-btn.blue {
+    color: #fff;
+    background: linear-gradient(180deg, #4aa3e0, var(--blue));
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    place-items: center;
+    z-index: 20;
+    padding: 18px;
+    background: rgba(20, 16, 13, 0.42);
+  }
+
+  .overlay.show {
+    display: grid;
+  }
+
+  .banner {
+    width: min(520px, 100%);
+    padding: 18px;
+    text-align: center;
+    color: #fff;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0)),
+      #30241b;
+    border: 3px solid var(--gold);
+    border-radius: 8px;
+    box-shadow: 0 18px 40px rgba(0,0,0,0.48);
+  }
+
+  .banner strong {
+    display: block;
+    font-size: 1.8rem;
+    line-height: 1.15;
+  }
+
+  .banner span {
+    display: block;
+    margin-top: 8px;
+    color: #f4dba6;
+    line-height: 1.45;
+  }
+
+  .banner-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  @keyframes hit-wobble {
+    0% { transform: translateX(0) scale(1); }
+    35% { transform: translateX(-6px) scale(0.96); }
+    70% { transform: translateX(5px) scale(1.04); }
+    100% { transform: translateX(0) scale(1); }
+  }
+
+  @keyframes flash-strike {
+    0% { transform: scale(1); filter: brightness(1); }
+    45% { transform: scale(1.16); filter: brightness(1.45); }
+    100% { transform: scale(1); filter: brightness(1); }
+  }
+
+  @keyframes float-pop {
+    0% { opacity: 0; transform: translate(-50%, 10px) scale(0.82); }
+    18% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -28px) scale(1.06); }
+  }
+
+  @media (max-width: 920px) {
+    .app {
+      min-height: 100dvh;
+    }
+
+    .battlefield {
+      grid-template-columns: 1fr;
+    }
+
+    .panel {
+      overflow: visible;
+    }
+
+    .mission,
+    .stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .unit-card,
+    .triangle,
+    .log {
+      display: none;
+    }
+
+    .board-frame {
+      width: min(94vw, 72dvh, 650px);
+    }
+
+    .roster {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      max-height: none;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .app {
+      gap: 8px;
+      padding: 7px;
+    }
+
+    .topbar {
+      grid-template-columns: 1fr auto;
+    }
+
+    .phase-pill {
+      grid-column: 1 / -1;
+      min-width: 0;
+      padding: 8px;
+      order: 3;
+    }
+
+    .brand-title strong {
+      font-size: 1rem;
+    }
+
+    .crest {
+      width: 42px;
+      height: 42px;
+      font-size: 1.25rem;
+    }
+
+    .mission {
+      grid-template-columns: 1fr;
+    }
+
+    .roster {
+      grid-template-columns: 1fr;
+    }
+
+    .command-bar {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .hint {
+      grid-column: 1 / -1;
+      font-size: 0.9rem;
+    }
+
+    .cmd-btn {
+      min-width: 0;
+      width: 100%;
+      padding-inline: 8px;
+    }
+
+    .unit-token {
+      font-size: 1.12rem;
+      border-width: 2px;
+    }
+
+    .terrain-mark {
+      font-size: 0.72rem;
+    }
+  }
 </style>
 </head>
 <body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="crest" aria-hidden="true">✦</div>
+      <div class="brand-title">
+        <strong>星紋のブレイブ隊</strong>
+        <span id="stageLabel">第1章 ルーン砦の奪還</span>
+      </div>
+    </div>
+    <div class="phase-pill" id="phasePill">味方フェイズ</div>
+    <button class="icon-btn" id="restartBtn" type="button" title="リスタート" aria-label="リスタート">↻</button>
+  </header>
 
-<div id="header">
-  <div id="stage-display">STAGE 1</div>
-  <div id="turn-display">PLAYER PHASE</div>
+  <main class="battlefield">
+    <section class="panel" aria-label="作戦情報">
+      <h2>作戦</h2>
+      <div class="mission">
+        <div class="mission-line">
+          <b>🎯</b>
+          <div><b>勝利条件</b><span>敵将を倒す</span></div>
+        </div>
+        <div class="mission-line">
+          <b>🛡️</b>
+          <div><b>敗北条件</b><span>リクが倒れる</span></div>
+        </div>
+        <div class="mission-line">
+          <b>⭐</b>
+          <div><b>スコア</b><span id="scoreLabel">0</span></div>
+        </div>
+        <div class="mission-line">
+          <b>🏆</b>
+          <div><b>最高</b><span id="bestLabel">0</span></div>
+        </div>
+      </div>
+
+      <div class="unit-card" id="selectedCard">
+        <div class="portrait" id="portrait">✦</div>
+        <div class="unit-meta">
+          <strong id="unitName">ユニット未選択</strong>
+          <small id="unitClass">盤面の味方を選択</small>
+          <div class="hp-shell" aria-hidden="true"><div class="hp-fill" id="hpFill"></div></div>
+        </div>
+      </div>
+      <div class="stats" id="statGrid"></div>
+      <div class="triangle">
+        剣は斧に強く、斧は槍に強く、槍は剣に強い。森と砦は受けるダメージを少し減らす。
+      </div>
+    </section>
+
+    <section class="board-wrap" aria-label="戦場">
+      <div class="board-frame">
+        <div id="gameBoard" aria-label="8x8の戦術マップ"></div>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="部隊一覧">
+      <h2>部隊</h2>
+      <div class="roster" id="roster"></div>
+      <div class="log">
+        <h2>戦況</h2>
+        <ul class="log-list" id="logList"></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="command-bar">
+    <div class="hint" id="hintText">味方を選んで、青いマスへ進軍しよう。</div>
+    <button class="cmd-btn secondary" id="waitBtn" type="button" disabled>🛡️ 待機</button>
+    <button class="cmd-btn secondary" id="dangerBtn" type="button">⚠️ 危険</button>
+    <button class="cmd-btn blue" id="endTurnBtn" type="button">🌙 終了</button>
+  </footer>
 </div>
 
-<div id="game-board"></div>
-
-<div id="footer-info">
-  <div class="info-title" id="ui-name">ユニットを選択してください</div>
-  <div class="info-stats" id="ui-stats">HP: -- / Atk: -- / Mov: --</div>
-  <div class="info-desc" id="ui-desc">味方をタップして移動・攻撃。空き地タップで待機。</div>
-</div>
-
-<div id="message-banner">
-  <div id="msg-text">PLAYER PHASE</div>
-  <button class="btn" id="msg-btn" style="display:none;" onclick="nextStage()">次のステージへ</button>
+<div class="overlay" id="overlay" aria-live="polite">
+  <div class="banner">
+    <strong id="overlayTitle">味方フェイズ</strong>
+    <span id="overlayText">勇気を集め、敵将を倒せ。</span>
+    <div class="banner-actions" id="overlayActions"></div>
+  </div>
 </div>
 
 <script>
-  // --- Game Data ---
+(() => {
   const BOARD_SIZE = 8;
-  const TERRAIN = {
-    0: { type: 'plain', icon: '', avoid: 0, heal: 0 },
-    1: { type: 'forest', icon: '🌲', avoid: 20, heal: 0 },
-    2: { type: 'mountain', icon: '⛰️', avoid: 30, heal: 0 },
-    3: { type: 'castle', icon: '🏰', avoid: 20, heal: 10 }
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const bestKey = "crestTacticsBestScore";
+
+  const terrain = {
+    G: { name: "草原", mark: "", css: "grass", cost: 1, def: 0, heal: 0, pass: true },
+    F: { name: "森", mark: "♣", css: "forest", cost: 2, def: 2, heal: 0, pass: true },
+    T: { name: "砦", mark: "◆", css: "fort", cost: 1, def: 2, heal: 5, pass: true },
+    R: { name: "道", mark: "·", css: "road", cost: 1, def: 0, heal: 0, pass: true },
+    M: { name: "山", mark: "▲", css: "mountain", cost: 99, def: 0, heal: 0, pass: false },
+    W: { name: "川", mark: "≈", css: "water", cost: 99, def: 0, heal: 0, pass: false }
   };
 
-  const CLASSES = {
-    sword:  { icon: '🗡️', name: '剣士', hp: 25, atk: 8, mov: 3, range: 1, type: 'sword' },
-    lance:  { icon: '🔱', name: '槍兵', hp: 30, atk: 7, mov: 2, range: 1, type: 'lance' },
-    axe:    { icon: '🪓', name: '斧兵', hp: 28, atk: 9, mov: 2, range: 1, type: 'axe' }, // 敵用追加
-    bow:    { icon: '🏹', name: '弓兵', hp: 20, atk: 9, mov: 2, range: 2, type: 'none' },
-    knight: { icon: '🐎', name: '騎士', hp: 35, atk: 6, mov: 4, range: 1, type: 'lance' },
-    mage:   { icon: '🧙', name: '魔法', hp: 18, atk:10, mov: 2, range: 1, type: 'none' },
-    boss:   { icon: '👹', name: 'ボス', hp: 45, atk:10, mov: 1, range: 1, type: 'axe' }
+  const maps = [
+    {
+      title: "第1章 ルーン砦の奪還",
+      tiles: [
+        ["M","M","F","G","G","R","F","T"],
+        ["M","G","G","R","F","R","G","G"],
+        ["F","G","F","R","G","G","G","F"],
+        ["G","R","R","R","W","W","G","G"],
+        ["G","G","F","R","G","R","R","G"],
+        ["T","G","G","G","F","G","G","M"],
+        ["G","R","F","G","G","G","M","M"],
+        ["G","G","G","F","G","M","M","M"]
+      ]
+    },
+    {
+      title: "第2章 きらめく橋の攻防",
+      tiles: [
+        ["F","G","G","R","R","G","F","T"],
+        ["G","F","G","R","W","R","G","G"],
+        ["G","G","G","R","W","R","F","G"],
+        ["M","M","G","R","R","R","G","G"],
+        ["G","F","G","G","F","G","G","M"],
+        ["T","G","R","R","R","G","F","M"],
+        ["G","G","R","W","R","G","G","G"],
+        ["G","F","G","G","R","G","M","M"]
+      ]
+    },
+    {
+      title: "第3章 こだまの森",
+      tiles: [
+        ["T","F","F","G","G","R","G","M"],
+        ["G","F","G","G","F","R","G","G"],
+        ["G","G","G","F","F","R","F","G"],
+        ["R","R","G","G","G","R","G","G"],
+        ["G","F","G","M","G","G","F","G"],
+        ["G","G","R","R","R","G","G","T"],
+        ["M","G","G","F","G","G","F","G"],
+        ["M","M","G","G","G","R","G","G"]
+      ]
+    }
+  ];
+
+  const classes = {
+    hero: { icon: "🛡️", label: "星剣ロード", hp: 34, atk: 10, mov: 3, min: 1, max: 1, type: "sword", trait: "近くの仲間を勇気づける" },
+    lancer: { icon: "🔱", label: "槍ナイト", hp: 36, atk: 9, mov: 4, min: 1, max: 1, type: "lance", trait: "足が速く、前線を支える" },
+    archer: { icon: "🏹", label: "風の弓兵", hp: 27, atk: 10, mov: 3, min: 2, max: 2, type: "bow", trait: "離れた敵を狙える" },
+    mage: { icon: "✨", label: "ルーン魔道士", hp: 25, atk: 11, mov: 3, min: 1, max: 2, type: "magic", trait: "地形の守りを少し無視する" },
+    bandit: { icon: "🪓", label: "山賊", hp: 26, atk: 8, mov: 3, min: 1, max: 1, type: "axe", trait: "荒っぽい一撃" },
+    soldier: { icon: "🗡️", label: "剣兵", hp: 25, atk: 8, mov: 3, min: 1, max: 1, type: "sword", trait: "素早い斬撃" },
+    guard: { icon: "🔰", label: "重槍兵", hp: 34, atk: 9, mov: 2, min: 1, max: 1, type: "lance", trait: "砦で粘る守備役" },
+    sniper: { icon: "🎯", label: "見張り弓", hp: 24, atk: 9, mov: 2, min: 2, max: 2, type: "bow", trait: "遠くから狙う" },
+    boss: { icon: "👑", label: "影の隊長", hp: 44, atk: 11, mov: 2, min: 1, max: 1, type: "axe", trait: "倒せば章クリア" }
   };
 
-  let stage = 1;
-  let map = [];
-  let units = [];
-  let selectedUnit = null;
-  let isPlayerTurn = true;
-  let animating = false;
+  const state = {
+    stage: 1,
+    turn: 1,
+    phase: "player",
+    score: 0,
+    best: Number(localStorage.getItem(bestKey) || 0),
+    selectedId: null,
+    selectionMoved: false,
+    showDanger: false,
+    locked: false,
+    units: [],
+    log: []
+  };
 
-  const boardEl = document.getElementById('game-board');
+  const el = {
+    board: document.getElementById("gameBoard"),
+    phase: document.getElementById("phasePill"),
+    stage: document.getElementById("stageLabel"),
+    score: document.getElementById("scoreLabel"),
+    best: document.getElementById("bestLabel"),
+    roster: document.getElementById("roster"),
+    log: document.getElementById("logList"),
+    hint: document.getElementById("hintText"),
+    wait: document.getElementById("waitBtn"),
+    danger: document.getElementById("dangerBtn"),
+    endTurn: document.getElementById("endTurnBtn"),
+    restart: document.getElementById("restartBtn"),
+    portrait: document.getElementById("portrait"),
+    unitName: document.getElementById("unitName"),
+    unitClass: document.getElementById("unitClass"),
+    hpFill: document.getElementById("hpFill"),
+    statGrid: document.getElementById("statGrid"),
+    overlay: document.getElementById("overlay"),
+    overlayTitle: document.getElementById("overlayTitle"),
+    overlayText: document.getElementById("overlayText"),
+    overlayActions: document.getElementById("overlayActions")
+  };
 
-  // --- Initialization ---
-  function initGame() {
-    generateMap();
-    spawnUnits();
-    renderBoard();
-    showMessage("STAGE " + stage, 1500);
+  function stageMap() {
+    return maps[(state.stage - 1) % maps.length];
   }
 
-  function generateMap() {
-    // 8x8 固定マップ (1:森, 2:山, 3:城, 0:平地)
-    map = [
-      [2,2,0,0,0,1,1,3],
-      [2,0,0,1,0,0,1,0],
-      [0,0,1,1,0,0,0,0],
-      [0,1,1,0,0,2,2,0],
-      [0,0,0,0,2,2,0,0],
-      [1,0,0,0,0,0,0,1],
-      [1,1,0,0,1,0,0,2],
-      [3,0,0,0,1,0,2,2]
-    ];
+  function unitClass(unit) {
+    return classes[unit.classId];
   }
 
-  function spawnUnits() {
-    units = [];
-    const statBoost = (stage - 1) * 2; // ステージが上がると敵が強くなる
-    
-    // Player Units (Top Left area)
-    addUnit(1, 6, 'sword', 'player', true); // Lord
-    addUnit(2, 7, 'lance', 'player');
-    addUnit(3, 6, 'bow', 'player');
-    addUnit(1, 5, 'knight', 'player');
-    addUnit(0, 6, 'mage', 'player');
-
-    // Enemy Units (Bottom Right area)
-    addUnit(7, 0, 'boss', 'enemy', false, statBoost);
-    addUnit(6, 1, 'axe', 'enemy', false, statBoost);
-    addUnit(6, 2, 'sword', 'enemy', false, statBoost);
-    addUnit(5, 1, 'bow', 'enemy', false, statBoost);
-    addUnit(4, 0, 'lance', 'enemy', false, statBoost);
-  }
-
-  function addUnit(x, y, clsId, team, isLord = false, boost = 0) {
-    const cls = CLASSES[clsId];
-    units.push({
-      id: Math.random().toString(36).substr(2, 9),
-      x: x, y: y,
-      clsId: clsId,
-      name: cls.name + (isLord ? "(主人公)" : ""),
-      icon: cls.icon,
-      team: team,
-      hp: cls.hp + boost,
-      maxHp: cls.hp + boost,
-      atk: cls.atk + Math.floor(boost/2),
+  function addUnit(x, y, classId, team, name, boss = false) {
+    const cls = classes[classId];
+    const enemyBoost = team === "enemy" ? Math.floor((state.stage - 1) * 3) : Math.floor((state.stage - 1) * 1.5);
+    const playerBoost = team === "player" ? Math.floor((state.stage - 1) * 2) : 0;
+    const hp = cls.hp + enemyBoost + playerBoost;
+    state.units.push({
+      id: `${team}-${classId}-${name}-${Math.random().toString(36).slice(2, 8)}`,
+      x,
+      y,
+      classId,
+      team,
+      name,
+      hp,
+      maxHp: hp,
+      atk: cls.atk + Math.floor(enemyBoost / 2) + Math.floor(playerBoost / 2),
       mov: cls.mov,
-      range: cls.range,
+      min: cls.min,
+      max: cls.max,
       type: cls.type,
-      isLord: isLord,
-      hasActed: false
+      boss,
+      acted: false,
+      pop: "",
+      hit: false,
+      flash: false
     });
   }
 
-  // --- Rendering ---
-  function renderBoard() {
-    boardEl.innerHTML = '';
-    
-    // Draw Terrain
-    for (let y = 0; y < BOARD_SIZE; y++) {
-      for (let x = 0; x < BOARD_SIZE; x++) {
-        const tVal = map[y][x];
-        const terrain = TERRAIN[tVal];
-        const cell = document.createElement('div');
-        cell.className = `cell ${terrain.type}`;
-        cell.id = `cell-${x}-${y}`;
-        cell.textContent = terrain.icon;
-        cell.onclick = () => onCellClick(x, y);
-        boardEl.appendChild(cell);
-      }
+  function setupStage() {
+    state.phase = "player";
+    state.turn = 1;
+    state.selectedId = null;
+    state.selectionMoved = false;
+    state.locked = false;
+    state.units = [];
+    const variant = (state.stage - 1) % 3;
+
+    addUnit(0, 7, "hero", "player", "リク");
+    addUnit(1, 6, "lancer", "player", "カイ");
+    addUnit(2, 7, "archer", "player", "ノア");
+    addUnit(0, 5, "mage", "player", "ミオ");
+
+    if (variant === 0) {
+      addUnit(7, 0, "boss", "enemy", "ザガン", true);
+      addUnit(6, 1, "bandit", "enemy", "山賊A");
+      addUnit(5, 1, "sniper", "enemy", "見張り");
+      addUnit(6, 2, "soldier", "enemy", "剣兵");
+      addUnit(4, 0, "guard", "enemy", "砦兵");
+    } else if (variant === 1) {
+      addUnit(7, 0, "boss", "enemy", "ドラン", true);
+      addUnit(5, 2, "guard", "enemy", "橋番");
+      addUnit(6, 3, "sniper", "enemy", "弓番");
+      addUnit(4, 1, "bandit", "enemy", "斧兵");
+      addUnit(7, 2, "soldier", "enemy", "剣兵");
+    } else {
+      addUnit(0, 0, "boss", "enemy", "モルド", true);
+      addUnit(2, 1, "sniper", "enemy", "森弓");
+      addUnit(4, 2, "bandit", "enemy", "斧兵");
+      addUnit(6, 1, "soldier", "enemy", "剣兵");
+      addUnit(7, 5, "guard", "enemy", "重槍");
     }
 
-    // Draw Units
-    units.forEach(u => {
-      if (u.hp <= 0) return;
-      const cell = document.getElementById(`cell-${u.x}-${u.y}`);
-      const uEl = document.createElement('div');
-      uEl.className = `unit ${u.team} ${u.hasActed ? 'acted' : ''}`;
-      uEl.innerHTML = `${u.icon}
-        <div class="hp-bar"><div class="hp-fill ${u.hp/u.maxHp < 0.3 ? 'low':''}" style="width:${(u.hp/u.maxHp)*100}%"></div></div>`;
-      cell.appendChild(uEl);
-    });
+    pushLog(`第${state.stage}章、開始。敵将を倒そう。`);
+    updateAll();
+    showOverlay(`第${state.stage}章`, stageMap().title, 900);
   }
 
-  function highlightCells(cells, className) {
-    cells.forEach(pos => {
-      const cell = document.getElementById(`cell-${pos.x}-${pos.y}`);
-      if(cell) cell.classList.add(className);
-    });
+  function tileAt(x, y) {
+    return stageMap().tiles[y][x];
   }
 
-  function clearHighlights() {
-    document.querySelectorAll('.cell').forEach(c => {
-      c.classList.remove('move-area');
-      c.classList.remove('atk-area');
-    });
+  function terrainAt(x, y) {
+    return terrain[tileAt(x, y)];
   }
 
-  function updateFooter(unit) {
-    if(!unit) return;
-    document.getElementById('ui-name').textContent = unit.name;
-    document.getElementById('ui-stats').textContent = `HP: ${unit.hp}/${unit.maxHp} | 攻: ${unit.atk} | 移動: ${unit.mov}`;
-    let wAdv = unit.type !== 'none' ? `(属性: ${unit.type})` : "";
-    document.getElementById('ui-desc').textContent = `${wAdv} 射程: ${unit.range}`;
+  function inBounds(x, y) {
+    return x >= 0 && y >= 0 && x < BOARD_SIZE && y < BOARD_SIZE;
   }
 
-  // --- Logic & Interaction ---
+  function aliveUnits(team) {
+    return state.units.filter((unit) => unit.team === team && unit.hp > 0);
+  }
+
   function getUnitAt(x, y) {
-    return units.find(u => u.x === x && u.y === y && u.hp > 0);
+    return state.units.find((unit) => unit.hp > 0 && unit.x === x && unit.y === y);
   }
 
-  // Manhattan distance simple BFS for movement
-  function getReachableCells(unit) {
-    let reachable = [];
-    for (let y = 0; y < BOARD_SIZE; y++) {
-      for (let x = 0; x < BOARD_SIZE; x++) {
-        const dist = Math.abs(unit.x - x) + Math.abs(unit.y - y);
-        if (dist <= unit.mov) {
-          // 山(2)は進入不可
-          if (map[y][x] !== 2 && (!getUnitAt(x, y) || getUnitAt(x,y).team === unit.team)) {
-            reachable.push({x, y});
-          }
+  function selectedUnit() {
+    return state.units.find((unit) => unit.id === state.selectedId && unit.hp > 0);
+  }
+
+  function keyOf(x, y) {
+    return `${x},${y}`;
+  }
+
+  function distance(a, b) {
+    return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+  }
+
+  function getReachable(unit, includeStart = false) {
+    const start = keyOf(unit.x, unit.y);
+    const costs = new Map([[start, 0]]);
+    const queue = [{ x: unit.x, y: unit.y, cost: 0 }];
+    const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+
+    while (queue.length) {
+      const current = queue.shift();
+      for (const [dx, dy] of dirs) {
+        const nx = current.x + dx;
+        const ny = current.y + dy;
+        if (!inBounds(nx, ny)) continue;
+
+        const land = terrainAt(nx, ny);
+        if (!land.pass) continue;
+
+        const occupant = getUnitAt(nx, ny);
+        if (occupant && occupant.id !== unit.id) continue;
+
+        const nextCost = current.cost + land.cost;
+        const key = keyOf(nx, ny);
+        if (nextCost <= unit.mov && (!costs.has(key) || nextCost < costs.get(key))) {
+          costs.set(key, nextCost);
+          queue.push({ x: nx, y: ny, cost: nextCost });
         }
       }
     }
-    return reachable;
+
+    return [...costs.keys()].map((key) => {
+      const [x, y] = key.split(",").map(Number);
+      return { x, y };
+    }).filter((pos) => includeStart || pos.x !== unit.x || pos.y !== unit.y);
   }
 
-  function getAttackableCells(unit, fromX, fromY) {
-    let attackable = [];
-    for (let y = 0; y < BOARD_SIZE; y++) {
-      for (let x = 0; x < BOARD_SIZE; x++) {
-        const dist = Math.abs(fromX - x) + Math.abs(fromY - y);
-        if (dist === unit.range) {
-          attackable.push({x, y});
+  function attackCellsFrom(unit, x = unit.x, y = unit.y) {
+    const cells = [];
+    for (let cy = 0; cy < BOARD_SIZE; cy++) {
+      for (let cx = 0; cx < BOARD_SIZE; cx++) {
+        const dist = Math.abs(cx - x) + Math.abs(cy - y);
+        if (dist >= unit.min && dist <= unit.max) {
+          cells.push({ x: cx, y: cy });
         }
       }
     }
-    return attackable;
+    return cells;
   }
 
-  function onCellClick(x, y) {
-    if (!isPlayerTurn || animating) return;
-
-    const clickedUnit = getUnitAt(x, y);
-
-    // すでに選択中のユニットがいる場合
-    if (selectedUnit) {
-      // 同じユニットをクリック -> 待機
-      if (clickedUnit === selectedUnit) {
-        selectedUnit.hasActed = true;
-        deselect();
-        checkTurnEnd();
-        return;
-      }
-
-      // 敵をクリック -> 攻撃判定
-      if (clickedUnit && clickedUnit.team === 'enemy') {
-        const dist = Math.abs(selectedUnit.x - clickedUnit.x) + Math.abs(selectedUnit.y - clickedUnit.y);
-        if (dist === selectedUnit.range) {
-          executeCombat(selectedUnit, clickedUnit);
-          return;
-        }
-      }
-
-      // 空き地をクリック -> 移動判定
-      if (!clickedUnit) {
-        const reachable = getReachableCells(selectedUnit);
-        if (reachable.some(p => p.x === x && p.y === y)) {
-          selectedUnit.x = x;
-          selectedUnit.y = y;
-          selectedUnit.hasActed = true;
-          
-          // 城なら回復
-          if(map[y][x] === 3) {
-            selectedUnit.hp = Math.min(selectedUnit.maxHp, selectedUnit.hp + 10);
-          }
-          
-          deselect();
-          checkTurnEnd();
-          return;
-        }
-      }
-
-      // 範囲外や味方をクリックした場合は選択解除して下へ処理を流す
-      deselect();
-    }
-
-    // 未行動の味方をクリックした場合
-    if (clickedUnit && clickedUnit.team === 'player' && !clickedUnit.hasActed) {
-      selectedUnit = clickedUnit;
-      updateFooter(selectedUnit);
-      const moves = getReachableCells(selectedUnit);
-      const attacks = getAttackableCells(selectedUnit, selectedUnit.x, selectedUnit.y);
-      highlightCells(moves, 'move-area');
-      highlightCells(attacks, 'atk-area');
-    } else if (clickedUnit) {
-      updateFooter(clickedUnit);
-    }
+  function canAttack(attacker, defender) {
+    const dist = distance(attacker, defender);
+    return dist >= attacker.min && dist <= attacker.max;
   }
 
-  function deselect() {
-    selectedUnit = null;
-    clearHighlights();
-    renderBoard();
+  function dangerCells() {
+    const danger = new Set();
+    aliveUnits("enemy").forEach((enemy) => {
+      const reachable = getReachable(enemy, true);
+      reachable.forEach((pos) => {
+        attackCellsFrom(enemy, pos.x, pos.y).forEach((cell) => danger.add(keyOf(cell.x, cell.y)));
+      });
+    });
+    return danger;
   }
 
-  // --- Combat Math ---
-  function getTriangleBonus(atkType, defType) {
-    if (atkType === 'sword' && defType === 'axe') return 2;
-    if (atkType === 'axe' && defType === 'lance') return 2;
-    if (atkType === 'lance' && defType === 'sword') return 2;
-    if (atkType === 'sword' && defType === 'lance') return -2;
-    if (atkType === 'lance' && defType === 'axe') return -2;
-    if (atkType === 'axe' && defType === 'sword') return -2;
+  function triangleBonus(attType, defType) {
+    if (attType === "sword" && defType === "axe") return 3;
+    if (attType === "axe" && defType === "lance") return 3;
+    if (attType === "lance" && defType === "sword") return 3;
+    if (attType === "sword" && defType === "lance") return -2;
+    if (attType === "lance" && defType === "axe") return -2;
+    if (attType === "axe" && defType === "sword") return -2;
     return 0;
   }
 
-  function executeCombat(attacker, defender) {
-    animating = true;
-    clearHighlights();
-    
-    // 命中・回避 (MVP仕様: 固定ダメージ + 乱数なしの地形効果減算)
-    let advantage = getTriangleBonus(attacker.type, defender.type);
-    let terrainDef = TERRAIN[map[defender.y][defender.x]].avoid > 0 ? 2 : 0; // 森や山ならダメージ-2
-    
-    let damage = Math.max(1, attacker.atk + advantage - terrainDef);
-    defender.hp -= damage;
-
-    document.getElementById('ui-desc').textContent = `${attacker.name}の攻撃！ ${damage}ダメージ！`;
-    renderBoard();
-
-    setTimeout(() => {
-      // 反撃 (射程が合えば)
-      if (defender.hp > 0) {
-        const dist = Math.abs(attacker.x - defender.x) + Math.abs(attacker.y - defender.y);
-        if (dist === defender.range) {
-          let revAdv = getTriangleBonus(defender.type, attacker.type);
-          let revTer = TERRAIN[map[attacker.y][attacker.x]].avoid > 0 ? 2 : 0;
-          let revDmg = Math.max(1, defender.atk + revAdv - revTer);
-          attacker.hp -= revDmg;
-          document.getElementById('ui-desc').textContent += ` 敵の反撃！ ${revDmg}ダメージ！`;
-        }
-      }
-
-      attacker.hasActed = true;
-      renderBoard();
-      animating = false;
-      deselect();
-      checkWinLoss();
-    }, 800);
+  function damageAmount(attacker, defender) {
+    const land = terrainAt(defender.x, defender.y);
+    const magicPierce = attacker.type === "magic" ? Math.floor(land.def / 2) : land.def;
+    const advantage = triangleBonus(attacker.type, defender.type);
+    const crit = Math.random() < (attacker.team === "player" ? 0.12 : 0.05);
+    const base = Math.max(1, attacker.atk + advantage - magicPierce);
+    return { value: base + (crit ? 5 : 0), crit, advantage };
   }
 
-  // --- Turn Management ---
-  function checkWinLoss() {
-    const lord = units.find(u => u.isLord);
-    if (!lord || lord.hp <= 0) {
-      showMessage("GAME OVER<br>主人公が倒れた...");
+  function forecastText(attacker, defender) {
+    const land = terrainAt(defender.x, defender.y);
+    const advantage = triangleBonus(attacker.type, defender.type);
+    const base = Math.max(1, attacker.atk + advantage - (attacker.type === "magic" ? Math.floor(land.def / 2) : land.def));
+    const icon = advantage > 0 ? "有利" : advantage < 0 ? "不利" : "互角";
+    return `${attacker.name} → ${defender.name}: ${base}ダメージ予想（${icon}）`;
+  }
+
+  async function strike(attacker, defender, counter = false) {
+    const result = damageAmount(attacker, defender);
+    attacker.flash = true;
+    updateAll();
+    await sleep(170);
+
+    defender.hp = Math.max(0, defender.hp - result.value);
+    defender.hit = true;
+    defender.pop = result.crit ? `必殺 ${result.value}` : `-${result.value}`;
+    state.score += attacker.team === "player" ? result.value * 10 : 0;
+    pushLog(`${counter ? "反撃" : "攻撃"}: ${attacker.name}が${defender.name}へ${result.value}ダメージ${result.crit ? "。必殺！" : "。"}`);
+    updateAll();
+    await sleep(result.crit ? 620 : 480);
+
+    attacker.flash = false;
+    defender.hit = false;
+    defender.pop = "";
+    if (defender.hp <= 0) {
+      if (attacker.team === "player") state.score += defender.boss ? 450 : 180;
+      pushLog(`${defender.name}を撃破。`);
+    }
+    updateAll();
+  }
+
+  async function executeCombat(attacker, defender) {
+    if (state.locked || attacker.hp <= 0 || defender.hp <= 0) return;
+    state.locked = true;
+    clearSelection(false);
+    await strike(attacker, defender);
+
+    if (defender.hp > 0 && attacker.hp > 0 && canAttack(defender, attacker)) {
+      await strike(defender, attacker, true);
+    }
+
+    attacker.acted = true;
+    if (terrainAt(attacker.x, attacker.y).heal && attacker.hp > 0) {
+      const heal = terrainAt(attacker.x, attacker.y).heal;
+      attacker.hp = Math.min(attacker.maxHp, attacker.hp + heal);
+      pushLog(`${attacker.name}は砦で${heal}回復。`);
+    }
+
+    state.locked = false;
+    updateAll();
+    if (checkEndState()) return;
+    if (state.phase === "player") checkPlayerDone();
+  }
+
+  function clearSelection(render = true) {
+    state.selectedId = null;
+    state.selectionMoved = false;
+    if (render) updateAll();
+  }
+
+  function endSelectedAction() {
+    const unit = selectedUnit();
+    if (!unit || state.phase !== "player" || state.locked) return;
+    unit.acted = true;
+    const land = terrainAt(unit.x, unit.y);
+    if (land.heal) {
+      unit.hp = Math.min(unit.maxHp, unit.hp + land.heal);
+      pushLog(`${unit.name}は砦で${land.heal}回復。`);
+    } else {
+      pushLog(`${unit.name}は待機。`);
+    }
+    clearSelection(false);
+    updateAll();
+    checkPlayerDone();
+  }
+
+  function selectUnit(unit) {
+    if (state.phase !== "player" || state.locked) return;
+    if (unit.team === "player" && !unit.acted) {
+      state.selectedId = unit.id;
+      state.selectionMoved = false;
+      pushHint(`${unit.name}を選択。青いマスへ進軍、赤い敵へ攻撃。`);
+    } else {
+      state.selectedId = null;
+      state.selectionMoved = false;
+      pushHint(`${unit.name} / ${unitClass(unit).label} / HP ${unit.hp}/${unit.maxHp}`);
+    }
+    updateAll();
+  }
+
+  async function onCellClick(x, y) {
+    if (state.locked || state.phase !== "player") return;
+    const clicked = getUnitAt(x, y);
+    const unit = selectedUnit();
+
+    if (!unit) {
+      if (clicked) selectUnit(clicked);
       return;
     }
 
-    const boss = units.find(u => u.clsId === 'boss' && u.hp > 0);
-    const enemies = units.filter(u => u.team === 'enemy' && u.hp > 0);
-    
-    if (!boss || enemies.length === 0) {
-      document.getElementById('msg-text').innerHTML = "STAGE CLEAR!";
-      document.getElementById('msg-btn').style.display = "inline-block";
-      document.getElementById('message-banner').style.display = "block";
-      document.getElementById('message-banner').style.color = "#00e676";
+    if (clicked && clicked.id === unit.id) {
+      endSelectedAction();
       return;
     }
 
-    checkTurnEnd();
+    if (clicked && clicked.team === "enemy") {
+      if (canAttack(unit, clicked)) {
+        pushHint(forecastText(unit, clicked));
+        await executeCombat(unit, clicked);
+      } else {
+        pushHint("射程外。近づいてから攻撃しよう。");
+      }
+      return;
+    }
+
+    if (clicked && clicked.team === "player") {
+      selectUnit(clicked);
+      return;
+    }
+
+    if (!clicked && !state.selectionMoved) {
+      const reachable = getReachable(unit).some((pos) => pos.x === x && pos.y === y);
+      if (reachable) {
+        unit.x = x;
+        unit.y = y;
+        state.selectionMoved = true;
+        const targets = aliveUnits("enemy").filter((enemy) => canAttack(unit, enemy));
+        pushHint(targets.length ? "攻撃できる敵がいる。赤い敵を選ぼう。" : "ここで待機できる。");
+        updateAll();
+        return;
+      }
+    }
+
+    pushHint("そのマスへは行けない。別の作戦を選ぼう。");
+  }
+
+  function checkPlayerDone() {
+    if (aliveUnits("player").every((unit) => unit.acted)) {
+      endPlayerTurn();
+    }
+  }
+
+  async function endPlayerTurn() {
+    if (state.phase !== "player" || state.locked) return;
+    clearSelection(false);
+    state.phase = "enemy";
+    updateAll();
+    await showOverlay("敵フェイズ", "敵軍が動き出した。守りを固めよう。", 850);
+    await runEnemyTurn();
+  }
+
+  async function runEnemyTurn() {
+    state.locked = true;
+    const enemies = aliveUnits("enemy");
+    for (const enemy of enemies) {
+      if (state.phase !== "enemy" || enemy.hp <= 0) break;
+      const players = aliveUnits("player");
+      if (!players.length) break;
+      let target = players.slice().sort((a, b) => distance(enemy, a) - distance(enemy, b))[0];
+
+      if (!canAttack(enemy, target)) {
+        moveEnemyToward(enemy, target);
+        updateAll();
+        await sleep(420);
+        target = aliveUnits("player").slice().sort((a, b) => distance(enemy, a) - distance(enemy, b))[0];
+      }
+
+      if (target && canAttack(enemy, target)) {
+        await executeCombat(enemy, target);
+        if (checkEndState()) return;
+      }
+      await sleep(250);
+    }
+
+    state.locked = false;
+    if (!checkEndState()) startPlayerTurn();
+  }
+
+  function moveEnemyToward(enemy, target) {
+    const reachable = getReachable(enemy, true);
+    const candidates = reachable.filter((pos) => {
+      const occupant = getUnitAt(pos.x, pos.y);
+      return !occupant || occupant.id === enemy.id;
+    });
+    candidates.sort((a, b) => {
+      const attackA = attackCellsFrom(enemy, a.x, a.y).some((cell) => cell.x === target.x && cell.y === target.y) ? -6 : 0;
+      const attackB = attackCellsFrom(enemy, b.x, b.y).some((cell) => cell.x === target.x && cell.y === target.y) ? -6 : 0;
+      const distA = Math.abs(a.x - target.x) + Math.abs(a.y - target.y) + attackA;
+      const distB = Math.abs(b.x - target.x) + Math.abs(b.y - target.y) + attackB;
+      return distA - distB;
+    });
+    const next = candidates[0];
+    if (next) {
+      enemy.x = next.x;
+      enemy.y = next.y;
+      pushLog(`${enemy.name}が前進。`);
+    }
+  }
+
+  function startPlayerTurn() {
+    state.phase = "player";
+    state.turn += 1;
+    state.units.forEach((unit) => {
+      unit.acted = false;
+      const land = terrainAt(unit.x, unit.y);
+      if (unit.hp > 0 && land.heal) {
+        unit.hp = Math.min(unit.maxHp, unit.hp + land.heal);
+      }
+    });
+    pushHint(`味方フェイズ ${state.turn}ターン目。`);
+    updateAll();
+    showOverlay("味方フェイズ", "進軍再開。勝てる一手を選ぼう。", 650);
+  }
+
+  function checkEndState() {
+    const hero = state.units.find((unit) => unit.team === "player" && unit.classId === "hero");
+    if (!hero || hero.hp <= 0) {
+      state.phase = "gameover";
+      state.locked = false;
+      updateBest();
+      showOverlay("GAME OVER", "リクが倒れた。もう一度、配置を考えて挑戦しよう。", 0, [
+        { label: "↻ 再挑戦", action: resetGame, primary: true }
+      ]);
+      return true;
+    }
+
+    const boss = state.units.find((unit) => unit.team === "enemy" && unit.boss);
+    if (!boss || boss.hp <= 0 || aliveUnits("enemy").length === 0) {
+      state.phase = "clear";
+      state.locked = false;
+      const turnBonus = Math.max(0, 6 - state.turn) * 120;
+      state.score += 600 + turnBonus;
+      updateBest();
+      showOverlay("STAGE CLEAR!", `スコア ${state.score}。第${state.stage + 1}章へ進める。`, 0, [
+        { label: "⚔️ 次の章", action: nextStage, primary: true },
+        { label: "↻ 最初から", action: resetGame }
+      ]);
+      updateAll();
+      return true;
+    }
+    return false;
   }
 
   function nextStage() {
-    document.getElementById('message-banner').style.display = "none";
-    document.getElementById('msg-btn').style.display = "none";
-    document.getElementById('message-banner').style.color = "#fff";
-    
-    stage++;
-    document.getElementById('stage-display').textContent = "STAGE " + stage;
-    
-    // 味方全回復＆レベルアップ処理（MVP用簡易処理）
-    units.forEach(u => {
-      if(u.team === 'player' && u.hp > 0) {
-        u.maxHp += 2; u.atk += 1; u.hp = u.maxHp; u.hasActed = false;
-      }
-    });
-
-    generateMap();
-    spawnUnits(); // 敵を再生成
-    isPlayerTurn = true;
-    renderBoard();
-    showMessage("STAGE " + stage, 1500);
+    state.stage += 1;
+    state.selectedId = null;
+    state.selectionMoved = false;
+    hideOverlay();
+    setupStage();
   }
 
-  function checkTurnEnd() {
-    if (!isPlayerTurn) return;
-    const activePlayers = units.filter(u => u.team === 'player' && u.hp > 0 && !u.hasActed);
-    if (activePlayers.length === 0) {
-      isPlayerTurn = false;
-      document.getElementById('turn-display').textContent = "ENEMY PHASE";
-      document.getElementById('turn-display').style.color = "#ff1744";
-      showMessage("ENEMY PHASE", 1000, startEnemyTurn);
+  function resetGame() {
+    state.stage = 1;
+    state.turn = 1;
+    state.score = 0;
+    state.log = [];
+    state.selectedId = null;
+    state.selectionMoved = false;
+    hideOverlay();
+    setupStage();
+  }
+
+  function updateBest() {
+    if (state.score > state.best) {
+      state.best = state.score;
+      localStorage.setItem(bestKey, String(state.best));
     }
   }
 
-  // --- Enemy AI ---
-  function startEnemyTurn() {
-    let enemies = units.filter(u => u.team === 'enemy' && u.hp > 0);
-    let eIndex = 0;
+  function pushLog(text) {
+    state.log.unshift(text);
+    state.log = state.log.slice(0, 7);
+  }
 
-    function nextEnemy() {
-      if (eIndex >= enemies.length || isPlayerTurn) {
-        endEnemyTurn();
-        return;
+  function pushHint(text) {
+    el.hint.textContent = text;
+  }
+
+  function showOverlay(title, text, duration = 0, actions = []) {
+    el.overlayTitle.textContent = title;
+    el.overlayText.textContent = text;
+    el.overlayActions.innerHTML = "";
+    actions.forEach((item) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `cmd-btn ${item.primary ? "blue" : "secondary"}`;
+      button.textContent = item.label;
+      button.addEventListener("click", item.action);
+      el.overlayActions.appendChild(button);
+    });
+    el.overlay.classList.add("show");
+    if (!duration) return Promise.resolve();
+    return sleep(duration).then(() => hideOverlay());
+  }
+
+  function hideOverlay() {
+    el.overlay.classList.remove("show");
+  }
+
+  function cellClass(x, y, unit, reachable, attacks, danger) {
+    const land = terrainAt(x, y);
+    const classes = ["cell", land.css];
+    if (danger.has(keyOf(x, y))) classes.push("danger");
+    if (unit && unit.x === x && unit.y === y) classes.push("selected");
+    if (reachable.has(keyOf(x, y))) classes.push("move");
+    if (attacks.has(keyOf(x, y))) classes.push("attack");
+    return classes.join(" ");
+  }
+
+  function renderBoard() {
+    const unit = selectedUnit();
+    const reachable = new Set();
+    const attacks = new Set();
+    const danger = state.showDanger ? dangerCells() : new Set();
+
+    if (unit && state.phase === "player") {
+      if (!state.selectionMoved) {
+        getReachable(unit).forEach((pos) => reachable.add(keyOf(pos.x, pos.y)));
       }
-      
-      const e = enemies[eIndex];
-      eIndex++;
+      attackCellsFrom(unit).forEach((pos) => attacks.add(keyOf(pos.x, pos.y)));
+    }
 
-      // 1. 最も近いプレイヤーを探す
-      let targets = units.filter(u => u.team === 'player' && u.hp > 0);
-      if (targets.length === 0) return;
-      
-      targets.sort((a, b) => {
-        let da = Math.abs(e.x - a.x) + Math.abs(e.y - a.y);
-        let db = Math.abs(e.x - b.x) + Math.abs(e.y - b.y);
-        return da - db;
-      });
-      let target = targets[0];
+    el.board.innerHTML = "";
+    for (let y = 0; y < BOARD_SIZE; y++) {
+      for (let x = 0; x < BOARD_SIZE; x++) {
+        const cell = document.createElement("button");
+        const land = terrainAt(x, y);
+        const occupant = getUnitAt(x, y);
+        cell.type = "button";
+        cell.className = cellClass(x, y, unit, reachable, attacks, danger);
+        cell.setAttribute("aria-label", `${land.name} ${x + 1}-${y + 1}`);
+        cell.addEventListener("click", () => onCellClick(x, y));
 
-      // 2. 移動 (簡易AI: 近づく)
-      let dx = target.x - e.x;
-      let dy = target.y - e.y;
-      
-      let newX = e.x; let newY = e.y;
-      
-      // 移動力分近づく
-      for(let m=0; m<e.mov; m++) {
-        let distX = Math.abs(target.x - newX);
-        let distY = Math.abs(target.y - newY);
-        
-        if(distX + distY === e.range) break; // 攻撃距離なら止まる
+        if (land.mark) {
+          const mark = document.createElement("span");
+          mark.className = "terrain-mark";
+          mark.textContent = land.mark;
+          cell.appendChild(mark);
+        }
 
-        let stepX = newX, stepY = newY;
-        if(distX > distY) stepX += Math.sign(target.x - newX);
-        else stepY += Math.sign(target.y - newY);
-
-        if(map[stepY][stepX] !== 2 && !getUnitAt(stepX, stepY)) {
-          newX = stepX; newY = stepY;
-        } else {
-          // 障害物回避 (非常に簡易)
-          if(distX <= distY) stepX += Math.sign(target.x - e.x);
-          else stepY += Math.sign(target.y - e.y);
-          if(map[stepY] && map[stepY][stepX] !== 2 && !getUnitAt(stepX, stepY)) {
-             newX = stepX; newY = stepY;
+        if (occupant) {
+          const cls = unitClass(occupant);
+          const token = document.createElement("div");
+          token.className = `unit-token ${occupant.team} ${occupant.acted ? "acted" : ""} ${occupant.hit ? "hit" : ""} ${occupant.flash ? "flash" : ""}`;
+          token.textContent = cls.icon;
+          const hp = document.createElement("span");
+          hp.className = "mini-hp";
+          hp.innerHTML = `<i style="width:${Math.max(0, (occupant.hp / occupant.maxHp) * 100)}%"></i>`;
+          token.appendChild(hp);
+          if (occupant.pop) {
+            const pop = document.createElement("span");
+            pop.className = "damage-pop";
+            pop.textContent = occupant.pop;
+            token.appendChild(pop);
           }
+          cell.appendChild(token);
         }
-      }
-      
-      e.x = newX; e.y = newY;
-      renderBoard();
 
-      // 3. 攻撃
-      setTimeout(() => {
-        const finalDist = Math.abs(e.x - target.x) + Math.abs(e.y - target.y);
-        if (finalDist === e.range) {
-          executeCombat(e, target);
-        }
-        setTimeout(nextEnemy, 500);
-      }, 500);
+        el.board.appendChild(cell);
+      }
     }
-    
-    nextEnemy();
   }
 
-  function endEnemyTurn() {
-    units.forEach(u => u.hasActed = false);
-    isPlayerTurn = true;
-    document.getElementById('turn-display').textContent = "PLAYER PHASE";
-    document.getElementById('turn-display').style.color = "#4da8da";
-    
-    // 城の自動回復
-    units.forEach(u => {
-      if(u.hp > 0 && map[u.y][u.x] === 3) {
-        u.hp = Math.min(u.maxHp, u.hp + 10);
-      }
+  function renderInfo() {
+    const unit = selectedUnit() || aliveUnits("player").find((u) => !u.acted) || aliveUnits("player")[0] || aliveUnits("enemy")[0];
+    if (!unit) return;
+    const cls = unitClass(unit);
+    el.portrait.textContent = cls.icon;
+    el.unitName.textContent = unit.name;
+    el.unitClass.textContent = `${cls.label} / ${cls.trait}`;
+    const hpRatio = Math.max(0, unit.hp / unit.maxHp);
+    el.hpFill.style.width = `${hpRatio * 100}%`;
+    el.hpFill.classList.toggle("low", hpRatio < 0.35);
+    const range = unit.min === unit.max ? unit.max : `${unit.min}-${unit.max}`;
+    el.statGrid.innerHTML = `
+      <div class="stat"><span>HP</span><b>${unit.hp}/${unit.maxHp}</b></div>
+      <div class="stat"><span>攻撃</span><b>${unit.atk}</b></div>
+      <div class="stat"><span>移動</span><b>${unit.mov}</b></div>
+      <div class="stat"><span>射程</span><b>${range}</b></div>
+    `;
+  }
+
+  function renderRoster() {
+    const ordered = [...aliveUnits("player"), ...aliveUnits("enemy")];
+    el.roster.innerHTML = "";
+    ordered.forEach((unit) => {
+      const cls = unitClass(unit);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `${unit.team} ${unit.id === state.selectedId ? "is-selected" : ""}`;
+      button.innerHTML = `
+        <span class="roster-icon">${cls.icon}</span>
+        <span class="roster-name"><b>${unit.name}</b><span>${cls.label}</span></span>
+        <b>${unit.hp}</b>
+      `;
+      button.addEventListener("click", () => selectUnit(unit));
+      el.roster.appendChild(button);
     });
-    
+  }
+
+  function renderLog() {
+    el.log.innerHTML = "";
+    state.log.forEach((line) => {
+      const item = document.createElement("li");
+      item.textContent = line;
+      el.log.appendChild(item);
+    });
+  }
+
+  function renderChrome() {
+    el.stage.textContent = stageMap().title;
+    el.score.textContent = String(state.score);
+    el.best.textContent = String(state.best);
+    el.phase.textContent = state.phase === "enemy" ? "敵フェイズ" : state.phase === "player" ? `味方 ${state.turn}` : state.phase === "clear" ? "クリア" : "作戦終了";
+    el.phase.classList.toggle("enemy", state.phase === "enemy");
+    el.wait.disabled = !selectedUnit() || state.phase !== "player" || state.locked;
+    el.endTurn.disabled = state.phase !== "player" || state.locked;
+    el.danger.textContent = state.showDanger ? "✅ 危険" : "⚠️ 危険";
+  }
+
+  function updateAll() {
+    renderChrome();
     renderBoard();
-    showMessage("PLAYER PHASE", 1000);
+    renderInfo();
+    renderRoster();
+    renderLog();
   }
 
-  // --- Utility ---
-  function showMessage(text, duration, callback) {
-    const banner = document.getElementById('message-banner');
-    document.getElementById('msg-text').innerHTML = text;
-    banner.style.display = "block";
-    setTimeout(() => {
-      banner.style.display = "none";
-      if(callback) callback();
-    }, duration);
-  }
+  el.wait.addEventListener("click", endSelectedAction);
+  el.danger.addEventListener("click", () => {
+    state.showDanger = !state.showDanger;
+    pushHint(state.showDanger ? "敵が届くマスを表示中。" : "危険マスを非表示。");
+    updateAll();
+  });
+  el.endTurn.addEventListener("click", endPlayerTurn);
+  el.restart.addEventListener("click", resetGame);
 
-  // Start
-  initGame();
+  setupStage();
+})();
 </script>
 </body>
 </html>
