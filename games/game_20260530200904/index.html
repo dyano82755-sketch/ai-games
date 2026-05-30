@@ -6,360 +6,73 @@
 <title>星紋のブレイブ隊</title>
 <style>
   :root {
-    --ink: #231f20;
-    --paper: #f2e4c8;
-    --paper-deep: #dcc091;
-    --gold: #d8a93d;
-    --gold-light: #f5d980;
-    --red: #b83b35;
-    --blue: #286aa6;
-    --green: #2f7b4c;
-    --iron: #3d434a;
-    --shadow: rgba(19, 16, 12, 0.32);
-    --cell-gap: 3px;
+    --ink: #231f20; --paper: #f2e4c8; --paper-deep: #dcc091;
+    --gold: #d8a93d; --gold-light: #f5d980; --red: #b83b35;
+    --blue: #286aa6; --green: #2f7b4c; --iron: #3d434a;
+    --shadow: rgba(19, 16, 12, 0.32); --cell-gap: 3px;
   }
 
-  * {
-    box-sizing: border-box;
-    user-select: none;
-    touch-action: manipulation;
-  }
-
-  html,
-  body {
-    margin: 0;
-    min-height: 100%;
-  }
-
+  * { box-sizing: border-box; user-select: none; touch-action: manipulation; }
+  html, body { margin: 0; min-height: 100%; }
   body {
     color: var(--ink);
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
-    background:
-      linear-gradient(135deg, rgba(216, 169, 61, 0.18), rgba(184, 59, 53, 0.08)),
-      repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0 8px, rgba(0,0,0,0.03) 8px 16px),
-      #242424;
-    min-height: 100dvh;
-    overflow-x: hidden;
+    font-family: system-ui, sans-serif;
+    background: linear-gradient(135deg, rgba(216, 169, 61, 0.18), rgba(184, 59, 53, 0.08)),
+                repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0 8px, rgba(0,0,0,0.03) 8px 16px), #242424;
+    min-height: 100dvh; overflow-x: hidden;
   }
+  button { font: inherit; }
 
-  button {
-    font: inherit;
-  }
+  .app { width: min(1180px, 100%); min-height: 100dvh; margin: 0 auto; display: grid; grid-template-rows: auto 1fr auto; gap: 10px; padding: 10px; }
+  .topbar, .command-bar, .panel { border: 2px solid rgba(35, 31, 32, 0.8); border-radius: 8px; box-shadow: 0 8px 24px var(--shadow); }
+  
+  .topbar { min-height: 72px; display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; padding: 10px; background: linear-gradient(180deg, rgba(255,255,255,0.36), rgba(255,255,255,0.06)), var(--paper); }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .crest { width: 48px; height: 48px; display: grid; place-items: center; color: #fff; background: conic-gradient(from 45deg, var(--red), var(--gold), var(--blue), var(--red)); border: 2px solid var(--ink); border-radius: 8px; font-size: 1.55rem; box-shadow: inset 0 0 0 3px rgba(255,255,255,0.28); }
+  .brand-title { display: grid; gap: 2px; }
+  .brand-title strong { font-size: 1.18rem; line-height: 1.1; }
+  .brand-title span { color: #66543b; font-size: 0.82rem; }
+  
+  .phase-pill { min-width: 132px; padding: 10px 12px; text-align: center; color: #fff; background: linear-gradient(180deg, #3e8bcc, var(--blue)); border: 2px solid var(--ink); border-radius: 8px; font-weight: 800; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35); }
+  .phase-pill.enemy { background: linear-gradient(180deg, #d95d54, var(--red)); }
 
-  .app {
-    width: min(1180px, 100%);
-    min-height: 100dvh;
-    margin: 0 auto;
-    display: grid;
-    grid-template-rows: auto 1fr auto;
-    gap: 10px;
-    padding: 10px;
-  }
+  .icon-btn, .cmd-btn { min-height: 42px; border: 2px solid var(--ink); border-radius: 8px; color: var(--ink); background: linear-gradient(180deg, #fff4d9, var(--gold)); font-weight: 800; cursor: pointer; box-shadow: 0 3px 0 rgba(35,31,32,0.45); }
+  .icon-btn { width: 48px; font-size: 1.25rem; }
+  .icon-btn:active, .cmd-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(35,31,32,0.45); }
+  .cmd-btn:disabled { cursor: default; color: #756b61; background: #b8aa92; box-shadow: none; opacity: 0.72; }
 
-  .topbar,
-  .command-bar,
-  .panel {
-    border: 2px solid rgba(35, 31, 32, 0.8);
-    border-radius: 8px;
-    box-shadow: 0 8px 24px var(--shadow);
-  }
+  .battlefield { display: grid; grid-template-columns: minmax(220px, 260px) minmax(320px, 1fr) minmax(220px, 280px); gap: 10px; align-items: stretch; min-height: 0; }
+  .panel { background: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0.04)), var(--paper); padding: 12px; min-height: 0; overflow: hidden; }
+  .panel h2 { margin: 0 0 8px; font-size: 1rem; line-height: 1.2; color: #3d2f1d; }
 
-  .topbar {
-    min-height: 72px;
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    align-items: center;
-    gap: 10px;
-    padding: 10px;
-    background:
-      linear-gradient(180deg, rgba(255,255,255,0.36), rgba(255,255,255,0.06)),
-      var(--paper);
-  }
+  .mission { display: grid; gap: 8px; }
+  .mission-line { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; padding: 8px; border: 1px solid rgba(35,31,32,0.32); border-radius: 8px; background: rgba(255,255,255,0.36); }
+  .mission-line b { font-size: 0.9rem; }
+  .mission-line span { color: #5c4e3d; font-size: 0.84rem; }
 
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-  }
+  .unit-card { display: grid; grid-template-columns: 58px 1fr; gap: 10px; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 2px solid rgba(35,31,32,0.18); }
+  .portrait { width: 58px; height: 58px; display: grid; place-items: center; border: 2px solid var(--ink); border-radius: 8px; background: linear-gradient(160deg, rgba(255,255,255,0.52), rgba(255,255,255,0.08)), var(--gold); font-size: 1.75rem; }
+  .unit-meta { min-width: 0; }
+  .unit-meta strong { display: block; font-size: 1rem; line-height: 1.1; }
+  .unit-meta small { display: block; margin-top: 2px; color: #66543b; }
 
-  .crest {
-    width: 48px;
-    height: 48px;
-    display: grid;
-    place-items: center;
-    flex: 0 0 auto;
-    color: #fff;
-    background:
-      conic-gradient(from 45deg, var(--red), var(--gold), var(--blue), var(--red));
-    border: 2px solid var(--ink);
-    border-radius: 8px;
-    font-size: 1.55rem;
-    box-shadow: inset 0 0 0 3px rgba(255,255,255,0.28);
-  }
+  .hp-shell { width: 100%; height: 9px; margin-top: 8px; border: 1px solid var(--ink); border-radius: 999px; background: #5b4634; overflow: hidden; }
+  .hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #37c36b, #b9ec72); transition: width 180ms ease; }
+  .hp-fill.low { background: linear-gradient(90deg, #c6332f, #ff9a4d); }
 
-  .brand-title {
-    display: grid;
-    gap: 2px;
-    min-width: 0;
-  }
+  .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+  .stat { min-height: 40px; display: grid; align-content: center; padding: 6px 8px; border: 1px solid rgba(35,31,32,0.24); border-radius: 8px; background: rgba(255,255,255,0.35); }
+  .stat span { font-size: 0.74rem; color: #6c5c46; }
+  .stat b { font-size: 0.96rem; }
+  .triangle { margin-top: 12px; padding: 8px; border: 1px solid rgba(35,31,32,0.28); border-radius: 8px; background: rgba(61,67,74,0.08); font-size: 0.86rem; line-height: 1.45; }
 
-  .brand-title strong {
-    font-size: 1.18rem;
-    line-height: 1.1;
-  }
-
-  .brand-title span {
-    color: #66543b;
-    font-size: 0.82rem;
-  }
-
-  .phase-pill {
-    min-width: 132px;
-    padding: 10px 12px;
-    text-align: center;
-    color: #fff;
-    background: linear-gradient(180deg, #3e8bcc, var(--blue));
-    border: 2px solid var(--ink);
-    border-radius: 8px;
-    font-weight: 800;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
-  }
-
-  .phase-pill.enemy {
-    background: linear-gradient(180deg, #d95d54, var(--red));
-  }
-
-  .icon-btn,
-  .cmd-btn {
-    min-height: 42px;
-    border: 2px solid var(--ink);
-    border-radius: 8px;
-    color: var(--ink);
-    background: linear-gradient(180deg, #fff4d9, var(--gold));
-    font-weight: 800;
-    cursor: pointer;
-    box-shadow: 0 3px 0 rgba(35,31,32,0.45);
-  }
-
-  .icon-btn {
-    width: 48px;
-    font-size: 1.25rem;
-  }
-
-  .icon-btn:active,
-  .cmd-btn:active {
-    transform: translateY(2px);
-    box-shadow: 0 1px 0 rgba(35,31,32,0.45);
-  }
-
-  .cmd-btn:disabled {
-    cursor: default;
-    color: #756b61;
-    background: #b8aa92;
-    box-shadow: none;
-    opacity: 0.72;
-  }
-
-  .battlefield {
-    display: grid;
-    grid-template-columns: minmax(220px, 260px) minmax(320px, 1fr) minmax(220px, 280px);
-    gap: 10px;
-    align-items: stretch;
-    min-height: 0;
-  }
-
-  .panel {
-    background:
-      linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0.04)),
-      var(--paper);
-    padding: 12px;
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .panel h2 {
-    margin: 0 0 8px;
-    font-size: 1rem;
-    line-height: 1.2;
-    color: #3d2f1d;
-  }
-
-  .mission {
-    display: grid;
-    gap: 8px;
-  }
-
-  .mission-line {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 8px;
-    align-items: center;
-    padding: 8px;
-    border: 1px solid rgba(35,31,32,0.32);
-    border-radius: 8px;
-    background: rgba(255,255,255,0.36);
-  }
-
-  .mission-line b {
-    font-size: 0.9rem;
-  }
-
-  .mission-line span {
-    color: #5c4e3d;
-    font-size: 0.84rem;
-  }
-
-  .unit-card {
-    display: grid;
-    grid-template-columns: 58px 1fr;
-    gap: 10px;
-    align-items: center;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 2px solid rgba(35,31,32,0.18);
-  }
-
-  .portrait {
-    width: 58px;
-    height: 58px;
-    display: grid;
-    place-items: center;
-    border: 2px solid var(--ink);
-    border-radius: 8px;
-    background:
-      linear-gradient(160deg, rgba(255,255,255,0.52), rgba(255,255,255,0.08)),
-      var(--gold);
-    font-size: 1.75rem;
-  }
-
-  .unit-meta {
-    min-width: 0;
-  }
-
-  .unit-meta strong {
-    display: block;
-    font-size: 1rem;
-    line-height: 1.1;
-  }
-
-  .unit-meta small {
-    display: block;
-    margin-top: 2px;
-    color: #66543b;
-  }
-
-  .hp-shell {
-    width: 100%;
-    height: 9px;
-    margin-top: 8px;
-    border: 1px solid var(--ink);
-    border-radius: 999px;
-    background: #5b4634;
-    overflow: hidden;
-  }
-
-  .hp-fill {
-    height: 100%;
-    width: 100%;
-    background: linear-gradient(90deg, #37c36b, #b9ec72);
-    transition: width 180ms ease;
-  }
-
-  .hp-fill.low {
-    background: linear-gradient(90deg, #c6332f, #ff9a4d);
-  }
-
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
-    margin-top: 10px;
-  }
-
-  .stat {
-    min-height: 40px;
-    display: grid;
-    align-content: center;
-    padding: 6px 8px;
-    border: 1px solid rgba(35,31,32,0.24);
-    border-radius: 8px;
-    background: rgba(255,255,255,0.35);
-  }
-
-  .stat span {
-    font-size: 0.74rem;
-    color: #6c5c46;
-  }
-
-  .stat b {
-    font-size: 0.96rem;
-  }
-
-  .triangle {
-    margin-top: 12px;
-    padding: 8px;
-    border: 1px solid rgba(35,31,32,0.28);
-    border-radius: 8px;
-    background: rgba(61,67,74,0.08);
-    font-size: 0.86rem;
-    line-height: 1.45;
-  }
-
-  .board-wrap {
-    display: grid;
-    place-items: center;
-    min-width: 0;
-    min-height: 0;
-  }
-
-  .board-frame {
-    width: min(72dvh, 100%, 650px);
-    min-width: 310px;
-    aspect-ratio: 1;
-    padding: 8px;
-    background:
-      linear-gradient(180deg, rgba(255,255,255,0.18), rgba(0,0,0,0.2)),
-      #33271f;
-    border: 3px solid #171313;
-    border-radius: 8px;
-    box-shadow: 0 14px 30px rgba(0,0,0,0.38);
-  }
-
-  #gameBoard {
-    width: 100%;
-    height: 100%;
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
-    gap: var(--cell-gap);
-    background: #171313;
-    border-radius: 6px;
-    overflow: hidden;
-  }
-
-  .cell {
-    position: relative;
-    min-width: 0;
-    min-height: 0;
-    display: grid;
-    place-items: center;
-    border: 0;
-    padding: 0;
-    cursor: pointer;
-    overflow: hidden;
-  }
-
-  .cell::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(135deg, rgba(255,255,255,0.16), transparent 45%),
-      linear-gradient(315deg, rgba(0,0,0,0.08), transparent 42%);
-    pointer-events: none;
-  }
-
+  .board-wrap { display: grid; place-items: center; min-width: 0; min-height: 0; }
+  .board-frame { width: min(72dvh, 100%, 650px); min-width: 310px; aspect-ratio: 1; padding: 8px; background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(0,0,0,0.2)), #33271f; border: 3px solid #171313; border-radius: 8px; box-shadow: 0 14px 30px rgba(0,0,0,0.38); }
+  
+  #gameBoard { width: 100%; height: 100%; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); gap: var(--cell-gap); background: #171313; border-radius: 6px; overflow: hidden; }
+  .cell { position: relative; display: grid; place-items: center; border: 0; padding: 0; cursor: pointer; overflow: hidden; }
+  .cell::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(135deg, rgba(255,255,255,0.16), transparent 45%), linear-gradient(315deg, rgba(0,0,0,0.08), transparent 42%); pointer-events: none; }
+  
   .cell.grass { background: #70a64d; }
   .cell.forest { background: #2f7445; }
   .cell.fort { background: #92734c; }
@@ -367,312 +80,63 @@
   .cell.mountain { background: #6a625a; }
   .cell.water { background: #4b8fa5; }
 
-  .terrain-mark {
-    position: absolute;
-    inset: auto 4px 3px auto;
-    color: rgba(255,255,255,0.78);
-    font-size: 0.9rem;
-    text-shadow: 0 1px 1px rgba(0,0,0,0.42);
-    pointer-events: none;
-  }
+  .terrain-mark { position: absolute; inset: auto 4px 3px auto; color: rgba(255,255,255,0.78); font-size: 0.9rem; text-shadow: 0 1px 1px rgba(0,0,0,0.42); pointer-events: none; }
 
-  .cell.move::after,
-  .cell.attack::after,
-  .cell.skill-area::after,
-  .cell.danger::after,
-  .cell.selected::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-  }
+  .cell.move::after, .cell.attack::after, .cell.skill-area::after, .cell.danger::after, .cell.selected::after { content: ""; position: absolute; inset: 0; pointer-events: none; }
+  .cell.move::after { background: rgba(40, 106, 166, 0.36); box-shadow: inset 0 0 0 3px rgba(107, 196, 255, 0.75); }
+  .cell.attack::after { background: rgba(184, 59, 53, 0.32); box-shadow: inset 0 0 0 3px rgba(255, 181, 85, 0.82); }
+  .cell.skill-area::after { background: rgba(138, 43, 226, 0.36); box-shadow: inset 0 0 0 3px rgba(230, 130, 255, 0.85); }
+  .cell.danger::after { background: linear-gradient(45deg, rgba(184,59,53,0.2) 25%, transparent 25% 50%, rgba(184,59,53,0.2) 50% 75%, transparent 75%); background-size: 14px 14px; }
+  .cell.selected::after { box-shadow: inset 0 0 0 4px var(--gold-light); }
 
-  .cell.move::after {
-    background: rgba(40, 106, 166, 0.36);
-    box-shadow: inset 0 0 0 3px rgba(107, 196, 255, 0.75);
-  }
-
-  .cell.attack::after {
-    background: rgba(184, 59, 53, 0.32);
-    box-shadow: inset 0 0 0 3px rgba(255, 181, 85, 0.82);
-  }
-
-  /* 新設: スキル発動範囲の紫ハイライト */
-  .cell.skill-area::after {
-    background: rgba(138, 43, 226, 0.36);
-    box-shadow: inset 0 0 0 3px rgba(230, 130, 255, 0.85);
-  }
-
-  .cell.danger::after {
-    background:
-      linear-gradient(45deg, rgba(184,59,53,0.2) 25%, transparent 25% 50%, rgba(184,59,53,0.2) 50% 75%, transparent 75%);
-    background-size: 14px 14px;
-  }
-
-  .cell.selected::after {
-    box-shadow: inset 0 0 0 4px var(--gold-light);
-  }
-
-  .unit-token {
-    position: relative;
-    z-index: 2;
-    width: 74%;
-    height: 74%;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    border: 3px solid #fff;
-    color: #fff;
-    font-size: 1.45rem;
-    text-shadow: 0 2px 0 rgba(0,0,0,0.52);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.38);
-    transform: translateZ(0);
-    transition: transform 160ms ease, filter 160ms ease;
-  }
-
-  .unit-token.player {
-    background:
-      radial-gradient(circle at 35% 25%, rgba(255,255,255,0.38), transparent 30%),
-      linear-gradient(180deg, #4aa3e0, var(--blue));
-  }
-
-  .unit-token.enemy {
-    background:
-      radial-gradient(circle at 35% 25%, rgba(255,255,255,0.34), transparent 30%),
-      linear-gradient(180deg, #e76b5f, var(--red));
-  }
-
-  .unit-token.acted {
-    filter: grayscale(0.8) brightness(0.62);
-  }
-
+  .unit-token { position: relative; z-index: 2; width: 74%; height: 74%; display: grid; place-items: center; border-radius: 50%; border: 3px solid #fff; color: #fff; font-size: 1.45rem; text-shadow: 0 2px 0 rgba(0,0,0,0.52); box-shadow: 0 4px 10px rgba(0,0,0,0.38); transform: translateZ(0); transition: transform 160ms ease, filter 160ms ease; }
+  .unit-token.player { background: radial-gradient(circle at 35% 25%, rgba(255,255,255,0.38), transparent 30%), linear-gradient(180deg, #4aa3e0, var(--blue)); }
+  .unit-token.enemy { background: radial-gradient(circle at 35% 25%, rgba(255,255,255,0.34), transparent 30%), linear-gradient(180deg, #e76b5f, var(--red)); }
+  .unit-token.acted { filter: grayscale(0.8) brightness(0.62); }
   .unit-token.hit { animation: hit-wobble 260ms ease; }
   .unit-token.flash { animation: flash-strike 360ms ease; }
 
-  .mini-hp {
-    position: absolute;
-    left: 10%;
-    right: 10%;
-    bottom: -8px;
-    height: 6px;
-    border: 1px solid rgba(35,31,32,0.82);
-    border-radius: 99px;
-    background: #3b2c22;
-    overflow: hidden;
-  }
+  .mini-hp { position: absolute; left: 10%; right: 10%; bottom: -8px; height: 6px; border: 1px solid rgba(35,31,32,0.82); border-radius: 99px; background: #3b2c22; overflow: hidden; }
+  .mini-hp i { display: block; height: 100%; background: #62d66f; }
+  
+  .damage-pop { position: absolute; z-index: 5; top: 8px; left: 50%; transform: translateX(-50%); padding: 2px 7px; color: #fff; background: #2b1c15; border: 2px solid var(--gold-light); border-radius: 999px; font-size: 0.85rem; font-weight: 900; animation: float-pop 820ms ease forwards; pointer-events: none; }
+  
+  /* EXPポップアップ用追加 */
+  .exp-pop { position: absolute; z-index: 6; top: -15px; left: 50%; transform: translateX(-50%); padding: 2px 7px; color: #fff; background: #286aa6; border: 2px solid #6bc4ff; border-radius: 999px; font-size: 0.85rem; font-weight: 900; animation: float-pop-exp 1000ms ease forwards; pointer-events: none; }
 
-  .mini-hp i {
-    display: block;
-    height: 100%;
-    background: #62d66f;
-  }
+  .roster { display: grid; gap: 8px; max-height: 260px; overflow: auto; padding-right: 2px; }
+  .roster button { width: 100%; display: grid; grid-template-columns: 34px 1fr auto; gap: 8px; align-items: center; min-height: 48px; padding: 7px; border: 1px solid rgba(35,31,32,0.28); border-radius: 8px; background: rgba(255,255,255,0.38); color: var(--ink); cursor: pointer; text-align: left; }
+  .roster button.is-selected { outline: 3px solid rgba(216,169,61,0.72); }
+  .roster-icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--blue); border: 2px solid var(--ink); }
+  .roster button.enemy .roster-icon { background: var(--red); }
+  .roster-name { display: grid; min-width: 0; }
+  .roster-name b, .roster-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .roster-name span { color: #66543b; font-size: 0.78rem; }
 
-  .damage-pop {
-    position: absolute;
-    z-index: 5;
-    top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 2px 7px;
-    color: #fff;
-    background: #2b1c15;
-    border: 2px solid var(--gold-light);
-    border-radius: 999px;
-    font-size: 0.85rem;
-    font-weight: 900;
-    animation: float-pop 820ms ease forwards;
-    pointer-events: none;
-  }
+  .log { margin-top: 12px; padding-top: 12px; border-top: 2px solid rgba(35,31,32,0.18); }
+  .log-list { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; max-height: 210px; overflow: auto; }
+  .log-list li { padding: 7px 8px; border-radius: 8px; background: rgba(255,255,255,0.34); color: #4c3d2f; font-size: 0.86rem; line-height: 1.35; }
 
-  .roster {
-    display: grid;
-    gap: 8px;
-    max-height: 260px;
-    overflow: auto;
-    padding-right: 2px;
-  }
+  .command-bar { display: grid; grid-template-columns: minmax(160px, 1fr) auto auto auto auto; gap: 8px; align-items: center; padding: 10px; background: linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0.02)), var(--paper-deep); }
+  .hint { min-width: 0; color: #4a3928; font-weight: 700; line-height: 1.35; }
+  .cmd-btn { min-width: 98px; padding: 8px 12px; }
+  .cmd-btn.secondary { background: linear-gradient(180deg, #f7f1e1, #cdb58d); }
+  .cmd-btn.blue { color: #fff; background: linear-gradient(180deg, #4aa3e0, var(--blue)); }
 
-  .roster button {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 34px 1fr auto;
-    gap: 8px;
-    align-items: center;
-    min-height: 48px;
-    padding: 7px;
-    border: 1px solid rgba(35,31,32,0.28);
-    border-radius: 8px;
-    background: rgba(255,255,255,0.38);
-    color: var(--ink);
-    cursor: pointer;
-    text-align: left;
-  }
-
-  .roster button.is-selected {
-    outline: 3px solid rgba(216,169,61,0.72);
-  }
-
-  .roster-icon {
-    width: 34px;
-    height: 34px;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    color: #fff;
-    background: var(--blue);
-    border: 2px solid var(--ink);
-  }
-
-  .roster button.enemy .roster-icon {
-    background: var(--red);
-  }
-
-  .roster-name {
-    display: grid;
-    min-width: 0;
-  }
-
-  .roster-name b,
-  .roster-name span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .roster-name span {
-    color: #66543b;
-    font-size: 0.78rem;
-  }
-
-  .log {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 2px solid rgba(35,31,32,0.18);
-  }
-
-  .log-list {
-    display: grid;
-    gap: 7px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    max-height: 210px;
-    overflow: auto;
-  }
-
-  .log-list li {
-    padding: 7px 8px;
-    border-radius: 8px;
-    background: rgba(255,255,255,0.34);
-    color: #4c3d2f;
-    font-size: 0.86rem;
-    line-height: 1.35;
-  }
-
-  .command-bar {
-    display: grid;
-    grid-template-columns: minmax(160px, 1fr) auto auto auto auto; /* ボタン増量のため列拡張 */
-    gap: 8px;
-    align-items: center;
-    padding: 10px;
-    background:
-      linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0.02)),
-      var(--paper-deep);
-  }
-
-  .hint {
-    min-width: 0;
-    color: #4a3928;
-    font-weight: 700;
-    line-height: 1.35;
-  }
-
-  .cmd-btn {
-    min-width: 98px;
-    padding: 8px 12px;
-  }
-
-  .cmd-btn.secondary {
-    background: linear-gradient(180deg, #f7f1e1, #cdb58d);
-  }
-
-  .cmd-btn.blue {
-    color: #fff;
-    background: linear-gradient(180deg, #4aa3e0, var(--blue));
-  }
-
-  .overlay {
-    position: fixed;
-    inset: 0;
-    display: none;
-    place-items: center;
-    z-index: 20;
-    padding: 18px;
-    background: rgba(20, 16, 13, 0.42);
-  }
-
+  .overlay { position: fixed; inset: 0; display: none; place-items: center; z-index: 20; padding: 18px; background: rgba(20, 16, 13, 0.42); }
   .overlay.show { display: grid; }
-
-  .banner {
-    width: min(520px, 100%);
-    padding: 18px;
-    text-align: center;
-    color: #fff;
-    background:
-      linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0)),
-      #30241b;
-    border: 3px solid var(--gold);
-    border-radius: 8px;
-    box-shadow: 0 18px 40px rgba(0,0,0,0.48);
-  }
-
+  .banner { width: min(520px, 100%); padding: 18px; text-align: center; color: #fff; background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0)), #30241b; border: 3px solid var(--gold); border-radius: 8px; box-shadow: 0 18px 40px rgba(0,0,0,0.48); }
   .banner strong { font-size: 1.8rem; line-height: 1.15; }
   .banner span { display: block; margin-top: 8px; color: #f4dba6; line-height: 1.45; }
   .banner-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 
-  @keyframes hit-wobble {
-    0% { transform: translateX(0) scale(1); }
-    35% { transform: translateX(-6px) scale(0.96); }
-    70% { transform: translateX(5px) scale(1.04); }
-    100% { transform: translateX(0) scale(1); }
-  }
+  @keyframes hit-wobble { 0% { transform: translateX(0) scale(1); } 35% { transform: translateX(-6px) scale(0.96); } 70% { transform: translateX(5px) scale(1.04); } 100% { transform: translateX(0) scale(1); } }
+  @keyframes flash-strike { 0% { transform: scale(1); filter: brightness(1); } 45% { transform: scale(1.16); filter: brightness(1.45); } 100% { transform: scale(1); filter: brightness(1); } }
+  @keyframes float-pop { 0% { opacity: 0; transform: translate(-50%, 10px) scale(0.82); } 18% { opacity: 1; transform: translate(-50%, 0) scale(1); } 100% { opacity: 0; transform: translate(-50%, -28px) scale(1.06); } }
+  @keyframes float-pop-exp { 0% { opacity: 0; transform: translate(-50%, 0) scale(0.5); } 20% { opacity: 1; transform: translate(-50%, -15px) scale(1.2); } 80% { opacity: 1; transform: translate(-50%, -25px) scale(1); } 100% { opacity: 0; transform: translate(-50%, -35px) scale(0.8); } }
 
-  @keyframes flash-strike {
-    0% { transform: scale(1); filter: brightness(1); }
-    45% { transform: scale(1.16); filter: brightness(1.45); }
-    100% { transform: scale(1); filter: brightness(1); }
-  }
-
-  @keyframes float-pop {
-    0% { opacity: 0; transform: translate(-50%, 10px) scale(0.82); }
-    18% { opacity: 1; transform: translate(-50%, 0) scale(1); }
-    100% { opacity: 0; transform: translate(-50%, -28px) scale(1.06); }
-  }
-
-  @media (max-width: 920px) {
-    .app { min-height: 100dvh; }
-    .battlefield { grid-template-columns: 1fr; }
-    .panel { overflow: visible; }
-    .mission, .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .unit-card, .triangle, .log { display: none; }
-    .board-frame { width: min(94vw, 72dvh, 650px); }
-    .roster { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: none; }
-  }
-
-  @media (max-width: 560px) {
-    .app { gap: 8px; padding: 7px; }
-    .topbar { grid-template-columns: 1fr auto; }
-    .phase-pill { grid-column: 1 / -1; min-width: 0; padding: 8px; order: 3; }
-    .brand-title strong { font-size: 1rem; }
-    .crest { width: 42px; height: 42px; font-size: 1.25rem; }
-    .mission { grid-template-columns: 1fr; }
-    .roster { grid-template-columns: 1fr; }
-    .command-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .hint { grid-column: 1 / -1; font-size: 0.9rem; }
-    .cmd-btn { min-width: 0; width: 100%; padding-inline: 8px; }
-    .unit-token { font-size: 1.12rem; border-width: 2px; }
-    .terrain-mark { font-size: 0.72rem; }
-  }
+  @media (max-width: 920px) { .app { min-height: 100dvh; } .battlefield { grid-template-columns: 1fr; } .panel { overflow: visible; } .mission, .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .unit-card, .triangle, .log { display: none; } .board-frame { width: min(94vw, 72dvh, 650px); } .roster { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: none; } }
+  @media (max-width: 560px) { .app { gap: 8px; padding: 7px; } .topbar { grid-template-columns: 1fr auto; } .phase-pill { grid-column: 1 / -1; min-width: 0; padding: 8px; order: 3; } .brand-title strong { font-size: 1rem; } .crest { width: 42px; height: 42px; font-size: 1.25rem; } .mission { grid-template-columns: 1fr; } .roster { grid-template-columns: 1fr; } .command-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hint { grid-column: 1 / -1; font-size: 0.9rem; } .cmd-btn { min-width: 0; width: 100%; padding-inline: 8px; } .unit-token { font-size: 1.12rem; border-width: 2px; } .terrain-mark { font-size: 0.72rem; } }
 </style>
 </head>
 <body>
@@ -693,22 +157,10 @@
     <section class="panel" aria-label="作戦情報">
       <h2>作戦</h2>
       <div class="mission">
-        <div class="mission-line">
-          <b>🎯</b>
-          <div><b>勝利条件</b><span>敵将を倒す</span></div>
-        </div>
-        <div class="mission-line">
-          <b>🛡️</b>
-          <div><b>敗北条件</b><span>リクが倒れる</span></div>
-        </div>
-        <div class="mission-line">
-          <b>⭐</b>
-          <div><b>スコア</b><span id="scoreLabel">0</span></div>
-        </div>
-        <div class="mission-line">
-          <b>🏆</b>
-          <div><b>最高</b><span id="bestLabel">0</span></div>
-        </div>
+        <div class="mission-line"><b>🎯</b><div><b>勝利条件</b><span>敵将を倒す</span></div></div>
+        <div class="mission-line"><b>🛡️</b><div><b>敗北条件</b><span>リクが倒れる</span></div></div>
+        <div class="mission-line"><b>⭐</b><div><b>スコア</b><span id="scoreLabel">0</span></div></div>
+        <div class="mission-line"><b>🏆</b><div><b>最高</b><span id="bestLabel">0</span></div></div>
       </div>
 
       <div class="unit-card" id="selectedCard">
@@ -720,15 +172,11 @@
         </div>
       </div>
       <div class="stats" id="statGrid"></div>
-      <div class="triangle">
-        剣は斧に強く、斧は槍に強く、槍は剣に強い。青マスへ移動後、隣接する赤い敵へ通常攻撃、または「技を使う」ボタンで固有の奥義を発動可能！
-      </div>
+      <div class="triangle">敵への攻撃や撃破でEXPを獲得！LvUPで全回復＆能力UP！<br>青マスへ移動後、赤い敵へ攻撃、または「技を使う」で奥義発動！</div>
     </section>
 
     <section class="board-wrap" aria-label="戦場">
-      <div class="board-frame">
-        <div id="gameBoard" aria-label="8x8の戦術マップ"></div>
-      </div>
+      <div class="board-frame"><div id="gameBoard" aria-label="8x8の戦術マップ"></div></div>
     </section>
 
     <section class="panel" aria-label="部隊一覧">
@@ -774,167 +222,99 @@
   };
 
   const maps = [
-    {
-      title: "第1章 ルーン砦の奪還",
-      tiles: [
-        ["M","M","F","G","G","R","F","T"],
-        ["M","G","G","R","F","R","G","G"],
-        ["F","G","F","R","G","G","G","F"],
-        ["G","R","R","R","W","W","G","G"],
-        ["G","G","F","R","G","R","R","G"],
-        ["T","G","G","G","F","G","G","M"],
-        ["G","R","F","G","G","G","M","M"],
-        ["G","G","G","F","G","M","M","M"]
-      ]
-    },
-    {
-      title: "第2章 きらめく橋の攻防",
-      tiles: [
-        ["F","G","G","R","R","G","F","T"],
-        ["G","F","G","R","W","R","G","G"],
-        ["G","G","G","R","W","R","F","G"],
-        ["M","M","G","R","R","R","G","G"],
-        ["G","F","G","G","F","G","G","M"],
-        ["T","G","R","R","R","G","F","M"],
-        ["G","G","R","W","R","G","G","G"],
-        ["G","F","G","G","R","G","M","M"]
-      ]
-    },
-    {
-      title: "第3章 こだまの森",
-      tiles: [
-        ["T","F","F","G","G","R","G","M"],
-        ["G","F","G","G","F","R","G","G"],
-        ["G","G","G","F","F","R","F","G"],
-        ["R","R","G","G","G","R","G","G"],
-        ["G","F","G","M","G","G","F","G"],
-        ["G","G","R","R","R","G","G","T"],
-        ["M","G","G","F","G","G","F","G"],
-        ["M","M","G","G","G","R","G","G"]
-      ]
-    }
+    { title: "第1章 ルーン砦の奪還", tiles: [ ["M","M","F","G","G","R","F","T"], ["M","G","G","R","F","R","G","G"], ["F","G","F","R","G","G","G","F"], ["G","R","R","R","W","W","G","G"], ["G","G","F","R","G","R","R","G"], ["T","G","G","G","F","G","G","M"], ["G","R","F","G","G","G","M","M"], ["G","G","G","F","G","M","M","M"] ] },
+    { title: "第2章 きらめく橋の攻防", tiles: [ ["F","G","G","R","R","G","F","T"], ["G","F","G","R","W","R","G","G"], ["G","G","G","R","W","R","F","G"], ["M","M","G","R","R","R","G","G"], ["G","F","G","G","F","G","G","M"], ["T","G","R","R","R","G","F","M"], ["G","G","R","W","R","G","G","G"], ["G","F","G","G","R","G","M","M"] ] },
+    { title: "第3章 こだまの森", tiles: [ ["T","F","F","G","G","R","G","M"], ["G","F","G","G","F","R","G","G"], ["G","G","G","F","F","R","F","G"], ["R","R","G","G","G","R","G","G"], ["G","F","G","M","G","G","F","G"], ["G","G","R","R","R","G","G","T"], ["M","G","G","F","G","G","F","G"], ["M","M","G","G","G","R","G","G"] ] }
   ];
 
   const classes = {
-    // 初期クラス（技データ、進化先データを内包）
-    hero: { icon: "🛡️", label: "星剣ロード", hp: 34, atk: 10, mov: 3, min: 1, max: 1, type: "sword", trait: "近くの仲間を勇気づける", nextClass: "hero_v2", skill: { name: "星烈斬", bonus: 6, min: 1, max: 1 } },
-    lancer: { icon: "🔱", label: "槍ナイト", hp: 36, atk: 9, mov: 4, min: 1, max: 1, type: "lance", trait: "足が速く、前線を支える", nextClass: "lancer_v2", skill: { name: "流星突", bonus: 4, min: 1, max: 1 } },
-    archer: { icon: "🏹", label: "風の弓兵", hp: 27, atk: 10, mov: 3, min: 2, max: 2, type: "bow", trait: "離れた敵を狙える", nextClass: "archer_v2", skill: { name: "狙撃矢", bonus: 3, min: 2, max: 3 } },
-    mage: { icon: "✨", label: "ルーン魔道士", hp: 25, atk: 11, mov: 3, min: 1, max: 2, type: "magic", trait: "地形の守りを少し無視する", nextClass: "mage_v2", skill: { name: "爆炎ルーン", bonus: 8, min: 1, max: 2 } },
-    
-    // 進化後クラス（Lv3到達時に自動クラスチェンジ）
-    hero_v2: { icon: "👑", label: "ブレイブロード", hp: 44, atk: 15, mov: 3, min: 1, max: 1, type: "sword", trait: "星紋の力を完全覚醒せし勇者", skill: { name: "真・星烈覇斬", bonus: 12, min: 1, max: 1 } },
-    lancer_v2: { icon: "🐎", label: "ホーリーナイト", hp: 46, atk: 13, mov: 4, min: 1, max: 1, type: "lance", trait: "聖なる加護を受けし白銀の重騎士", skill: { name: "神聖流星突", bonus: 9, min: 1, max: 1 } },
-    archer_v2: { icon: "🎯", label: "スナイパーマスター", hp: 35, atk: 14, mov: 3, min: 2, max: 2, type: "bow", trait: "遥か彼方の闇を射抜く神射手", skill: { name: "神幻究極矢", bonus: 8, min: 2, max: 4 } },
-    mage_v2: { icon: "🔮", label: "ルーン大魔導士", hp: 32, atk: 17, mov: 3, min: 1, max: 2, type: "magic", trait: "世界の理を操る禁術の体現者", skill: { name: "終焉のメテオ", bonus: 15, min: 1, max: 3 } },
+    // プレイヤー初期クラス
+    hero: { icon: "🛡️", label: "星剣ロード", hp: 34, atk: 10, mov: 3, min: 1, max: 1, type: "sword", trait: "主人公", nextClass: "hero_v2", skill: { name: "星烈斬", bonus: 6, min: 1, max: 1 } },
+    lancer: { icon: "🔱", label: "槍ナイト", hp: 36, atk: 9, mov: 4, min: 1, max: 1, type: "lance", trait: "足が速い", nextClass: "lancer_v2", skill: { name: "流星突", bonus: 4, min: 1, max: 1 } },
+    archer: { icon: "🏹", label: "風の弓兵", hp: 27, atk: 10, mov: 3, min: 2, max: 2, type: "bow", trait: "遠隔攻撃", nextClass: "archer_v2", skill: { name: "狙撃矢", bonus: 3, min: 2, max: 3 } },
+    mage: { icon: "✨", label: "ルーン魔道士", hp: 25, atk: 11, mov: 3, min: 1, max: 2, type: "magic", trait: "魔法攻撃", nextClass: "mage_v2", skill: { name: "爆炎ルーン", bonus: 8, min: 1, max: 2 } },
+    // プレイヤー進化クラス
+    hero_v2: { icon: "👑", label: "ブレイブロード", hp: 44, atk: 15, mov: 3, min: 1, max: 1, type: "sword", trait: "星紋の覚醒者", skill: { name: "真・星烈覇斬", bonus: 12, min: 1, max: 1 } },
+    lancer_v2: { icon: "🐎", label: "ホーリーナイト", hp: 46, atk: 13, mov: 4, min: 1, max: 1, type: "lance", trait: "白銀の重騎士", skill: { name: "神聖流星突", bonus: 9, min: 1, max: 1 } },
+    archer_v2: { icon: "🎯", label: "スナイパーマスター", hp: 35, atk: 14, mov: 3, min: 2, max: 2, type: "bow", trait: "神射手", skill: { name: "神幻究極矢", bonus: 8, min: 2, max: 4 } },
+    mage_v2: { icon: "🔮", label: "ルーン大魔導士", hp: 32, atk: 17, mov: 3, min: 1, max: 2, type: "magic", trait: "禁術の体現者", skill: { name: "終焉のメテオ", bonus: 15, min: 1, max: 3 } },
 
-    // 敵ユニット
-    bandit: { icon: "🪓", label: "山賊", hp: 26, atk: 8, mov: 3, min: 1, max: 1, type: "axe", trait: "荒っぽい一撃" },
-    soldier: { icon: "🗡️", label: "剣兵", hp: 25, atk: 8, mov: 3, min: 1, max: 1, type: "sword", trait: "素早い斬撃" },
-    guard: { icon: "🔰", label: "重槍兵", hp: 34, atk: 9, mov: 2, min: 1, max: 1, type: "lance", trait: "砦で粘る守備役" },
-    sniper: { icon: "🏹", label: "見張り弓", hp: 24, atk: 9, mov: 2, min: 2, max: 2, type: "bow", trait: "遠くから狙う" },
-    boss: { icon: "👹", label: "影の隊長", hp: 44, atk: 11, mov: 2, min: 1, max: 1, type: "axe", trait: "倒せば章クリア" }
+    // 敵ユニット (Base)
+    bandit: { icon: "🪓", label: "山賊", hp: 26, atk: 8, mov: 3, min: 1, max: 1, type: "axe", trait: "斧" },
+    soldier: { icon: "🗡️", label: "剣兵", hp: 25, atk: 8, mov: 3, min: 1, max: 1, type: "sword", trait: "剣" },
+    guard: { icon: "🔰", label: "重槍兵", hp: 34, atk: 9, mov: 2, min: 1, max: 1, type: "lance", trait: "槍" },
+    sniper: { icon: "🏹", label: "見張り弓", hp: 24, atk: 9, mov: 2, min: 2, max: 2, type: "bow", trait: "弓" },
+    boss: { icon: "👹", label: "影の隊長", hp: 44, atk: 11, mov: 2, min: 1, max: 1, type: "axe", trait: "ボス" },
+    
+    // 敵ユニット (進化 V2: 第3章〜)
+    bandit_v2: { icon: "👺", label: "狂戦士", hp: 36, atk: 13, mov: 3, min: 1, max: 1, type: "axe", trait: "狂気の斧" },
+    soldier_v2: { icon: "⚔️", label: "剣豪", hp: 35, atk: 13, mov: 3, min: 1, max: 1, type: "sword", trait: "達人の剣" },
+    guard_v2: { icon: "🛡️", label: "ジェネラル", hp: 45, atk: 12, mov: 2, min: 1, max: 1, type: "lance", trait: "鉄壁の槍" },
+    sniper_v2: { icon: "🏇", label: "ボウナイト", hp: 32, atk: 12, mov: 4, min: 2, max: 2, type: "bow", trait: "機動弓" },
+    boss_v2: { icon: "💀", label: "魔将", hp: 60, atk: 16, mov: 2, min: 1, max: 2, type: "magic", trait: "魔法ボス" }
   };
 
   const state = {
-    stage: 1,
-    turn: 1,
-    phase: "player",
-    score: 0,
-    best: Number(localStorage.getItem(bestKey) || 0),
-    selectedId: null,
-    selectionMoved: false,
-    selectedSkill: false, // 新設: スキル発動モードの管理
-    showDanger: false,
-    locked: false,
-    units: [],
-    log: []
+    stage: 1, turn: 1, phase: "player", score: 0, best: Number(localStorage.getItem(bestKey) || 0),
+    selectedId: null, selectionMoved: false, selectedSkill: false, showDanger: false, locked: false,
+    units: [], log: []
   };
 
   const el = {
-    board: document.getElementById("gameBoard"),
-    phase: document.getElementById("phasePill"),
-    stage: document.getElementById("stageLabel"),
-    score: document.getElementById("scoreLabel"),
-    best: document.getElementById("bestLabel"),
-    roster: document.getElementById("roster"),
-    log: document.getElementById("logList"),
-    hint: document.getElementById("hintText"),
-    skill: document.getElementById("skillBtn"), // 新設
-    wait: document.getElementById("waitBtn"),
-    danger: document.getElementById("dangerBtn"),
-    endTurn: document.getElementById("endTurnBtn"),
-    restart: document.getElementById("restartBtn"),
-    portrait: document.getElementById("portrait"),
-    unitName: document.getElementById("unitName"),
-    unitClass: document.getElementById("unitClass"),
-    hpFill: document.getElementById("hpFill"),
-    statGrid: document.getElementById("statGrid"),
-    overlay: document.getElementById("overlay"),
-    overlayTitle: document.getElementById("overlayTitle"),
-    overlayText: document.getElementById("overlayText"),
-    overlayActions: document.getElementById("overlayActions")
+    board: document.getElementById("gameBoard"), phase: document.getElementById("phasePill"), stage: document.getElementById("stageLabel"),
+    score: document.getElementById("scoreLabel"), best: document.getElementById("bestLabel"), roster: document.getElementById("roster"),
+    log: document.getElementById("logList"), hint: document.getElementById("hintText"), skill: document.getElementById("skillBtn"),
+    wait: document.getElementById("waitBtn"), danger: document.getElementById("dangerBtn"), endTurn: document.getElementById("endTurnBtn"),
+    restart: document.getElementById("restartBtn"), portrait: document.getElementById("portrait"), unitName: document.getElementById("unitName"),
+    unitClass: document.getElementById("unitClass"), hpFill: document.getElementById("hpFill"), statGrid: document.getElementById("statGrid"),
+    overlay: document.getElementById("overlay"), overlayTitle: document.getElementById("overlayTitle"), overlayText: document.getElementById("overlayText"), overlayActions: document.getElementById("overlayActions")
   };
 
-  function stageMap() {
-    return maps[(state.stage - 1) % maps.length];
-  }
+  function stageMap() { return maps[(state.stage - 1) % maps.length]; }
+  function unitClass(unit) { return classes[unit.classId]; }
 
-  function unitClass(unit) {
-    return classes[unit.classId];
-  }
+  function addUnit(x, y, baseClassId, team, name, boss = false) {
+    // 敵のステージ進化判定
+    let classId = baseClassId;
+    if (team === "enemy" && state.stage >= 3) {
+      if (classes[baseClassId + "_v2"]) classId = baseClassId + "_v2";
+    }
 
-  function addUnit(x, y, classId, team, name, boss = false) {
     const cls = classes[classId];
-    const enemyBoost = team === "enemy" ? Math.floor((state.stage - 1) * 3) : Math.floor((state.stage - 1) * 1.5);
-    const playerBoost = team === "player" ? Math.floor((state.stage - 1) * 2) : 0;
-    const hp = cls.hp + enemyBoost + playerBoost;
+    const enemyBoost = team === "enemy" ? Math.floor((state.stage - 1) * 2) : 0;
+    const hp = cls.hp + enemyBoost;
     state.units.push({
       id: `${team}-${classId}-${name}-${Math.random().toString(36).slice(2, 8)}`,
-      x,
-      y,
-      classId,
-      team,
-      name,
-      hp,
-      maxHp: hp,
-      atk: cls.atk + Math.floor(enemyBoost / 2) + Math.floor(playerBoost / 2),
-      mov: cls.mov,
-      min: cls.min,
-      max: cls.max,
-      type: cls.type,
-      boss,
-      acted: false,
-      pop: "",
-      hit: false,
-      flash: false,
-      level: 1, // 新設: 初期レベル
-      exp: 0    // 新設: 初期経験値
+      x, y, classId, team, name, hp, maxHp: hp, atk: cls.atk + Math.floor(enemyBoost / 2),
+      mov: cls.mov, min: cls.min, max: cls.max, type: cls.type, boss,
+      acted: false, pop: "", popExp: "", hit: false, flash: false, level: 1, exp: 0
     });
   }
 
   function setupStage() {
-    state.phase = "player";
-    state.turn = 1;
-    state.selectedId = null;
-    state.selectionMoved = false;
-    state.selectedSkill = false;
-    state.locked = false;
+    state.phase = "player"; state.turn = 1; state.selectedId = null;
+    state.selectionMoved = false; state.selectedSkill = false; state.locked = false;
     
-    // 味方ユニットの引き継ぎ・生成処理
+    // 味方の配置位置（リセット用）
+    const startPositions = [{x:0, y:7}, {x:1, y:6}, {x:2, y:7}, {x:0, y:5}];
+
     if (state.stage === 1 || state.units.length === 0) {
       state.units = [];
-      addUnit(0, 7, "hero", "player", "リク");
-      addUnit(1, 6, "lancer", "player", "カイ");
-      addUnit(2, 7, "archer", "player", "ノア");
-      addUnit(0, 5, "mage", "player", "ミオ");
+      addUnit(startPositions[0].x, startPositions[0].y, "hero", "player", "リク");
+      addUnit(startPositions[1].x, startPositions[1].y, "lancer", "player", "カイ");
+      addUnit(startPositions[2].x, startPositions[2].y, "archer", "player", "ノア");
+      addUnit(startPositions[3].x, startPositions[3].y, "mage", "player", "ミオ");
     } else {
-      // 次のステージへ進む場合は、プレイヤーユニットのみ生存状態を引き継ぐ
+      // ステージクリア後、味方のみ引き継ぎ、位置をリセット
       const currentPlayers = aliveUnits("player");
       state.units = [];
-      currentPlayers.forEach(p => {
+      currentPlayers.forEach((p, index) => {
         p.acted = false;
-        p.hp = p.maxHp; // ステージ開始時は全回復
+        p.hp = p.maxHp; // 全回復
+        if (startPositions[index]) {
+          p.x = startPositions[index].x;
+          p.y = startPositions[index].y;
+        }
         state.units.push(p);
       });
     }
@@ -942,22 +322,16 @@
     const variant = (state.stage - 1) % 3;
     if (variant === 0) {
       addUnit(7, 0, "boss", "enemy", "ザガン", true);
-      addUnit(6, 1, "bandit", "enemy", "山賊A");
-      addUnit(5, 1, "sniper", "enemy", "見張り");
-      addUnit(6, 2, "soldier", "enemy", "剣兵");
-      addUnit(4, 0, "guard", "enemy", "砦兵");
+      addUnit(6, 1, "bandit", "enemy", "山賊A"); addUnit(5, 1, "sniper", "enemy", "見張り");
+      addUnit(6, 2, "soldier", "enemy", "剣兵"); addUnit(4, 0, "guard", "enemy", "砦兵");
     } else if (variant === 1) {
       addUnit(7, 0, "boss", "enemy", "ドラン", true);
-      addUnit(5, 2, "guard", "enemy", "橋番");
-      addUnit(6, 3, "sniper", "enemy", "弓番");
-      addUnit(4, 1, "bandit", "enemy", "斧兵");
-      addUnit(7, 2, "soldier", "enemy", "剣兵");
+      addUnit(5, 2, "guard", "enemy", "橋番"); addUnit(6, 3, "sniper", "enemy", "弓番");
+      addUnit(4, 1, "bandit", "enemy", "斧兵"); addUnit(7, 2, "soldier", "enemy", "剣兵");
     } else {
       addUnit(0, 0, "boss", "enemy", "モルド", true);
-      addUnit(2, 1, "sniper", "enemy", "森弓");
-      addUnit(4, 2, "bandit", "enemy", "斧兵");
-      addUnit(6, 1, "soldier", "enemy", "剣兵");
-      addUnit(7, 5, "guard", "enemy", "重槍");
+      addUnit(2, 1, "sniper", "enemy", "森弓"); addUnit(4, 2, "bandit", "enemy", "斧兵");
+      addUnit(6, 1, "soldier", "enemy", "剣兵"); addUnit(7, 5, "guard", "enemy", "重槍");
     }
 
     pushLog(`第${state.stage}章、開始。敵軍を迎え撃て。`);
@@ -968,9 +342,9 @@
   function tileAt(x, y) { return stageMap().tiles[y][x]; }
   function terrainAt(x, y) { return terrain[tileAt(x, y)]; }
   function inBounds(x, y) { return x >= 0 && y >= 0 && x < BOARD_SIZE && y < BOARD_SIZE; }
-  function aliveUnits(team) { return state.units.filter((unit) => unit.team === team && unit.hp > 0); }
-  function getUnitAt(x, y) { return state.units.find((unit) => unit.hp > 0 && unit.x === x && unit.y === y); }
-  function selectedUnit() { return state.units.find((unit) => unit.id === state.selectedId && unit.hp > 0); }
+  function aliveUnits(team) { return state.units.filter(u => u.team === team && u.hp > 0); }
+  function getUnitAt(x, y) { return state.units.find(u => u.hp > 0 && u.x === x && u.y === y); }
+  function selectedUnit() { return state.units.find(u => u.id === state.selectedId && u.hp > 0); }
   function keyOf(x, y) { return `${x},${y}`; }
   function distance(a, b) { return Math.abs(a.x - b.x) + Math.abs(a.y - b.y); }
 
@@ -983,29 +357,23 @@
     while (queue.length) {
       const current = queue.shift();
       for (const [dx, dy] of dirs) {
-        const nx = current.x + dx;
-        const ny = current.y + dy;
+        const nx = current.x + dx, ny = current.y + dy;
         if (!inBounds(nx, ny)) continue;
-
         const land = terrainAt(nx, ny);
         if (!land.pass) continue;
-
         const occupant = getUnitAt(nx, ny);
         if (occupant && occupant.id !== unit.id) continue;
 
         const nextCost = current.cost + land.cost;
         const key = keyOf(nx, ny);
         if (nextCost <= unit.mov && (!costs.has(key) || nextCost < costs.get(key))) {
-          costs.set(key, nextCost);
-          queue.push({ x: nx, y: ny, cost: nextCost });
+          costs.set(key, nextCost); queue.push({ x: nx, y: ny, cost: nextCost });
         }
       }
     }
-
-    return [...costs.keys()].map((key) => {
-      const [x, y] = key.split(",").map(Number);
-      return { x, y };
-    }).filter((pos) => includeStart || pos.x !== unit.x || pos.y !== unit.y);
+    return [...costs.keys()].map(key => {
+      const [x, y] = key.split(",").map(Number); return { x, y };
+    }).filter(pos => includeStart || pos.x !== unit.x || pos.y !== unit.y);
   }
 
   function attackCellsFrom(unit, x = unit.x, y = unit.y, customMin, customMax) {
@@ -1015,9 +383,7 @@
     for (let cy = 0; cy < BOARD_SIZE; cy++) {
       for (let cx = 0; cx < BOARD_SIZE; cx++) {
         const dist = Math.abs(cx - x) + Math.abs(cy - y);
-        if (dist >= minRange && dist <= maxRange) {
-          cells.push({ x: cx, y: cy });
-        }
+        if (dist >= minRange && dist <= maxRange) cells.push({ x: cx, y: cy });
       }
     }
     return cells;
@@ -1034,10 +400,9 @@
 
   function dangerCells() {
     const danger = new Set();
-    aliveUnits("enemy").forEach((enemy) => {
-      const reachable = getReachable(enemy, true);
-      reachable.forEach((pos) => {
-        attackCellsFrom(enemy, pos.x, pos.y).forEach((cell) => danger.add(keyOf(cell.x, cell.y)));
+    aliveUnits("enemy").forEach(enemy => {
+      getReachable(enemy, true).forEach(pos => {
+        attackCellsFrom(enemy, pos.x, pos.y).forEach(cell => danger.add(keyOf(cell.x, cell.y)));
       });
     });
     return danger;
@@ -1053,7 +418,6 @@
     return 0;
   }
 
-  // 攻撃力計算（アクティブスキルのボーナス補正を統合）
   function damageAmount(attacker, defender, isSkill = false) {
     const land = terrainAt(defender.x, defender.y);
     const magicPierce = attacker.type === "magic" ? Math.floor(land.def / 2) : land.def;
@@ -1061,10 +425,7 @@
     const crit = Math.random() < (attacker.team === "player" ? 0.15 : 0.05);
     
     let attackPower = attacker.atk;
-    if (isSkill) {
-      attackPower += unitClass(attacker).skill.bonus; // スキル固有の威力を加算
-    }
-
+    if (isSkill) attackPower += unitClass(attacker).skill.bonus;
     const base = Math.max(1, attackPower + advantage - magicPierce);
     return { value: base + (crit ? 6 : 0), crit, advantage };
   }
@@ -1076,29 +437,27 @@
     const base = Math.max(1, attackPower + advantage - (attacker.type === "magic" ? Math.floor(land.def / 2) : land.def));
     const icon = advantage > 0 ? "有利" : advantage < 0 ? "不利" : "互角";
     return isSkill 
-      ? `【技】${unitClass(attacker).skill.name} → ${defender.name}: ${base}ダメージ予想（${icon}）`
-      : `${attacker.name} → ${defender.name}: ${base}ダメージ予想（${icon}）`;
+      ? `【技】${unitClass(attacker).skill.name} → ${defender.name}: ${base}Dmg予想（${icon}）`
+      : `${attacker.name} → ${defender.name}: ${base}Dmg予想（${icon}）`;
   }
 
-  // 経験値獲得とレベルアップ・進化の処理
   function gainExp(unit, amount) {
     if (unit.team !== "player") return;
     unit.exp += amount;
-    pushLog(`${unit.name}は 経験値を ${amount} 獲得。`);
+    unit.popExp = `+${amount} EXP`; // 視覚的ポップアップ
     
     if (unit.exp >= 100) {
       unit.level++;
       unit.exp -= 100;
       unit.maxHp += 4;
       unit.atk += 2;
-      unit.hp = unit.maxHp; // レベルアップで全回復
-      pushLog(`🎉 【レベルアップ】${unit.name}がLv.${unit.level}に上がった！ステータス上昇！`);
+      unit.hp = unit.maxHp;
+      pushLog(`🎉 【LvUP】${unit.name}がLv.${unit.level}に上がった！`);
       
-      // レベル3で自動進化（クラスチェンジ）
       const cls = unitClass(unit);
-      if (unit.level === 3 && cls.nextClass) {
+      if (unit.level >= 3 && cls.nextClass) {
         unit.classId = cls.nextClass;
-        pushLog(`✨ 【クラスチェンジ】${unit.name}が「${classes[cls.nextClass].label}」へ進化した！ アイコンと技が超強化！`);
+        pushLog(`✨ 【クラスチェンジ】${unit.name}が「${classes[cls.nextClass].label}」へ進化した！`);
       }
     }
   }
@@ -1114,15 +473,11 @@
     defender.pop = result.crit ? `必殺 ${result.value}` : `-${result.value}`;
     state.score += attacker.team === "player" ? result.value * 10 : 0;
     
-    if (isSkill) {
-      pushLog(`奥義・${unitClass(attacker).skill.name}！ ${attacker.name}が${defender.name}へ${result.value}ダメージ！`);
-    } else {
-      pushLog(`${counter ? "反撃" : "攻撃"}: ${attacker.name}が${defender.name}へ${result.value}ダメージ${result.crit ? "。必殺！" : "。"}`);
-    }
+    if (isSkill) pushLog(`奥義・${unitClass(attacker).skill.name}！ ${attacker.name}が${defender.name}へ${result.value}ダメージ！`);
+    else pushLog(`${counter ? "反撃" : "攻撃"}: ${attacker.name}が${defender.name}へ${result.value}ダメージ${result.crit ? "。必殺！" : "。"}`);
     
-    // 味方ユニットなら戦闘行動で経験値獲得
     if (attacker.team === "player") {
-      gainExp(attacker, 20);
+      gainExp(attacker, defender.hp <= 0 ? 60 : 20); // トドメなら60EXP, 攻撃のみなら20EXP
     }
 
     updateAll();
@@ -1131,12 +486,10 @@
     attacker.flash = false;
     defender.hit = false;
     defender.pop = "";
+    attacker.popExp = "";
     
     if (defender.hp <= 0) {
-      if (attacker.team === "player") {
-        state.score += defender.boss ? 450 : 180;
-        gainExp(attacker, 40); // 撃破ボーナス経験値
-      }
+      if (attacker.team === "player") state.score += defender.boss ? 450 : 180;
       pushLog(`${defender.name}を撃破。`);
     }
     updateAll();
@@ -1147,10 +500,7 @@
     state.locked = true;
     clearSelection(false);
     
-    // 攻撃の実行
     await strike(attacker, defender, false, isSkill);
-
-    // 反撃の実行（通常攻撃かつ相手が生存しており、射程が合う場合のみ）
     if (defender.hp > 0 && attacker.hp > 0 && canAttack(defender, attacker)) {
       await strike(defender, attacker, true, false);
     }
@@ -1169,9 +519,7 @@
   }
 
   function clearSelection(render = true) {
-    state.selectedId = null;
-    state.selectionMoved = false;
-    state.selectedSkill = false;
+    state.selectedId = null; state.selectionMoved = false; state.selectedSkill = false;
     if (render) updateAll();
   }
 
@@ -1183,39 +531,29 @@
     if (land.heal) {
       unit.hp = Math.min(unit.maxHp, unit.hp + land.heal);
       pushLog(`${unit.name}は砦で待機、${land.heal}回復。`);
-    } else {
-      pushLog(`${unit.name}は待機。`);
-    }
-    clearSelection(false);
-    updateAll();
-    checkPlayerDone();
+    } else pushLog(`${unit.name}は待機。`);
+    clearSelection(false); updateAll(); checkPlayerDone();
   }
 
   function selectUnit(unit) {
     if (state.phase !== "player" || state.locked) return;
-    state.selectedSkill = false; // 選択し直した時はスキル選択をリセット
+    state.selectedSkill = false;
     if (unit.team === "player" && !unit.acted) {
-      state.selectedId = unit.id;
-      state.selectionMoved = false;
+      state.selectedId = unit.id; state.selectionMoved = false;
       pushHint(`${unit.name}を選択中。青いマスへ進軍、または「技を使う」を選択可能。`);
     } else {
-      state.selectedId = null;
-      state.selectionMoved = false;
+      state.selectedId = null; state.selectionMoved = false;
       pushHint(`${unit.name} / ${unitClass(unit).label} / HP ${unit.hp}/${unit.maxHp}`);
     }
     updateAll();
   }
 
-  // スキル（技）発動モードのトグル
   function toggleSkillMode() {
     const unit = selectedUnit();
     if (!unit || unit.acted || state.phase !== "player") return;
     state.selectedSkill = !state.selectedSkill;
-    if (state.selectedSkill) {
-      pushHint(`奥義【${unitClass(unit).skill.name}】発動体勢！ 紫色の範囲にいる敵を選択してください。`);
-    } else {
-      pushHint("技の選択を解除しました。通常進軍を行います。");
-    }
+    if (state.selectedSkill) pushHint(`奥義【${unitClass(unit).skill.name}】発動体勢！ 紫色の範囲にいる敵を選択してください。`);
+    else pushHint("技の選択を解除しました。通常進軍を行います。");
     updateAll();
   }
 
@@ -1224,77 +562,43 @@
     const clicked = getUnitAt(x, y);
     const unit = selectedUnit();
 
-    if (!unit) {
-      if (clicked) selectUnit(clicked);
-      return;
-    }
+    if (!unit) { if (clicked) selectUnit(clicked); return; }
+    if (clicked && clicked.id === unit.id) { endSelectedAction(); return; }
 
-    if (clicked && clicked.id === unit.id) {
-      endSelectedAction();
-      return;
-    }
-
-    // スキル発動モード中のクリック処理
     if (state.selectedSkill) {
       if (clicked && clicked.team === "enemy") {
-        if (canAttack(unit, clicked, true)) {
-          await executeCombat(unit, clicked, true);
-        } else {
-          pushHint("技の射程外です。通常攻撃に変えるか、移動してください。");
-          state.selectedSkill = false;
-          updateAll();
-        }
-      } else {
-        state.selectedSkill = false;
-        pushHint("技をキャンセルしました。");
-        updateAll();
-      }
+        if (canAttack(unit, clicked, true)) await executeCombat(unit, clicked, true);
+        else { pushHint("技の射程外です。"); state.selectedSkill = false; updateAll(); }
+      } else { state.selectedSkill = false; pushHint("技をキャンセルしました。"); updateAll(); }
       return;
     }
 
-    // 通常モード中のクリック処理
     if (clicked && clicked.team === "enemy") {
-      if (canAttack(unit, clicked, false)) {
-        pushHint(forecastText(unit, clicked, false));
-        await executeCombat(unit, clicked, false);
-      } else {
-        pushHint("攻撃射程外。青いマスに移動して近づいてください。");
-      }
+      if (canAttack(unit, clicked, false)) { pushHint(forecastText(unit, clicked, false)); await executeCombat(unit, clicked, false); }
+      else pushHint("攻撃射程外。青いマスに移動して近づいてください。");
       return;
     }
 
-    if (clicked && clicked.team === "player") {
-      selectUnit(clicked);
-      return;
-    }
+    if (clicked && clicked.team === "player") { selectUnit(clicked); return; }
 
     if (!clicked && !state.selectionMoved) {
-      const reachable = getReachable(unit).some((pos) => pos.x === x && pos.y === y);
+      const reachable = getReachable(unit).some(pos => pos.x === x && pos.y === y);
       if (reachable) {
-        unit.x = x;
-        unit.y = y;
-        state.selectionMoved = true;
-        const targets = aliveUnits("enemy").filter((enemy) => canAttack(unit, enemy, false));
+        unit.x = x; unit.y = y; state.selectionMoved = true;
+        const targets = aliveUnits("enemy").filter(e => canAttack(unit, e, false));
         pushHint(targets.length ? "敵が射程内にいます。タップして攻撃、または下の「技を使う」を発動！" : "ここで待機、または「技を使う」を発動できます。");
         updateAll();
         return;
       }
     }
-
     pushHint("そのマスへは進軍できません。");
   }
 
-  function checkPlayerDone() {
-    if (aliveUnits("player").every((unit) => unit.acted)) {
-      endPlayerTurn();
-    }
-  }
+  function checkPlayerDone() { if (aliveUnits("player").every(u => u.acted)) endPlayerTurn(); }
 
   async function endPlayerTurn() {
     if (state.phase !== "player" || state.locked) return;
-    clearSelection(false);
-    state.phase = "enemy";
-    updateAll();
+    clearSelection(false); state.phase = "enemy"; updateAll();
     await showOverlay("敵フェイズ", "敵軍が進軍を開始。防衛線を維持せよ。", 850);
     await runEnemyTurn();
   }
@@ -1309,9 +613,7 @@
       let target = players.slice().sort((a, b) => distance(enemy, a) - distance(enemy, b))[0];
 
       if (!canAttack(enemy, target)) {
-        moveEnemyToward(enemy, target);
-        updateAll();
-        await sleep(420);
+        moveEnemyToward(enemy, target); updateAll(); await sleep(420);
         target = aliveUnits("player").slice().sort((a, b) => distance(enemy, a) - distance(enemy, b))[0];
       }
 
@@ -1321,138 +623,73 @@
       }
       await sleep(250);
     }
-
     state.locked = false;
     if (!checkEndState()) startPlayerTurn();
   }
 
   function moveEnemyToward(enemy, target) {
     const reachable = getReachable(enemy, true);
-    const candidates = reachable.filter((pos) => {
+    const candidates = reachable.filter(pos => {
       const occupant = getUnitAt(pos.x, pos.y);
       return !occupant || occupant.id === enemy.id;
     });
     candidates.sort((a, b) => {
-      const attackA = attackCellsFrom(enemy, a.x, a.y).some((cell) => cell.x === target.x && cell.y === target.y) ? -6 : 0;
-      const attackB = attackCellsFrom(enemy, b.x, b.y).some((cell) => cell.x === target.x && cell.y === target.y) ? -6 : 0;
-      const distA = Math.abs(a.x - target.x) + Math.abs(a.y - target.y) + attackA;
-      const distB = Math.abs(b.x - target.x) + Math.abs(b.y - target.y) + attackB;
-      return distA - distB;
+      const attackA = attackCellsFrom(enemy, a.x, a.y).some(cell => cell.x === target.x && cell.y === target.y) ? -6 : 0;
+      const attackB = attackCellsFrom(enemy, b.x, b.y).some(cell => cell.x === target.x && cell.y === target.y) ? -6 : 0;
+      return (Math.abs(a.x - target.x) + Math.abs(a.y - target.y) + attackA) - (Math.abs(b.x - target.x) + Math.abs(b.y - target.y) + attackB);
     });
-    const next = candidates[0];
-    if (next) {
-      enemy.x = next.x;
-      enemy.y = next.y;
-      pushLog(`${enemy.name}が距離を詰めてきた。`);
-    }
+    if (candidates[0]) { enemy.x = candidates[0].x; enemy.y = candidates[0].y; pushLog(`${enemy.name}が前進。`); }
   }
 
   function startPlayerTurn() {
-    state.phase = "player";
-    state.turn += 1;
-    state.units.forEach((unit) => {
-      unit.acted = false;
-      const land = terrainAt(unit.x, unit.y);
-      if (unit.hp > 0 && land.heal) {
-        unit.hp = Math.min(unit.maxHp, unit.hp + land.heal);
-      }
+    state.phase = "player"; state.turn += 1;
+    state.units.forEach(u => {
+      u.acted = false;
+      const land = terrainAt(u.x, u.y);
+      if (u.hp > 0 && land.heal) u.hp = Math.min(u.maxHp, u.hp + land.heal);
     });
     pushHint(`味方フェイズ ${state.turn}ターン目。戦術を選べ。`);
-    updateAll();
-    showOverlay("味方フェイズ", "全軍、進軍を再開せよ！", 650);
+    updateAll(); showOverlay("味方フェイズ", "全軍、進軍を再開せよ！", 650);
   }
 
   function checkEndState() {
-    const hero = state.units.find((unit) => unit.team === "player" && unit.classId.startsWith("hero"));
+    const hero = state.units.find(u => u.team === "player" && u.classId.startsWith("hero"));
     if (!hero || hero.hp <= 0) {
-      state.phase = "gameover";
-      state.locked = false;
-      updateBest();
-      showOverlay("GAME OVER", "リクが倒れた。部隊の連携を練り直し再挑戦しよう。", 0, [
-        { label: "↻ 再挑戦", action: resetGame, primary: true }
-      ]);
+      state.phase = "gameover"; state.locked = false; updateBest();
+      showOverlay("GAME OVER", "リクが倒れた。部隊の連携を練り直し再挑戦しよう。", 0, [{ label: "↻ 再挑戦", action: resetGame, primary: true }]);
       return true;
     }
-
-    const boss = state.units.find((unit) => unit.team === "enemy" && unit.boss);
+    const boss = state.units.find(u => u.team === "enemy" && u.boss);
     if (!boss || boss.hp <= 0 || aliveUnits("enemy").length === 0) {
-      state.phase = "clear";
-      state.locked = false;
-      const turnBonus = Math.max(0, 6 - state.turn) * 120;
-      state.score += 600 + turnBonus;
-      updateBest();
-      showOverlay("STAGE CLEAR!", `作戦成功！ スコア: ${state.score}。次の章への扉が開いた。`, 0, [
-        { label: "⚔️ 次の章へ", action: nextStage, primary: true },
-        { label: "↻ 最初から", action: resetGame }
-      ]);
-      updateAll();
-      return true;
+      state.phase = "clear"; state.locked = false;
+      state.score += 600 + Math.max(0, 6 - state.turn) * 120; updateBest();
+      showOverlay("STAGE CLEAR!", `作戦成功！ スコア: ${state.score}。次の章への扉が開いた。`, 0, [{ label: "⚔️ 次の章へ", action: nextStage, primary: true }, { label: "↻ 最初から", action: resetGame }]);
+      updateAll(); return true;
     }
     return false;
   }
 
-  function nextStage() {
-    state.stage += 1;
-    state.selectedId = null;
-    state.selectionMoved = false;
-    state.selectedSkill = false;
-    hideOverlay();
-    setupStage();
-  }
-
-  function resetGame() {
-    state.stage = 1;
-    state.turn = 1;
-    state.score = 0;
-    state.log = [];
-    state.selectedId = null;
-    state.selectionMoved = false;
-    state.selectedSkill = false;
-    state.units = []; // リセット時は味方データも初期化
-    hideOverlay();
-    setupStage();
-  }
-
-  function updateBest() {
-    if (state.score > state.best) {
-      state.best = state.score;
-      localStorage.setItem(bestKey, String(state.best));
-    }
-  }
-
-  function pushLog(text) {
-    state.log.unshift(text);
-    state.log = state.log.slice(0, 7);
-  }
-
+  function nextStage() { state.stage += 1; state.selectedId = null; state.selectionMoved = false; state.selectedSkill = false; hideOverlay(); setupStage(); }
+  function resetGame() { state.stage = 1; state.turn = 1; state.score = 0; state.log = []; state.selectedId = null; state.selectionMoved = false; state.selectedSkill = false; state.units = []; hideOverlay(); setupStage(); }
+  function updateBest() { if (state.score > state.best) { state.best = state.score; localStorage.setItem(bestKey, String(state.best)); } }
+  function pushLog(text) { state.log.unshift(text); state.log = state.log.slice(0, 7); }
   function pushHint(text) { el.hint.textContent = text; }
 
   function showOverlay(title, text, duration = 0, actions = []) {
-    el.overlayTitle.textContent = title;
-    el.overlayText.textContent = text;
-    el.overlayActions.innerHTML = "";
-    actions.forEach((item) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = `cmd-btn ${item.primary ? "blue" : "secondary"}`;
-      button.textContent = item.label;
-      button.addEventListener("click", item.action);
-      el.overlayActions.appendChild(button);
+    el.overlayTitle.textContent = title; el.overlayText.textContent = text; el.overlayActions.innerHTML = "";
+    actions.forEach(item => {
+      const btn = document.createElement("button"); btn.type = "button"; btn.className = `cmd-btn ${item.primary ? "blue" : "secondary"}`;
+      btn.textContent = item.label; btn.addEventListener("click", item.action); el.overlayActions.appendChild(btn);
     });
     el.overlay.classList.add("show");
-    if (!duration) return Promise.resolve();
-    return sleep(duration).then(() => hideOverlay());
+    if (duration) return sleep(duration).then(() => hideOverlay());
   }
-
   function hideOverlay() { el.overlay.classList.remove("show"); }
 
   function cellClass(x, y, unit, reachable, attacks, danger) {
-    const land = terrainAt(x, y);
-    const classes = ["cell", land.css];
+    const land = terrainAt(x, y); const classes = ["cell", land.css];
     if (danger.has(keyOf(x, y))) classes.push("danger");
     if (unit && unit.x === x && unit.y === y) classes.push("selected");
-    
-    // スキル選択中なら紫ハイライト、通常なら青・赤ハイライト
     if (state.selectedSkill && unit && unit.id === state.selectedId) {
       const skl = unitClass(unit).skill;
       const dist = Math.abs(unit.x - x) + Math.abs(unit.y - y);
@@ -1465,148 +702,73 @@
   }
 
   function renderBoard() {
-    const unit = selectedUnit();
-    const reachable = new Set();
-    const attacks = new Set();
-    const danger = state.showDanger ? dangerCells() : new Set();
-
+    const unit = selectedUnit(); const reachable = new Set(); const attacks = new Set(); const danger = state.showDanger ? dangerCells() : new Set();
     if (unit && state.phase === "player") {
-      if (!state.selectionMoved) {
-        getReachable(unit).forEach((pos) => reachable.add(keyOf(pos.x, pos.y)));
-      }
-      attackCellsFrom(unit).forEach((pos) => attacks.add(keyOf(pos.x, pos.y)));
+      if (!state.selectionMoved) getReachable(unit).forEach(pos => reachable.add(keyOf(pos.x, pos.y)));
+      attackCellsFrom(unit).forEach(pos => attacks.add(keyOf(pos.x, pos.y)));
     }
-
     el.board.innerHTML = "";
     for (let y = 0; y < BOARD_SIZE; y++) {
       for (let x = 0; x < BOARD_SIZE; x++) {
-        const cell = document.createElement("button");
-        const land = terrainAt(x, y);
-        const occupant = getUnitAt(x, y);
-        cell.type = "button";
-        cell.className = cellClass(x, y, unit, reachable, attacks, danger);
+        const cell = document.createElement("button"); const land = terrainAt(x, y); const occupant = getUnitAt(x, y);
+        cell.type = "button"; cell.className = cellClass(x, y, unit, reachable, attacks, danger);
         cell.setAttribute("aria-label", `${land.name} ${x + 1}-${y + 1}`);
         cell.addEventListener("click", () => onCellClick(x, y));
-
-        if (land.mark) {
-          const mark = document.createElement("span");
-          mark.className = "terrain-mark";
-          mark.textContent = land.mark;
-          cell.appendChild(mark);
-        }
-
+        if (land.mark) { const mark = document.createElement("span"); mark.className = "terrain-mark"; mark.textContent = land.mark; cell.appendChild(mark); }
         if (occupant) {
           const cls = unitClass(occupant);
           const token = document.createElement("div");
           token.className = `unit-token ${occupant.team} ${occupant.acted ? "acted" : ""} ${occupant.hit ? "hit" : ""} ${occupant.flash ? "flash" : ""}`;
           token.textContent = cls.icon;
-          const hp = document.createElement("span");
-          hp.className = "mini-hp";
-          hp.innerHTML = `<i style="width:${Math.max(0, (occupant.hp / occupant.maxHp) * 100)}%"></i>`;
-          token.appendChild(hp);
-          if (occupant.pop) {
-            const pop = document.createElement("span");
-            pop.className = "damage-pop";
-            pop.textContent = occupant.pop;
-            token.appendChild(pop);
-          }
+          const hp = document.createElement("span"); hp.className = "mini-hp"; hp.innerHTML = `<i style="width:${Math.max(0, (occupant.hp / occupant.maxHp) * 100)}%"></i>`; token.appendChild(hp);
+          if (occupant.pop) { const pop = document.createElement("span"); pop.className = "damage-pop"; pop.textContent = occupant.pop; token.appendChild(pop); }
+          if (occupant.popExp) { const exp = document.createElement("span"); exp.className = "exp-pop"; exp.textContent = occupant.popExp; token.appendChild(exp); }
           cell.appendChild(token);
         }
-
         el.board.appendChild(cell);
       }
     }
   }
 
   function renderInfo() {
-    const unit = selectedUnit() || aliveUnits("player").find((u) => !u.acted) || aliveUnits("player")[0] || aliveUnits("enemy")[0];
+    const unit = selectedUnit() || aliveUnits("player").find(u => !u.acted) || aliveUnits("player")[0] || aliveUnits("enemy")[0];
     if (!unit) return;
-    const cls = unitClass(unit);
-    el.portrait.textContent = cls.icon;
-    el.unitName.textContent = unit.name;
-    
-    // スキル持ちならスキル名、敵なら特性を表示
+    const cls = unitClass(unit); el.portrait.textContent = cls.icon; el.unitName.textContent = unit.name;
     const skillDesc = cls.skill ? `【技】${cls.skill.name}(威+${cls.skill.bonus})` : cls.trait;
     el.unitClass.textContent = `${cls.label} / ${skillDesc}`;
-    
-    const hpRatio = Math.max(0, unit.hp / unit.maxHp);
-    el.hpFill.style.width = `${hpRatio * 100}%`;
-    el.hpFill.classList.toggle("low", hpRatio < 0.35);
-    
+    const hpRatio = Math.max(0, unit.hp / unit.maxHp); el.hpFill.style.width = `${hpRatio * 100}%`; el.hpFill.classList.toggle("low", hpRatio < 0.35);
     const range = unit.min === unit.max ? unit.max : `${unit.min}-${unit.max}`;
-    const lvStr = unit.team === "player" ? `${unit.level}` : "--";
-    const expStr = unit.team === "player" ? `${unit.exp}/100` : "--";
-
-    el.statGrid.innerHTML = `
-      <div class="stat"><span>HP</span><b>${unit.hp}/${unit.maxHp}</b></div>
-      <div class="stat"><span>攻撃</span><b>${unit.atk}</b></div>
-      <div class="stat"><span>Lv</span><b>${lvStr}</b></div>
-      <div class="stat"><span>EXP</span><b>${expStr}</b></div>
-      <div class="stat"><span>移動</span><b>${unit.mov}</b></div>
-      <div class="stat"><span>射程</span><b>${range}</b></div>
-    `;
+    el.statGrid.innerHTML = `<div class="stat"><span>HP</span><b>${unit.hp}/${unit.maxHp}</b></div><div class="stat"><span>攻撃</span><b>${unit.atk}</b></div><div class="stat"><span>Lv</span><b>${unit.team==="player"?unit.level:"--"}</b></div><div class="stat"><span>EXP</span><b>${unit.team==="player"?unit.exp+"/100":"--"}</b></div><div class="stat"><span>移動</span><b>${unit.mov}</b></div><div class="stat"><span>射程</span><b>${range}</b></div>`;
   }
 
   function renderRoster() {
-    const ordered = [...aliveUnits("player"), ...aliveUnits("enemy")];
     el.roster.innerHTML = "";
-    ordered.forEach((unit) => {
-      const cls = unitClass(unit);
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = `${unit.team} ${unit.id === state.selectedId ? "is-selected" : ""}`;
-      button.innerHTML = `
-        <span class="roster-icon">${cls.icon}</span>
-        <span class="roster-name"><b>${unit.name}</b><span>Lv.${unit.level} ${cls.label}</span></span>
-        <b>${unit.hp}</b>
-      `;
-      button.addEventListener("click", () => selectUnit(unit));
-      el.roster.appendChild(button);
+    [...aliveUnits("player"), ...aliveUnits("enemy")].forEach(unit => {
+      const cls = unitClass(unit); const btn = document.createElement("button");
+      btn.type = "button"; btn.className = `${unit.team} ${unit.id === state.selectedId ? "is-selected" : ""}`;
+      btn.innerHTML = `<span class="roster-icon">${cls.icon}</span><span class="roster-name"><b>${unit.name}</b><span>Lv.${unit.level} ${cls.label}</span></span><b>${unit.hp}</b>`;
+      btn.addEventListener("click", () => selectUnit(unit)); el.roster.appendChild(btn);
     });
   }
 
-  function renderLog() {
-    el.log.innerHTML = "";
-    state.log.forEach((line) => {
-      const item = document.createElement("li");
-      item.textContent = line;
-      el.log.appendChild(item);
-    });
-  }
+  function renderLog() { el.log.innerHTML = ""; state.log.forEach(line => { const li = document.createElement("li"); li.textContent = line; el.log.appendChild(li); }); }
 
   function renderChrome() {
-    el.stage.textContent = stageMap().title;
-    el.score.textContent = String(state.score);
-    el.best.textContent = String(state.best);
+    el.stage.textContent = stageMap().title; el.score.textContent = String(state.score); el.best.textContent = String(state.best);
     el.phase.textContent = state.phase === "enemy" ? "敵フェイズ" : state.phase === "player" ? `味方 ${state.turn}` : state.phase === "clear" ? "クリア" : "作戦終了";
     el.phase.classList.toggle("enemy", state.phase === "enemy");
-    
-    // ボタンの活性・非活性制御
-    const activeUnit = selectedUnit();
-    const canUseSkill = activeUnit && unitClass(activeUnit).skill && !activeUnit.acted && state.phase === "player" && !state.locked;
-    
-    el.skill.disabled = !canUseSkill;
-    el.skill.classList.toggle("blue", state.selectedSkill); // 選択中はボタンの色を変える
-    el.wait.disabled = !activeUnit || state.phase !== "player" || state.locked;
+    const active = selectedUnit(); const canSkill = active && unitClass(active).skill && !active.acted && state.phase === "player" && !state.locked;
+    el.skill.disabled = !canSkill; el.skill.classList.toggle("blue", state.selectedSkill);
+    el.wait.disabled = !active || state.phase !== "player" || state.locked;
     el.endTurn.disabled = state.phase !== "player" || state.locked;
     el.danger.textContent = state.showDanger ? "✅ 危険" : "⚠️ 危険";
   }
 
-  function updateAll() {
-    renderChrome();
-    renderBoard();
-    renderInfo();
-    renderRoster();
-    renderLog();
-  }
+  function updateAll() { renderChrome(); renderBoard(); renderInfo(); renderRoster(); renderLog(); }
 
-  el.skill.addEventListener("click", toggleSkillMode); // 新設
+  el.skill.addEventListener("click", toggleSkillMode);
   el.wait.addEventListener("click", endSelectedAction);
-  el.danger.addEventListener("click", () => {
-    state.showDanger = !state.showDanger;
-    pushHint(state.showDanger ? "敵軍の攻撃予測範囲を表示中。" : "危険エリアを非表示にしました。");
-    updateAll();
-  });
+  el.danger.addEventListener("click", () => { state.showDanger = !state.showDanger; pushHint(state.showDanger ? "敵軍の攻撃予測範囲を表示中。" : "危険エリアを非表示にしました。"); updateAll(); });
   el.endTurn.addEventListener("click", endPlayerTurn);
   el.restart.addEventListener("click", resetGame);
 
