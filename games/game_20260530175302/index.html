@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>フライトシュミレーター</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to bottom, #1a2980, #26d0ce);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        #gameContainer {
+            width: 100%;
+            max-width: 500px;
+            height: 100vh;
+            max-height: 700px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        /* スタート画面 */
+        #startScreen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #startScreen h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #00f0ff;
+        }
+
+        #startScreen p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        #startButton {
+            background: linear-gradient(to bottom, #ff8c00, #ff4500);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 69, 0, 0.4);
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+
+        #startButton:hover {
+            transform: scale(1.05);
+            box-shadow: 0 7px 20px rgba(255, 69, 0, 0.6);
+        }
+
+        /* ゲーム画面 */
+        #gameScreen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        #gameHeader {
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        #score, #altitude {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        #gameArea {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #87CEEB, #E0F7FA);
+        }
+
+        /* 飛行機 */
+        #aircraft {
+            position: absolute;
+            font-size: 3rem;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            transition: transform 0.1s;
+        }
+
+        /* 障害物 */
+        .obstacle {
+            position: absolute;
+            background: #8B4513;
+            border: 2px solid #5D2906;
+        }
+
+        .obstacle-top {
+            border-bottom: none;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .obstacle-bottom {
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+        }
+
+        /* ゲームオーバー画面 */
+        #gameOverScreen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #gameOverScreen h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #ff4500;
+        }
+
+        #finalScore {
+            font-size: 2rem;
+            margin-bottom: 30px;
+        }
+
+        #restartButton {
+            background: linear-gradient(to bottom, #4CAF50, #2E7D32);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(46, 125, 50, 0.4);
+            transition: all 0.3s;
+        }
+
+        #restartButton:hover {
+            transform: scale(1.05);
+            box-shadow: 0 7px 20px rgba(46, 125, 50, 0.6);
+        }
+
+        /* タッチ操作のヒント */
+        #touchHint {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 1rem;
+            opacity: 0.7;
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 500px) {
+            #startScreen h1 {
+                font-size: 2rem;
+            }
+            
+            #startScreen p {
+                font-size: 1rem;
+            }
+            
+            #startButton, #restartButton {
+                padding: 12px 30px;
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- スタート画面 -->
+        <div id="startScreen">
+            <h1>✈️ フライトシュミレーター ✈️</h1>
+            <p>飛行機を操作して障害物を避けましょう！<br>画面をタップまたはクリックして上昇、離すと下降します。</p>
+            <button id="startButton">🚀 スタート</button>
+            <p>💡 ヒント：タップを長くすると上昇、離すと下降します</p>
+        </div>
+
+        <!-- ゲーム画面 -->
+        <div id="gameScreen">
+            <div id="gameHeader">
+                <div id="score">スコア: 0</div>
+                <div id="altitude">高度: 0m</div>
+            </div>
+            <div id="gameArea">
+                <div id="aircraft">✈️</div>
+                <div id="touchHint">タップして上昇 / 離すと下降</div>
+            </div>
+        </div>
+
+        <!-- ゲームオーバー画面 -->
+        <div id="gameOverScreen">
+            <h2>💥 ゲームオーバー 💥</h2>
+            <div id="finalScore">最終スコア: 0</div>
+            <button id="restartButton">🔄 もう一度</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ゲーム状態管理
+            const gameState = {
+                isPlaying: false,
+                score: 0,
+                altitude: 0,
+                aircraftY: 0,
+                obstacles: [],
+                gameSpeed: 2,
+                lastObstacleTime: 0,
+                touchStartY: 0,
+                isTouching: false
+            };
+
+            // DOM要素
+            const startScreen = document.getElementById('startScreen');
+            const gameScreen = document.getElementById('gameScreen');
+            const gameOverScreen = document.getElementById('gameOverScreen');
+            const startButton = document.getElementById('startButton');
+            const restartButton = document.getElementById('restartButton');
+            const scoreElement = document.getElementById('score');
+            const altitudeElement = document.getElementById('altitude');
+            const finalScoreElement = document.getElementById('finalScore');
+            const aircraft = document.getElementById('aircraft');
+            const gameArea = document.getElementById('gameArea');
+
+            // ゲーム初期化
+            function initGame() {
+                gameState.isPlaying = true;
+                gameState.score = 0;
+                gameState.altitude = 0;
+                gameState.aircraftY = 0;
+                gameState.obstacles = [];
+                gameState.lastObstacleTime = 0;
+                gameState.isTouching = false;
+
+                // ゲーム画面表示
+                startScreen.style.display = 'none';
+                gameScreen.style.display = 'flex';
+                gameOverScreen.style.display = 'none';
+
+                // 飛行機初期位置
+                aircraft.style.top = '50%';
+                aircraft.style.transform = 'translate(-50%, -50%)';
+
+                // スコアと高度表示更新
+                updateScore();
+                
+                // ゲームループ開始
+                requestAnimationFrame(gameLoop);
+            }
+
+            // スコアと高度表示更新
+            function updateScore() {
+                scoreElement.textContent = `スコア: ${gameState.score}`;
+                altitudeElement.textContent = `高度: ${Math.floor(gameState.altitude)}m`;
+            }
+
+            // 障害物生成
+            function createObstacle() {
+                const obstacleHeight = Math.random() * 200 + 100;
+                const gap = 150;
+                const topHeight = Math.random() * (gameArea.offsetHeight - gap - obstacleHeight);
+                
+                const topObstacle = document.createElement('div');
+                topObstacle.className = 'obstacle obstacle-top';
+                topObstacle.style.width = '80px';
+                topObstacle.style.height = `${topHeight}px`;
+                topObstacle.style.left = `${gameArea.offsetWidth}px`;
+                topObstacle.style.top = '0px';
+                
+                const bottomObstacle = document.createElement('div');
+                bottomObstacle.className = 'obstacle obstacle-bottom';
+                bottomObstacle.style.width = '80px';
+                bottomObstacle.style.height = `${obstacleHeight}px`;
+                bottomObstacle.style.left = `${gameArea.offsetWidth}px`;
+                bottomObstacle.style.bottom = '0px';
+                
+                gameArea.appendChild(topObstacle);
+                gameArea.appendChild(bottomObstacle);
+                
+                gameState.obstacles.push({
+                    top: topObstacle,
+                    bottom: bottomObstacle,
+                    x: gameArea.offsetWidth,
+                    passed: false
+                });
+            }
+
+            // ゲームループ
+            function gameLoop(timestamp) {
+                if (!gameState.isPlaying) return;
+
+                // 障害物生成
+                if (timestamp - gameState.lastObstacleTime > 1500) {
+                    createObstacle();
+                    gameState.lastObstacleTime = timestamp;
+                }
+
+                // 障害物移動と衝突判定
+                for (let i = gameState.obstacles.length - 1; i >= 0; i--) {
+                    const obstacle = gameState.obstacles[i];
+                    obstacle.x -= gameState.gameSpeed;
+                    obstacle.top.style.left = `${obstacle.x}px`;
+                    obstacle.bottom.style.left = `${obstacle.x}px`;
+
+                    // 通過判定
+                    if (!obstacle.passed && obstacle.x < -80) {
+                        obstacle.passed = true;
+                        gameState.score += 10;
+                        updateScore();
+                    }
+
+                    // 衝突判定
+                    if (obstacle.x < 100 && obstacle.x > 20) {
+                        const aircraftRect = aircraft.getBoundingClientRect();
+                        const topRect = obstacle.top.getBoundingClientRect();
+                        const bottomRect = obstacle.bottom.getBoundingClientRect();
+                        const gameAreaRect = gameArea.getBoundingClientRect();
+
+                        const aircraftTop = aircraftRect.top - gameAreaRect.top;
+                        const aircraftBottom = aircraftRect.bottom - gameAreaRect.top;
+                        
+                        if (aircraftBottom > topRect.bottom || aircraftTop < bottomRect.top) {
+                            gameOver();
+                            return;
+                        }
+                    }
+
+                    // 障害物削除
+                    if (obstacle.x < -100) {
+                        obstacle.top.remove();
+                        obstacle.bottom.remove();
+                        gameState.obstacles.splice(i, 1);
+                    }
+                }
+
+                // 飛行機の移動
+                if (gameState.isTouching) {
+                    gameState.aircraftY -= 3;
+                } else {
+                    gameState.aircraftY += 1;
+                }
+
+                // 画面外チェック
+                if (gameState.aircraftY < -100) {
+                    gameState.aircraftY = -100;
+                } else if (gameState.aircraftY > 100) {
+                    gameState.aircraftY = 100;
+                }
+
+                // 高度更新
+                gameState.altitude = Math.max(0, gameState.altitude + gameState.aircraftY * 0.1);
+
+                // 飛行機位置更新
+                aircraft.style.transform = `translate(-50%, ${gameState.aircraftY}px)`;
+
+                // ゲームスピードアップ
+                if (gameState.score > 0 && gameState.score % 100 === 0) {
+                    gameState.gameSpeed = Math.min(5, 2 + Math.floor(gameState.score / 100) * 0.2);
+                }
+
+                requestAnimationFrame(gameLoop);
+            }
+
+            // ゲームオーバー
+            function gameOver() {
+                gameState.isPlaying = false;
+                finalScoreElement.textContent = `最終スコア: ${gameState.score}`;
+                gameOverScreen.style.display = 'flex';
+            }
+
+            // タッチイベント処理
+            function handleTouchStart(e) {
+                if (!gameState.isPlaying) return;
+                e.preventDefault();
+                gameState.isTouching = true;
+                gameState.touchStartY = e.touches[0].clientY;
+            }
+
+            function handleTouchMove(e) {
+                if (!gameState.isPlaying || !gameState.isTouching) return;
+                e.preventDefault();
+                const currentY = e.touches[0].clientY;
+                const diff = currentY - gameState.touchStartY;
+                gameState.aircraftY -= diff * 0.3;
+                gameState.touchStartY = currentY;
+            }
+
+            function handleTouchEnd() {
+                if (!gameState.isPlaying) return;
+                gameState.isTouching = false;
+            }
+
+            // マウスイベント処理
+            function handleMouseDown(e) {
+                if (!gameState.isPlaying) return;
+                gameState.isTouching = true;
+            }
+
+            function handleMouseMove(e) {
+                if (!gameState.isPlaying || !gameState.isTouching) return;
+                const rect = gameArea.getBoundingClientRect();
+                const mouseY = e.clientY - rect.top;
+                gameState.aircraftY = (mouseY - rect.height / 2) * 0.2;
+            }
+
+            function handleMouseUp() {
+                if (!gameState.isPlaying) return;
+                gameState.isTouching = false;
+            }
+
+            // イベントリスナー設定
+            startButton.addEventListener('click', initGame);
+            restartButton.addEventListener('click', initGame);
+
+            gameArea.addEventListener('touchstart', handleTouchStart);
+            gameArea.addEventListener('touchmove', handleTouchMove);
+            gameArea.addEventListener('touchend', handleTouchEnd);
+
+            gameArea.addEventListener('mousedown', handleMouseDown);
+            gameArea.addEventListener('mousemove', handleMouseMove);
+            gameArea.addEventListener('mouseup', handleMouseUp);
+            gameArea.addEventListener('mouseleave', handleMouseUp);
+
+            // 初期画面表示
+            startScreen.style.display = 'flex';
+        });
+    </script>
+</body>
+</html>
