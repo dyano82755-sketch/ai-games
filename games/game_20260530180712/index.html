@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>2048 Game</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #1e1e1e;
+      color: #f0f0f0;
+      overflow: hidden;
+    }
+
+    #game-container {
+      width: 100%;
+      max-width: 500px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      color: #ffcc00;
+    }
+
+    #score-container {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .score-box {
+      background: #333;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      background: #333;
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 20px;
+    }
+
+    .cell {
+      width: 100%;
+      aspect-ratio: 1;
+      background: #555;
+      border-radius: 6px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .cell-2 { background: #eee4da; color: #776e65; }
+    .cell-4 { background: #ede0c8; color: #776e65; }
+    .cell-8 { background: #f2b179; color: #f9f6f2; }
+    .cell-16 { background: #f59563; color: #f9f6f2; }
+    .cell-32 { background: #f67c5f; color: #f9f6f2; }
+    .cell-64 { background: #f65e3b; color: #f9f6f2; }
+    .cell-128 { background: #edcf72; color: #f9f6f2; font-size: 1.3rem; }
+    .cell-256 { background: #edcc61; color: #f9f6f2; font-size: 1.3rem; }
+    .cell-512 { background: #edc850; color: #f9f6f2; font-size: 1.3rem; }
+    .cell-1024 { background: #edc53f; color: #f9f6f2; font-size: 1.1rem; }
+    .cell-2048 { background: #edc22e; color: #f9f6f2; font-size: 1.1rem; }
+
+    #controls {
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 12px 20px;
+      font-size: 1.1rem;
+      background: #ffcc00;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 5px;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #ffdd44;
+    }
+
+    #game-over {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 10;
+    }
+
+    #game-over-content {
+      background: #333;
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 90%;
+    }
+
+    #game-over h2 {
+      color: #ffcc00;
+      font-size: 2rem;
+      margin-bottom: 15px;
+    }
+
+    #start-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #1e1e1e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 10;
+    }
+
+    #start-screen h1 {
+      color: #ffcc00;
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
+
+    #start-screen p {
+      margin-bottom: 20px;
+      font-size: 1.1rem;
+      max-width: 80%;
+    }
+
+    #start-screen button {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="start-screen">
+    <h1>2048</h1>
+    <p>4×4のマス目を上下左右にスライドさせ、同じ数字のタイルを合体させましょう。</p>
+    <p>2048のタイルを作るとゲームクリア！</p>
+    <button onclick="startGame()">ゲーム開始</button>
+  </div>
+
+  <div id="game-container">
+    <h1>2048</h1>
+    <div id="score-container">
+      <div class="score-box">スコア: <span id="score">0</span></div>
+      <div class="score-box">ベスト: <span id="best-score">0</span></div>
+    </div>
+    <div id="grid"></div>
+    <div id="controls">
+      <button onclick="move('up')">↑</button><br/>
+      <button onclick="move('left')">←</button>
+      <button onclick="move('down')">↓</button>
+      <button onclick="move('right')">→</button>
+    </div>
+  </div>
+
+  <div id="game-over">
+    <div id="game-over-content">
+      <h2>ゲームオーバー</h2>
+      <p>スコア: <span id="final-score">0</span></p>
+      <button onclick="restartGame()">もう一度プレイ</button>
+    </div>
+  </div>
+
+  <script>
+    let grid = [];
+    let score = 0;
+    let bestScore = localStorage.getItem('bestScore') || 0;
+    let gameOver = false;
+
+    const directions = {
+      up: [0, -1],
+      down: [0, 1],
+      left: [-1, 0],
+      right: [1, 0]
+    };
+
+    function initGame() {
+      grid = Array(4).fill().map(() => Array(4).fill(0));
+      score = 0;
+      gameOver = false;
+      document.getElementById('score').textContent = score;
+      document.getElementById('best-score').textContent = bestScore;
+      document.getElementById('game-over').style.display = 'none';
+      addRandomTile();
+      addRandomTile();
+      updateGrid();
+    }
+
+    function addRandomTile() {
+      const emptyCells = [];
+      for (let y = 0; y < 4; y++) {
+        for (let x = 0; x < 4; x++) {
+          if (grid[y][x] === 0) {
+            emptyCells.push({ x, y });
+          }
+        }
+      }
+      if (emptyCells.length > 0) {
+        const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        grid[randomCell.y][randomCell.x] = Math.random() < 0.9 ? 2 : 4;
+      }
+    }
+
+    function updateGrid() {
+      const gridElement = document.getElementById('grid');
+      gridElement.innerHTML = '';
+      for (let y = 0; y < 4; y++) {
+        for (let x = 0; x < 4; x++) {
+          const cellValue = grid[y][x];
+          const cell = document.createElement('div');
+          cell.className = `cell cell-${cellValue || 'empty'}`;
+          cell.textContent = cellValue || '';
+          gridElement.appendChild(cell);
+        }
+      }
+    }
+
+    function move(direction) {
+      if (gameOver) return;
+
+      const [dx, dy] = directions[direction];
+      let moved = false;
+
+      // タイルを一つずつ処理
+      for (let y = 0; y < 4; y++) {
+        for (let x = 0; x < 4; x++) {
+          if (grid[y][x] === 0) continue;
+
+          let cx = x;
+          let cy = y;
+          let nextX = cx + dx;
+          let nextY = cy + dy;
+
+          // 移動可能な位置まで移動
+          while (
+            nextX >= 0 &&
+            nextX < 4 &&
+            nextY >= 0 &&
+            nextY < 4 &&
+            grid[nextY][nextX] === 0
+          ) {
+            cx = nextX;
+            cy = nextY;
+            nextX += dx;
+            nextY += dy;
+          }
+
+          // 合体可能か確認
+          if (
+            nextX >= 0 &&
+            nextX < 4 &&
+            nextY >= 0 &&
+            nextY < 4 &&
+            grid[nextY][nextX] === grid[cy][cx] &&
+            grid[cy][cx] !== 0
+          ) {
+            grid[nextY][nextX] *= 2;
+            score += grid[nextY][nextX];
+            grid[cy][cx] = 0;
+            moved = true;
+          } else if (cx !== x || cy !== y) {
+            grid[cy][cx] = 0;
+            grid[y][x] = grid[y][x];
+            moved = true;
+          }
+        }
+      }
+
+      if (moved) {
+        addRandomTile();
+        updateGrid();
+        document.getElementById('score').textContent = score;
+        if (score > bestScore) {
+          bestScore = score;
+          localStorage.setItem('bestScore', bestScore);
+          document.getElementById('best-score').textContent = bestScore;
+        }
+        checkGameOver();
+      }
+    }
+
+    function checkGameOver() {
+      for (let y = 0; y < 4; y++) {
+        for (let x = 0; x < 4; x++) {
+          if (grid[y][x] === 0) return;
+          if (x < 3 && grid[y][x] === grid[y][x + 1]) return;
+          if (y < 3 && grid[y][x] === grid[y + 1][x]) return;
+        }
+      }
+      gameOver = true;
+      document.getElementById('final-score').textContent = score;
+      document.getElementById('game-over').style.display = 'flex';
+    }
+
+    function startGame() {
+      document.getElementById('start-screen').style.display = 'none';
+      initGame();
+    }
+
+    function restartGame() {
+      document.getElementById('game-over').style.display = 'none';
+      initGame();
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp') move('up');
+      if (e.key === 'ArrowDown') move('down');
+      if (e.key === 'ArrowLeft') move('left');
+      if (e.key === 'ArrowRight') move('right');
+    });
+
+    window.onload = () => {
+      document.getElementById('best-score').textContent = bestScore;
+    };
+  </script>
+</body>
+</html>
