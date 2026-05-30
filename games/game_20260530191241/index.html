@@ -3,544 +3,393 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>大航海サバイバー：海賊王の逆襲</title>
+  <title>絵文字パックマン</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; user-select: none; }
     body {
-      font-family: 'Arial', sans-serif;
-      background: #111;
-      color: white;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
+      background: #111; color: white; font-family: 'Arial', sans-serif;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100vh; overflow: hidden;
+    }
+    
+    #header {
+      width: 100%; max-width: 500px; display: flex; justify-content: space-between;
+      padding: 10px 20px; font-size: 1.5rem; font-weight: bold; color: #FFD700;
     }
 
     #gameContainer {
       position: relative;
-      width: 100%;
-      max-width: 800px;
-      height: 100vh;
-      max-height: 600px;
-      background: linear-gradient(135deg, #0a4b78, #001a33);
+      width: 95vw; max-width: 500px; aspect-ratio: 1;
+      background: #000; border: 4px solid #333; border-radius: 10px;
       overflow: hidden;
-      box-shadow: 0 0 30px rgba(0, 150, 255, 0.3);
-      border: 2px solid #4a90e2;
     }
 
-    /* UI & Screens */
-    .screen {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.85);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 100; text-align: center;
+    /* マップのグリッド */
+    #mapGrid {
+      display: grid; width: 100%; height: 100%;
+      grid-template-columns: repeat(15, 1fr);
+      grid-template-rows: repeat(15, 1fr);
     }
-    #gameOverScreen { display: none; }
-
-    h1 { font-size: 2.5rem; color: #FFD700; text-shadow: 0 0 10px #ff8c00; margin-bottom: 10px; }
-    p { font-size: 1.1rem; margin-bottom: 20px; line-height: 1.5; }
     
-    .btn {
-      background: linear-gradient(to bottom, #FFD700, #FFA500);
-      color: #000; font-size: 1.2rem; font-weight: bold;
-      padding: 12px 30px; border: none; border-radius: 30px;
-      cursor: pointer; transition: transform 0.1s;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.5);
-    }
-    .btn:active { transform: scale(0.95); }
+    .cell { display: flex; align-items: center; justify-content: center; position: relative; }
+    .wall { background: #1919A6; border-radius: 4px; box-shadow: inset 0 0 5px #000055; margin: 1px; }
+    .dot::after { content: ''; width: 20%; height: 20%; background: #FFAA00; border-radius: 50%; }
+    .power { font-size: 1.2rem; animation: pulse 0.5s infinite alternate; }
 
-    #hud {
-      position: absolute; top: 10px; left: 10px; right: 10px;
-      display: flex; justify-content: space-between; z-index: 50;
-      pointer-events: none;
-    }
-    .hud-box {
-      background: rgba(0, 0, 0, 0.6); padding: 8px 15px;
-      border-radius: 8px; font-weight: bold; font-size: 1.2rem;
-      border: 1px solid rgba(255,255,255,0.2);
-    }
-    #hpBar { color: #ff4444; }
-    #coinCount { color: #FFD700; }
+    @keyframes pulse { from { transform: scale(0.8); } to { transform: scale(1.2); } }
 
-    /* Entities */
-    .entity { position: absolute; transform: translate(-50%, -50%); }
-    
-    #player {
-      font-size: 3rem; z-index: 20;
-      transition: opacity 0.2s;
+    /* 動くキャラクター達 */
+    .entity {
+      position: absolute;
+      width: calc(100% / 15); height: calc(100% / 15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; z-index: 10;
+      transition: top 0.25s linear, left 0.25s linear;
     }
-    .blink { animation: damageBlink 0.2s infinite; }
-    @keyframes damageBlink { 0% { opacity: 1; filter: drop-shadow(0 0 10px red); } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
-    .enemy { font-size: 2.5rem; z-index: 15; }
-    .coin { font-size: 1.5rem; z-index: 10; animation: floatCoin 1s infinite alternate; }
-    @keyframes floatCoin { from { transform: translate(-50%, -50%) translateY(0); } to { transform: translate(-50%, -50%) translateY(-5px); } }
-    
-    .bullet {
-      font-size: 1.5rem; z-index: 25;
-      text-shadow: 0 0 5px orange;
-    }
-    .effect { font-size: 2rem; z-index: 30; pointer-events: none; }
+    #player { z-index: 20; }
+    .ghost { z-index: 15; }
 
-    /* Controls */
-    #mobileControls {
-      position: absolute; bottom: 20px; left: 0; width: 100%;
-      display: flex; justify-content: space-between; padding: 0 20px; z-index: 60;
-    }
-    .d-pad {
-      display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px);
-      gap: 5px;
+    /* モバイル用コントローラー */
+    #controls {
+      margin-top: 20px;
+      display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(3, 60px); gap: 10px;
     }
     .c-btn {
       background: rgba(255, 255, 255, 0.2); border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.5rem; border: 1px solid rgba(255,255,255,0.4);
+      display: flex; align-items: center; justify-content: center; font-size: 2rem;
     }
     .c-btn:active { background: rgba(255, 255, 255, 0.5); }
     #btnUp { grid-column: 2; grid-row: 1; }
     #btnLeft { grid-column: 1; grid-row: 2; }
     #btnRight { grid-column: 3; grid-row: 2; }
     #btnDown { grid-column: 2; grid-row: 3; }
+
+    /* 各種画面 */
+    .screen {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column;
+      align-items: center; justify-content: center; z-index: 100; text-align: center;
+    }
+    h1 { font-size: 2.5rem; margin-bottom: 20px; }
     
-    #actionBtn {
-      width: 80px; height: 80px; border-radius: 50%;
-      background: rgba(255, 50, 50, 0.4); border: 2px solid #ffaaaa;
-      display: flex; align-items: center; justify-content: center; font-size: 2rem;
-      align-self: flex-end; margin-bottom: 20px;
+    /* 難易度ボタン用コンテナ */
+    .btn-container {
+      display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap; justify-content: center;
     }
-    #actionBtn:active { background: rgba(255, 50, 50, 0.8); }
-
-    /* Upgrade Shop */
-    #upgradeShop {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: rgba(20, 20, 40, 0.95); border: 2px solid #FFD700;
-      padding: 20px; border-radius: 15px; z-index: 80; display: none;
-      width: 90%; max-width: 400px; text-align: center;
+    
+    .btn { 
+      background: #FFD700; color: #000; padding: 12px 25px; 
+      font-size: 1.2rem; font-weight: bold; border: none; 
+      border-radius: 30px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.5);
     }
-    .upg-item {
-      background: #333; margin: 10px 0; padding: 10px; border-radius: 8px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .upg-buy { background: #4CAF50; color: white; padding: 5px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-    .upg-buy:disabled { background: #555; color: #888; }
-    #closeShopBtn { margin-top: 15px; }
-
-    /* Shop trigger button */
-    #openShopBtn {
-      position: absolute; top: 60px; right: 10px; z-index: 50;
-      background: #8A2BE2; color: white; padding: 8px 15px; border-radius: 8px;
-      border: 1px solid #E6E6FA; font-weight: bold; cursor: pointer; display: none;
-    }
+    .btn.easy { background: #44ff44; }
+    .btn.normal { background: #FFD700; }
+    .btn.hard { background: #ff4444; color: white;}
+    .btn:active { transform: scale(0.95); }
   </style>
 </head>
 <body>
 
+  <div id="header">
+    <div>SCORE: <span id="scoreDisplay">0</span></div>
+    <div id="statusDisplay"></div>
+  </div>
+
   <div id="gameContainer">
-    <div id="hud">
-      <div class="hud-box" id="hpBar">❤️ 100</div>
-      <div class="hud-box" id="coinCount">💰 0</div>
-    </div>
+    <div id="mapGrid"></div>
     
-    <button id="openShopBtn">🛒 強化メニュー</button>
-
-    <div id="gameField" style="position: absolute; width:100%; height:100%;"></div>
-
     <div id="startScreen" class="screen">
-      <h1>大航海サバイバー</h1>
-      <p>敵船を倒してコインを奪え！<br>貯めたコインで最強の海賊船を作ろう。</p>
-      <p style="color:#aaa; font-size:0.9rem;">PC: WASDで移動、Spaceで大砲発射<br>スマホ: 画面ボタンで操作</p>
-      <button class="btn" id="startBtn">航海に出る 🏴‍☠️</button>
+      <h1 style="color: #FFD700;">🟡 ドットイート</h1>
+      <p>すべてのドットを食べ尽くせ！<br>💊を取ると一定時間反撃できるぞ。</p>
+      <div class="btn-container">
+        <button class="btn easy" onclick="startGame('easy')">初級</button>
+        <button class="btn normal" onclick="startGame('normal')">中級</button>
+        <button class="btn hard" onclick="startGame('hard')">上級</button>
+      </div>
     </div>
 
-    <div id="gameOverScreen" class="screen">
-      <h1 style="color: #ff4444;">船が沈没した...</h1>
-      <p>集めたコイン: <span id="finalScore">0</span> 💰</p>
-      <button class="btn" id="restartBtn">リトライ</button>
+    <div id="gameOverScreen" class="screen" style="display: none;">
+      <h1 style="color: #ff4444;">GAME OVER</h1>
+      <p>お化けに捕まった！</p>
+      <button class="btn" onclick="returnToTitle()" style="margin-top:20px;">タイトルに戻る</button>
     </div>
 
-    <div id="upgradeShop">
-      <h2 style="color:#FFD700; margin-bottom:15px;">⚓ 海賊の強化所</h2>
-      <div class="upg-item">
-        <span>❤️ HP回復 (30💰)</span>
-        <button class="upg-buy" onclick="buyUpgrade('heal')">購入</button>
-      </div>
-      <div class="upg-item">
-        <span>🚀 船速アップ (50💰)</span>
-        <button class="upg-buy" onclick="buyUpgrade('speed')">購入</button>
-      </div>
-      <div class="upg-item">
-        <span>🔥 連射力アップ (100💰)</span>
-        <button class="upg-buy" onclick="buyUpgrade('firerate')">購入</button>
-      </div>
-      <div class="upg-item">
-        <span>💣 3方向大砲 (200💰)</span>
-        <button class="upg-buy" onclick="buyUpgrade('multishot')">購入</button>
-      </div>
-      <button class="btn" id="closeShopBtn">海に戻る</button>
-    </div>
-
-    <div id="mobileControls">
-      <div class="d-pad">
-        <div class="c-btn" id="btnUp">▲</div>
-        <div class="c-btn" id="btnLeft">◀</div>
-        <div class="c-btn" id="btnRight">▶</div>
-        <div class="c-btn" id="btnDown">▼</div>
-      </div>
-      <div id="actionBtn">💣</div>
+    <div id="gameClearScreen" class="screen" style="display: none;">
+      <h1 style="color: #44ff44;">CLEAR!!</h1>
+      <p>見事、すべてのドットを食べ尽くした！</p>
+      <button class="btn" onclick="returnToTitle()" style="margin-top:20px;">タイトルに戻る</button>
     </div>
   </div>
 
+  <div id="controls">
+    <div class="c-btn" id="btnUp">▲</div>
+    <div class="c-btn" id="btnLeft">◀</div>
+    <div class="c-btn" id="btnRight">▶</div>
+    <div class="c-btn" id="btnDown">▼</div>
+  </div>
+
   <script>
-    // System variables
-    const field = document.getElementById('gameField');
-    const hpDisplay = document.getElementById('hpBar');
-    const coinDisplay = document.getElementById('coinCount');
-    let animationId;
-    let lastTime = 0;
+    const initialMap = [
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
+      [1,3,1,1,0,1,0,1,0,1,0,1,1,3,1],
+      [1,0,0,0,0,1,0,0,0,1,0,0,0,0,1],
+      [1,0,1,1,0,1,1,1,1,1,0,1,1,0,1],
+      [1,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
+      [1,1,1,1,0,1,2,2,2,1,0,1,1,1,1],
+      [2,2,2,1,0,1,2,4,2,1,0,1,2,2,2],
+      [1,1,1,1,0,1,1,1,1,1,0,1,1,1,1],
+      [1,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
+      [1,0,1,1,1,1,0,1,0,1,1,1,1,0,1],
+      [1,3,0,0,1,0,0,0,0,0,1,0,0,3,1],
+      [1,1,1,0,1,0,1,1,1,0,1,0,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
 
-    // Game state
-    const state = {
-      isRunning: false,
-      isShopOpen: false,
-      keys: {},
-      player: {
-        el: null, x: 400, y: 300,
-        vx: 0, vy: -1, // 向きのベクトル
-        speed: 3.5, hp: 100, maxHp: 100,
-        coins: 0,
-        fireDelay: 400, lastFire: 0,
-        multishot: false,
-        invincibleTimer: 0 // 無敵時間（ミリ秒）
-      },
-      enemies: [],
-      bullets: [],
-      coins: [],
-      particles: [],
-      difficulty: 1,
-      spawnTimer: 0
-    };
+    let currentMap = [];
+    let dotsRemaining = 0;
+    let score = 0;
+    let gameLoop;
+    let powerModeTime = 0;
+    let currentDifficulty = 'normal';
 
-    // Controls Setup
-    window.addEventListener('keydown', e => state.keys[e.key.toLowerCase()] = true);
-    window.addEventListener('keyup', e => state.keys[e.key.toLowerCase()] = false);
+    const player = { x: 7, y: 11, dirX: 0, dirY: 0, nextDirX: 0, nextDirY: 0, el: null };
+    const ghosts = [];
+    const container = document.getElementById('gameContainer');
+    const mapGrid = document.getElementById('mapGrid');
 
-    const touchState = { up: false, down: false, left: false, right: false, fire: false };
-    const setupBtn = (id, key) => {
+    function createMap() {
+      mapGrid.innerHTML = '';
+      currentMap = JSON.parse(JSON.stringify(initialMap));
+      dotsRemaining = 0;
+
+      for (let y = 0; y < 15; y++) {
+        for (let x = 0; x < 15; x++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.id = `cell-${x}-${y}`;
+          
+          if (currentMap[y][x] === 1) cell.classList.add('wall');
+          else if (currentMap[y][x] === 0) { cell.classList.add('dot'); dotsRemaining++; }
+          else if (currentMap[y][x] === 3) { cell.textContent = '💊'; cell.classList.add('power'); dotsRemaining++; }
+          
+          mapGrid.appendChild(cell);
+        }
+      }
+    }
+
+    function spawnEntities() {
+      document.querySelectorAll('.entity').forEach(e => e.remove());
+
+      // プレイヤーの生成
+      player.x = 7; player.y = 11; player.dirX = 0; player.dirY = 0; player.nextDirX = 0; player.nextDirY = 0;
+      player.el = document.createElement('div');
+      player.el.className = 'entity'; player.el.id = 'player'; player.el.textContent = '🟡';
+      updatePosition(player.el, player.x, player.y);
+      container.appendChild(player.el);
+
+      // お化けの数の調整
+      let ghostCount = 3;
+      if (currentDifficulty === 'easy') ghostCount = 2;
+      if (currentDifficulty === 'hard') ghostCount = 4;
+
+      ghosts.length = 0;
+      const startPos = [{x:6,y:7}, {x:8,y:7}, {x:7,y:6}, {x:7,y:7}];
+      const icons = ['👻', '🐙', '👾', '😈'];
+      
+      for(let i = 0; i < ghostCount; i++) {
+        const el = document.createElement('div');
+        el.className = 'entity ghost'; el.textContent = icons[i];
+        updatePosition(el, startPos[i].x, startPos[i].y);
+        container.appendChild(el);
+        ghosts.push({ x: startPos[i].x, y: startPos[i].y, dirX: 0, dirY: 0, el: el, icon: icons[i], isEaten: false });
+      }
+    }
+
+    function updatePosition(el, x, y) {
+      el.style.left = `calc(${x} * 100% / 15)`;
+      el.style.top = `calc(${y} * 100% / 15)`;
+    }
+
+    function setDirection(dx, dy) { player.nextDirX = dx; player.nextDirY = dy; }
+    window.addEventListener('keydown', e => {
+      if (e.key === 'ArrowUp' || e.key === 'w') setDirection(0, -1);
+      if (e.key === 'ArrowDown' || e.key === 's') setDirection(0, 1);
+      if (e.key === 'ArrowLeft' || e.key === 'a') setDirection(-1, 0);
+      if (e.key === 'ArrowRight' || e.key === 'd') setDirection(1, 0);
+    });
+    
+    const bindBtn = (id, dx, dy) => {
       const btn = document.getElementById(id);
-      btn.addEventListener('touchstart', e => { e.preventDefault(); touchState[key] = true; });
-      btn.addEventListener('touchend', e => { e.preventDefault(); touchState[key] = false; });
-      btn.addEventListener('mousedown', () => touchState[key] = true);
-      btn.addEventListener('mouseup', () => touchState[key] = false);
-      btn.addEventListener('mouseleave', () => touchState[key] = false);
+      const move = (e) => { e.preventDefault(); setDirection(dx, dy); };
+      btn.addEventListener('touchstart', move); btn.addEventListener('mousedown', move);
     };
-    setupBtn('btnUp', 'up'); setupBtn('btnDown', 'down');
-    setupBtn('btnLeft', 'left'); setupBtn('btnRight', 'right');
-    setupBtn('actionBtn', 'fire');
+    bindBtn('btnUp', 0, -1); bindBtn('btnDown', 0, 1); bindBtn('btnLeft', -1, 0); bindBtn('btnRight', 1, 0);
 
-    // UI Buttons
-    document.getElementById('startBtn').onclick = startGame;
-    document.getElementById('restartBtn').onclick = startGame;
-    document.getElementById('openShopBtn').onclick = () => { state.isShopOpen = true; document.getElementById('upgradeShop').style.display = 'block'; };
-    document.getElementById('closeShopBtn').onclick = () => { state.isShopOpen = false; document.getElementById('upgradeShop').style.display = 'none'; };
-
-    function startGame() {
-      document.getElementById('startScreen').style.display = 'none';
-      document.getElementById('gameOverScreen').style.display = 'none';
-      document.getElementById('upgradeShop').style.display = 'none';
-      field.innerHTML = '';
+    function tick() {
+      movePlayer();
+      moveGhosts();
+      checkCollisions();
       
-      // Reset State
-      state.player = { ...state.player, x: window.innerWidth/2 > 400 ? 400 : window.innerWidth/2, y: 300, hp: 100, coins: 0, speed: 3.5, fireDelay: 400, multishot: false, invincibleTimer: 0 };
-      state.enemies = []; state.bullets = []; state.coins = []; state.particles = [];
-      state.difficulty = 1; state.spawnTimer = 0; state.isShopOpen = false;
+      if (powerModeTime > 0) {
+        powerModeTime--;
+        if (powerModeTime <= 4) document.getElementById('statusDisplay').textContent = '⚠️ 点滅中';
+        if (powerModeTime === 0) {
+          document.getElementById('statusDisplay').textContent = '';
+          ghosts.forEach(g => { if (!g.isEaten) g.el.textContent = g.icon; });
+        }
+      }
+    }
+
+    function movePlayer() {
+      if (canMove(player.x + player.nextDirX, player.y + player.nextDirY)) {
+        player.dirX = player.nextDirX; player.dirY = player.nextDirY;
+      }
       
-      // Create Player
-      const pEl = document.createElement('div');
-      pEl.className = 'entity'; pEl.id = 'player'; pEl.textContent = '🏴‍☠️';
-      field.appendChild(pEl);
-      state.player.el = pEl;
-
-      updateHUD();
-      state.isRunning = true;
-      lastTime = performance.now();
-      cancelAnimationFrame(animationId);
-      animationId = requestAnimationFrame(loop);
-    }
-
-    function createEntity(type, icon, x, y, size) {
-      const el = document.createElement('div');
-      el.className = `entity ${type}`; el.textContent = icon;
-      el.style.left = x + 'px'; el.style.top = y + 'px';
-      if(size) el.style.fontSize = size;
-      field.appendChild(el);
-      return el;
-    }
-
-    // Main Loop
-    function loop(time) {
-      if (!state.isRunning) return;
-      const dt = time - lastTime;
-      lastTime = time;
-
-      if (!state.isShopOpen) {
-        updatePlayer(dt, time);
-        updateBullets(dt);
-        updateEnemies(dt);
-        updateCoins();
-        updateParticles(dt);
-        checkCollisions();
-        spawnEnemies(dt);
-      }
-
-      animationId = requestAnimationFrame(loop);
-    }
-
-    function updatePlayer(dt, time) {
-      const p = state.player;
-      let dx = 0, dy = 0;
-
-      if (state.keys['w'] || state.keys['ArrowUp'] || touchState.up) dy -= 1;
-      if (state.keys['s'] || state.keys['ArrowDown'] || touchState.down) dy += 1;
-      if (state.keys['a'] || state.keys['ArrowLeft'] || touchState.left) dx -= 1;
-      if (state.keys['d'] || state.keys['ArrowRight'] || touchState.right) dx += 1;
-
-      // 正規化して斜め移動も同じ速度に
-      if (dx !== 0 || dy !== 0) {
-        const len = Math.hypot(dx, dy);
-        dx /= len; dy /= len;
-        // 向きを記憶
-        p.vx = dx; p.vy = dy;
-      }
-
-      // 移動制限
-      const newX = p.x + dx * p.speed * (dt/(1000/60));
-      const newY = p.y + dy * p.speed * (dt/(1000/60));
-      const w = field.clientWidth; const h = field.clientHeight;
-      p.x = Math.max(20, Math.min(w - 20, newX));
-      p.y = Math.max(20, Math.min(h - 20, newY));
-
-      p.el.style.left = `${p.x}px`;
-      p.el.style.top = `${p.y}px`;
-
-      // 船を進行方向に向ける
-      const angle = Math.atan2(p.vy, p.vx) * 180 / Math.PI + 90;
-      p.el.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
-
-      // 無敵時間の処理
-      if (p.invincibleTimer > 0) {
-        p.invincibleTimer -= dt;
-        p.el.classList.add('blink');
-      } else {
-        p.el.classList.remove('blink');
-      }
-
-      // 発射
-      if ((state.keys[' '] || touchState.fire) && time - p.lastFire > p.fireDelay) {
-        fireCannon(p.x, p.y, p.vx, p.vy);
-        p.lastFire = time;
-      }
-    }
-
-    function fireCannon(x, y, dirX, dirY) {
-      const speed = 8;
-      const createBullet = (dx, dy) => {
-        const el = createEntity('bullet', '🔥', x, y);
-        state.bullets.push({ el, x, y, vx: dx * speed, vy: dy * speed });
-      };
-
-      createBullet(dirX, dirY);
-      
-      if (state.player.multishot) {
-        // 3方向射撃 (少し角度をずらす)
-        const angle = Math.atan2(dirY, dirX);
-        const spread = 0.3; // ラジアン
-        createBullet(Math.cos(angle + spread), Math.sin(angle + spread));
-        createBullet(Math.cos(angle - spread), Math.sin(angle - spread));
-      }
-    }
-
-    function spawnEnemies(dt) {
-      state.spawnTimer += dt;
-      // 時間経過で難易度アップ
-      state.difficulty += dt / 10000; 
-      
-      const spawnRate = Math.max(500, 2000 - state.difficulty * 200); // どんどん早く
-
-      if (state.spawnTimer > spawnRate) {
-        state.spawnTimer = 0;
-        const w = field.clientWidth; const h = field.clientHeight;
+      if (canMove(player.x + player.dirX, player.y + player.dirY)) {
+        player.x += player.dirX; player.y += player.dirY;
         
-        // 画面外（端）からスポーンさせる
-        let ex, ey;
-        if (Math.random() < 0.5) {
-          ex = Math.random() < 0.5 ? -30 : w + 30;
-          ey = Math.random() * h;
-        } else {
-          ex = Math.random() * w;
-          ey = Math.random() < 0.5 ? -30 : h + 30;
+        if (player.x < 0) player.x = 14;
+        if (player.x > 14) player.x = 0;
+
+        updatePosition(player.el, player.x, player.y);
+
+        let angle = 0;
+        if (player.dirX === 1) angle = 0;
+        if (player.dirX === -1) angle = 180;
+        if (player.dirY === 1) angle = 90;
+        if (player.dirY === -1) angle = -90;
+        player.el.style.transform = `rotate(${angle}deg)`;
+
+        eatItem();
+      }
+    }
+
+    function moveGhosts() {
+      ghosts.forEach(g => {
+        if (g.isEaten) return;
+
+        const possibleMoves = [];
+        const directions = [[0,-1], [0,1], [-1,0], [1,0]];
+        
+        directions.forEach(d => {
+          if (d[0] === -g.dirX && d[1] === -g.dirY && (g.dirX !== 0 || g.dirY !== 0)) return;
+          if (canMove(g.x + d[0], g.y + d[1])) possibleMoves.push(d);
+        });
+
+        if (possibleMoves.length === 0) {
+          directions.forEach(d => { if (canMove(g.x + d[0], g.y + d[1])) possibleMoves.push(d); });
         }
 
-        const isBig = Math.random() < 0.2; // 20%で大型船
-        const icon = isBig ? '🛳️' : '⛵';
-        const hp = isBig ? 60 : 20;
-        const speed = isBig ? 1.5 : 2.5;
-        const size = isBig ? '3.5rem' : '2.5rem';
-
-        const el = createEntity('enemy', icon, ex, ey, size);
-        state.enemies.push({ el, x: ex, y: ey, hp, speed, isBig });
-      }
-    }
-
-    function updateEnemies(dt) {
-      const px = state.player.x; const py = state.player.y;
-      state.enemies.forEach(e => {
-        const dx = px - e.x; const dy = py - e.y;
-        const len = Math.hypot(dx, dy);
-        e.x += (dx / len) * e.speed * (dt/(1000/60));
-        e.y += (dy / len) * e.speed * (dt/(1000/60));
-        e.el.style.left = `${e.x}px`; e.el.style.top = `${e.y}px`;
-        
-        // プレイヤー側を向く
-        const angle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
-        e.el.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+        if (possibleMoves.length > 0) {
+          const move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+          g.dirX = move[0]; g.dirY = move[1];
+          g.x += g.dirX; g.y += g.dirY;
+          
+          if (g.x < 0) g.x = 14;
+          if (g.x > 14) g.x = 0;
+          
+          updatePosition(g.el, g.x, g.y);
+        }
       });
     }
 
-    function updateBullets(dt) {
-      for (let i = state.bullets.length - 1; i >= 0; i--) {
-        const b = state.bullets[i];
-        b.x += b.vx * (dt/(1000/60)); b.y += b.vy * (dt/(1000/60));
-        b.el.style.left = `${b.x}px`; b.el.style.top = `${b.y}px`;
+    function canMove(x, y) {
+      if (x < 0 || x > 14) return true;
+      return currentMap[y][x] !== 1 && currentMap[y][x] !== 4;
+    }
 
-        if (b.x < -50 || b.x > field.clientWidth + 50 || b.y < -50 || b.y > field.clientHeight + 50) {
-          b.el.remove(); state.bullets.splice(i, 1);
+    function eatItem() {
+      const cellVal = currentMap[player.y][player.x];
+      if (cellVal === 0 || cellVal === 3) {
+        const cellId = `cell-${player.x}-${player.y}`;
+        const cellEl = document.getElementById(cellId);
+        
+        if (cellVal === 0) {
+          score += 10;
+          cellEl.classList.remove('dot');
+        } else if (cellVal === 3) {
+          score += 50;
+          cellEl.textContent = ''; cellEl.classList.remove('power');
+          activatePowerMode();
+        }
+        
+        currentMap[player.y][player.x] = 2;
+        document.getElementById('scoreDisplay').textContent = score;
+        dotsRemaining--;
+
+        if (dotsRemaining <= 0) {
+          clearInterval(gameLoop);
+          document.getElementById('gameClearScreen').style.display = 'flex';
         }
       }
     }
 
-    function updateCoins() {
-      // 磁石効果（プレイヤーに近づくと吸い込まれる）
-      const p = state.player;
-      for (let i = state.coins.length - 1; i >= 0; i--) {
-        const c = state.coins[i];
-        const dist = Math.hypot(p.x - c.x, p.y - c.y);
-        if (dist < 100) {
-          c.x += (p.x - c.x) * 0.1;
-          c.y += (p.y - c.y) * 0.1;
-          c.el.style.left = `${c.x}px`; c.el.style.top = `${c.y}px`;
-        }
-      }
-    }
+    function activatePowerMode() {
+      // 難易度によって無敵時間を変更
+      let time = 30; // 中級: 約7.5秒
+      if (currentDifficulty === 'easy') time = 45; // 初級: 約11秒
+      if (currentDifficulty === 'hard') time = 16; // 上級: 約3.5秒
 
-    function showParticle(text, x, y) {
-      const el = createEntity('effect', text, x, y);
-      state.particles.push({ el, x, y, life: 1, vy: -2 });
-    }
-
-    function updateParticles(dt) {
-      for (let i = state.particles.length - 1; i >= 0; i--) {
-        const p = state.particles[i];
-        p.life -= dt / 1000;
-        p.y += p.vy;
-        p.el.style.top = `${p.y}px`;
-        p.el.style.opacity = p.life;
-        if (p.life <= 0) { p.el.remove(); state.particles.splice(i, 1); }
-      }
+      powerModeTime = time; 
+      document.getElementById('statusDisplay').textContent = '💥 パワーモード！';
+      ghosts.forEach(g => {
+        g.isEaten = false;
+        g.el.textContent = '🥶';
+      });
     }
 
     function checkCollisions() {
-      const p = state.player;
-
-      // Player vs Enemy
-      if (p.invincibleTimer <= 0) {
-        for (let e of state.enemies) {
-          const hitRadius = e.isBig ? 40 : 25;
-          if (Math.hypot(p.x - e.x, p.y - e.y) < hitRadius) {
-            p.hp -= 20;
-            p.invincibleTimer = 1500; // 1.5秒の無敵時間！
-            showParticle('💥', p.x, p.y);
-            updateHUD();
-            
-            // ノックバック
-            p.x += (p.x - e.x) * 0.5; p.y += (p.y - e.y) * 0.5;
-
-            if (p.hp <= 0) {
-              state.isRunning = false;
-              document.getElementById('finalScore').textContent = p.coins;
-              document.getElementById('gameOverScreen').style.display = 'flex';
-            }
-            break; // 1フレームに受けるダメージは1体分のみ
+      ghosts.forEach(g => {
+        if (g.x === player.x && g.y === player.y && !g.isEaten) {
+          if (powerModeTime > 0) {
+            score += 200;
+            document.getElementById('scoreDisplay').textContent = score;
+            g.isEaten = true;
+            g.el.textContent = '👀';
+            setTimeout(() => {
+              g.x = 7; g.y = 7; updatePosition(g.el, 7, 7);
+              g.isEaten = false;
+              g.el.textContent = powerModeTime > 0 ? '🥶' : g.icon;
+            }, 3000);
+          } else {
+            clearInterval(gameLoop);
+            document.getElementById('gameOverScreen').style.display = 'flex';
           }
         }
-      }
-
-      // Bullet vs Enemy
-      for (let i = state.bullets.length - 1; i >= 0; i--) {
-        let hit = false;
-        const b = state.bullets[i];
-        for (let j = state.enemies.length - 1; j >= 0; j--) {
-          const e = state.enemies[j];
-          const hitRadius = e.isBig ? 40 : 25;
-          
-          if (Math.hypot(b.x - e.x, b.y - e.y) < hitRadius) {
-            e.hp -= 20;
-            hit = true;
-            showParticle('💨', e.x, e.y);
-            
-            if (e.hp <= 0) {
-              // 撃破！コインを落とす
-              const coinValue = e.isBig ? 5 : 1;
-              const el = createEntity('coin', '🪙', e.x, e.y);
-              state.coins.push({ el, x: e.x, y: e.y, val: coinValue });
-              
-              e.el.remove(); state.enemies.splice(j, 1);
-              showParticle('☠️', e.x, e.y);
-            }
-            break;
-          }
-        }
-        if (hit) { b.el.remove(); state.bullets.splice(i, 1); }
-      }
-
-      // Player vs Coin
-      for (let i = state.coins.length - 1; i >= 0; i--) {
-        const c = state.coins[i];
-        if (Math.hypot(p.x - c.x, p.y - c.y) < 30) {
-          p.coins += c.val;
-          c.el.remove(); state.coins.splice(i, 1);
-          showParticle(`+${c.val}`, p.x, p.y - 30);
-          updateHUD();
-        }
-      }
-    }
-
-    function updateHUD() {
-      hpDisplay.textContent = `❤️ ${state.player.hp}`;
-      coinDisplay.textContent = `💰 ${state.player.coins}`;
-      document.getElementById('openShopBtn').style.display = state.player.coins >= 30 ? 'block' : 'none';
-      
-      // ショップボタンの更新
-      document.querySelectorAll('.upg-buy').forEach(btn => {
-        const type = btn.getAttribute('onclick').match(/'([^']+)'/)[1];
-        let cost = 0;
-        if(type==='heal') cost=30; if(type==='speed') cost=50;
-        if(type==='firerate') cost=100; if(type==='multishot') cost=200;
-        btn.disabled = state.player.coins < cost;
       });
     }
 
-    // グローバル関数 (ショップ用)
-    window.buyUpgrade = (type) => {
-      const p = state.player;
-      if (type === 'heal' && p.coins >= 30) { p.coins -= 30; p.hp = Math.min(p.maxHp, p.hp + 40); }
-      if (type === 'speed' && p.coins >= 50) { p.coins -= 50; p.speed += 0.5; }
-      if (type === 'firerate' && p.coins >= 100) { p.coins -= 100; p.fireDelay = Math.max(150, p.fireDelay - 100); }
-      if (type === 'multishot' && p.coins >= 200 && !p.multishot) { p.coins -= 200; p.multishot = true; }
-      updateHUD();
+    window.returnToTitle = function() {
+      document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+      document.getElementById('startScreen').style.display = 'flex';
     };
 
+    window.startGame = function(difficulty) {
+      currentDifficulty = difficulty;
+      document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+      score = 0; document.getElementById('scoreDisplay').textContent = score;
+      powerModeTime = 0; document.getElementById('statusDisplay').textContent = '';
+      
+      createMap();
+      spawnEntities();
+      
+      // 難易度によってゲームスピード（更新間隔）を変更
+      let speed = 260; // 中級: 標準スピード
+      if (currentDifficulty === 'easy') speed = 330; // 初級: 少し遅い
+      if (currentDifficulty === 'hard') speed = 210; // 上級: スマホでも遊べる限界の速さ
+
+      clearInterval(gameLoop);
+      
+      // スピードに合わせてCSSのアニメーション速度も調整
+      document.querySelectorAll('.entity').forEach(el => {
+        el.style.transition = `top ${speed/1000}s linear, left ${speed/1000}s linear`;
+      });
+
+      gameLoop = setInterval(tick, speed);
+    };
   </script>
 </body>
 </html>
