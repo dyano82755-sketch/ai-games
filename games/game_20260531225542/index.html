@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>クイズRPG</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 500px;
+            height: 90vh;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            position: relative;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            transition: opacity 0.5s ease;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        h1 {
+            color: #fff;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        h2 {
+            color: #fff;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+
+        p {
+            color: #fff;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            background: linear-gradient(to right, #ff6b6b, #ffa502);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            width: 80%;
+            max-width: 250px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .question-container {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            width: 90%;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .question-text {
+            color: white;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+        }
+
+        .options-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .option-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 15px;
+            font-size: 1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .option-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .option-btn.correct {
+            background: linear-gradient(to right, #00b09b, #96c93d);
+            border-color: #96c93d;
+        }
+
+        .option-btn.incorrect {
+            background: linear-gradient(to right, #ff416c, #ff4b2b);
+            border-color: #ff4b2b;
+        }
+
+        .health-bar {
+            width: 90%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(to right, #ff6b6b, #ffa502);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .score-display {
+            color: white;
+            font-size: 1.2rem;
+            margin: 10px 0;
+        }
+
+        .character {
+            font-size: 4rem;
+            margin: 20px 0;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .game-over {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .result {
+            font-size: 1.5rem;
+            margin: 20px 0;
+        }
+
+        .final-score {
+            font-size: 2rem;
+            color: #ffcc00;
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            width: 90%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #00c9ff, #92fe9d);
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+
+        .timer {
+            color: #ffcc00;
+            font-size: 1.2rem;
+            margin: 10px 0;
+        }
+
+        .level-indicator {
+            color: #fff;
+            font-size: 1.1rem;
+            margin: 10px 0;
+        }
+
+        .difficulty {
+            color: #ffcc00;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- スタート画面 -->
+        <div id="start-screen" class="screen">
+            <h1>🧠 クイズRPG</h1>
+            <div class="character">🧙‍♂️</div>
+            <p>知識で戦う冒険の始まりです！</p>
+            <p>正解で敵を倒し、間違えるとダメージを受けます</p>
+            <p>レベルに応じて難易度が上がります</p>
+            <button id="start-btn" class="btn">ゲーム開始</button>
+        </div>
+
+        <!-- プレイ画面 -->
+        <div id="game-screen" class="screen hidden">
+            <div class="level-indicator">レベル <span id="level">1</span></div>
+            <div class="health-bar">
+                <div class="health-fill" id="health-bar"></div>
+            </div>
+            <div class="score-display">スコア: <span id="score">0</span></div>
+            <div class="timer">残り時間: <span id="timer">30</span>秒</div>
+            <div class="question-container">
+                <div class="question-text" id="question-text">問題が読み込まれています...</div>
+            </div>
+            <div class="options-container" id="options-container">
+                <!-- オプションはJavaScriptで追加 -->
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <!-- ゲームオーバー画面 -->
+        <div id="game-over-screen" class="screen hidden game-over">
+            <h2>ゲームオーバー</h2>
+            <div class="character">💀</div>
+            <div class="result">あなたの結果</div>
+            <div class="final-score">スコア: <span id="final-score">0</span></div>
+            <div class="final-score">レベル: <span id="final-level">1</span></div>
+            <button id="restart-btn" class="btn">もう一度遊ぶ</button>
+        </div>
+    </div>
+
+    <script>
+        // ゲーム状態管理
+        const gameState = {
+            score: 0,
+            level: 1,
+            health: 100,
+            timeLeft: 30,
+            timer: null,
+            currentQuestion: null,
+            isGameActive: false,
+            questions: [],
+            questionIndex: 0,
+            progress: 0
+        };
+
+        // 問題データ
+        const quizQuestions = [
+            {
+                question: "日本の首都は？",
+                options: ["東京", "大阪", "京都", "名古屋"],
+                correct: 0,
+                difficulty: "easy"
+            },
+            {
+                question: "地球の半径は約何km？",
+                options: ["6371", "5000", "7000", "5500"],
+                correct: 0,
+                difficulty: "medium"
+            },
+            {
+                question: "水の化学式は？",
+                options: ["H2O", "CO2", "NaCl", "O2"],
+                correct: 0,
+                difficulty: "easy"
+            },
+            {
+                question: "太陽系で一番大きな惑星は？",
+                options: ["木星", "土星", "天王星", "海王星"],
+                correct: 0,
+                difficulty: "medium"
+            },
+            {
+                question: "1メートルは何センチメートル？",
+                options: ["100", "1000", "10", "1"],
+                correct: 0,
+                difficulty: "easy"
+            },
+            {
+                question: "光の速度は秒あたり何km？",
+                options: ["300000", "299792", "350000", "280000"],
+                correct: 1,
+                difficulty: "hard"
+            },
+            {
+                question: "日本の最高峰は？",
+                options: ["富士山", "白山", "槍岳", "御岳山"],
+                correct: 0,
+                difficulty: "medium"
+            },
+            {
+                question: "酸素の元素記号は？",
+                options: ["O", "H", "C", "N"],
+                correct: 0,
+                difficulty: "easy"
+            },
+            {
+                question: "1週間は何時間？",
+                options: ["168", "120", "240", "144"],
+                correct: 0,
+                difficulty: "medium"
+            },
+            {
+                question: "地球の表面の約何%が水で覆われている？",
+                options: ["71", "60", "80", "50"],
+                correct: 0,
+                difficulty: "hard"
+            }
+        ];
+
+        // DOM要素
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const scoreDisplay = document.getElementById('score');
+        const levelDisplay = document.getElementById('level');
+        const healthBar = document.getElementById('health-bar');
+        const timerDisplay = document.getElementById('timer');
+        const finalScore = document.getElementById('final-score');
+        const finalLevel = document.getElementById('final-level');
+        const progressFill = document.getElementById('progress-fill');
+
+        // ゲーム初期化
+        function initGame() {
+            gameState.score = 0;
+            gameState.level = 1;
+            gameState.health = 100;
+            gameState.questionIndex = 0;
+            gameState.progress = 0;
+            gameState.isGameActive = true;
+
+            updateScore();
+            updateLevel();
+            updateHealth();
+            updateProgress();
+
+            showScreen(gameScreen);
+            startTimer();
+            loadQuestion();
+        }
+
+        // 画面切り替え
+        function showScreen(screen) {
+            startScreen.classList.add('hidden');
+            gameScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            screen.classList.remove('hidden');
+        }
+
+        // 問題をロード
+        function loadQuestion() {
+            if (gameState.questionIndex >= quizQuestions.length) {
+                endGame();
+                return;
+            }
+
+            gameState.currentQuestion = quizQuestions[gameState.questionIndex];
+            questionText.textContent = gameState.currentQuestion.question;
+            
+            optionsContainer.innerHTML = '';
+            gameState.currentQuestion.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'option-btn';
+                button.textContent = option;
+                button.onclick = () => checkAnswer(index);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        // 回答をチェック
+        function checkAnswer(selectedIndex) {
+            const isCorrect = selectedIndex === gameState.currentQuestion.correct;
+            const buttons = optionsContainer.querySelectorAll('.option-btn');
+            
+            // 正解/不正解の表示
+            buttons.forEach((btn, index) => {
+                if (index === gameState.currentQuestion.correct) {
+                    btn.classList.add('correct');
+                } else {
+                    btn.classList.add('incorrect');
+                }
+                btn.disabled = true;
+            });
+
+            if (isCorrect) {
+                gameState.score += 10 * gameState.level;
+                updateScore();
+                // 正解時は少し回復
+                gameState.health = Math.min(100, gameState.health + 5);
+                updateHealth();
+            } else {
+                // 不正解時はダメージ
+                gameState.health -= 15;
+                updateHealth();
+                if (gameState.health <= 0) {
+                    endGame();
+                    return;
+                }
+            }
+
+            // 次の問題へ
+            setTimeout(() => {
+                gameState.questionIndex++;
+                gameState.progress = (gameState.questionIndex / quizQuestions.length) * 100;
+                updateProgress();
+                loadQuestion();
+            }, 1000);
+        }
+
+        // タイマー開始
+        function startTimer() {
+            clearInterval(gameState.timer);
+            gameState.timeLeft = 30;
+            updateTimer();
+            gameState.timer = setInterval(() => {
+                gameState.timeLeft--;
+                updateTimer();
+                if (gameState.timeLeft <= 0) {
+                    clearInterval(gameState.timer);
+                    gameState.health -= 10;
+                    updateHealth();
+                    if (gameState.health <= 0) {
+                        endGame();
+                    } else {
+                        gameState.questionIndex++;
+                        gameState.progress = (gameState.questionIndex / quizQuestions.length) * 100;
+                        updateProgress();
+                        loadQuestion();
+                    }
+                }
+            }, 1000);
+        }
+
+        // タイマー更新
+        function updateTimer() {
+            timerDisplay.textContent = gameState.timeLeft;
+        }
+
+        // スコア更新
+        function updateScore() {
+            scoreDisplay.textContent = gameState.score;
+        }
+
+        // レベル更新
+        function updateLevel() {
+            levelDisplay.textContent = gameState.level;
+        }
+
+        // ヘルス更新
+        function updateHealth() {
+            healthBar.style.width = `${gameState.health}%`;
+        }
+
+        // プログレス更新
+        function updateProgress() {
+            progressFill.style.width = `${gameState.progress}%`;
+        }
+
+        // ゲーム終了
+        function endGame() {
+            gameState.isGameActive = false;
+            clearInterval(gameState.timer);
+            finalScore.textContent = gameState.score;
+            finalLevel.textContent = gameState.level;
+            showScreen(gameOverScreen);
+        }
+
+        // イベントリスナー
+        startBtn.addEventListener('click', () => {
+            initGame();
+        });
+
+        restartBtn.addEventListener('click', () => {
+            initGame();
+        });
+
+        // ゲーム初期化
+        showScreen(startScreen);
+    </script>
+</body>
+</html>
