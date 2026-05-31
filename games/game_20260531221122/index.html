@@ -1,0 +1,594 @@
+```html
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>大富豪ゲーム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e5799, #207cca, #2989d8, #1e5799);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+        
+        #game-container {
+            width: 100%;
+            max-width: 500px;
+            height: 90vh;
+            position: relative;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .screen {
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .active {
+            display: flex;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #ffcc00;
+        }
+        
+        .card {
+            width: 60px;
+            height: 80px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px;
+            margin: 5px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+            position: relative;
+            font-weight: bold;
+            font-size: 12px;
+            user-select: none;
+        }
+        
+        .card.red {
+            color: #d32f2f;
+        }
+        
+        .card.black {
+            color: #333;
+        }
+        
+        .card-top, .card-bottom {
+            font-size: 16px;
+        }
+        
+        .card-center {
+            font-size: 20px;
+        }
+        
+        .player-area {
+            width: 100%;
+            margin: 10px 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .player {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 5px;
+            font-size: 24px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+        }
+        
+        .player.active {
+            background: rgba(255, 215, 0, 0.3);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+        }
+        
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(to right, #ff9800, #ff5722);
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        .score-item {
+            text-align: center;
+        }
+        
+        .score-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffcc00;
+        }
+        
+        .game-info {
+            margin: 10px 0;
+            font-size: 1.2rem;
+        }
+        
+        .hand {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 10px 0;
+            min-height: 100px;
+        }
+        
+        .hand-card {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .hand-card:hover {
+            transform: translateY(-10px);
+        }
+        
+        .hand-card.selected {
+            transform: translateY(-20px);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+        }
+        
+        .message {
+            font-size: 1.2rem;
+            margin: 10px 0;
+            min-height: 30px;
+        }
+        
+        .winner {
+            font-size: 2rem;
+            color: #ffcc00;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.7);
+        }
+        
+        .rules {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .rules li {
+            margin: 5px 0;
+        }
+        
+        @media (max-width: 500px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            h2 {
+                font-size: 1.5rem;
+            }
+            
+            .card {
+                width: 50px;
+                height: 70px;
+                font-size: 10px;
+            }
+            
+            .card-top, .card-bottom {
+                font-size: 12px;
+            }
+            
+            .card-center {
+                font-size: 16px;
+            }
+            
+            .player {
+                width: 60px;
+                height: 60px;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- スタート画面 -->
+        <div id="start-screen" class="screen active">
+            <h1>🎯 大富豪ゲーム 🎯</h1>
+            <div class="rules">
+                <p>ゲームのルール:</p>
+                <ul>
+                    <li>カードを1枚ずつ出していきます</li>
+                    <li>数字が大きいカードが勝ちます</li>
+                    <li>数字が同じ場合はスートの強さで勝負</li>
+                    <li>最後のカードを出した人が勝ちます</li>
+                </ul>
+            </div>
+            <div class="controls">
+                <button id="start-button">ゲーム開始</button>
+            </div>
+        </div>
+
+        <!-- プレイ画面 -->
+        <div id="game-screen" class="screen">
+            <h2>ゲーム中</h2>
+            <div class="game-info">
+                <div class="message" id="game-message">あなたのターンです</div>
+                <div class="score-board">
+                    <div class="score-item">
+                        <div>プレイヤー</div>
+                        <div class="score-value" id="player-score">0</div>
+                    </div>
+                    <div class="score-item">
+                        <div>AI</div>
+                        <div class="score-value" id="ai-score">0</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="player-area">
+                <div class="player active" id="player">👤</div>
+                <div class="player" id="ai">🤖</div>
+            </div>
+            
+            <div class="hand" id="player-hand"></div>
+            
+            <div class="controls">
+                <button id="play-button">カードを出す</button>
+                <button id="pass-button">パス</button>
+            </div>
+        </div>
+
+        <!-- ゲームオーバー画面 -->
+        <div id="game-over-screen" class="screen">
+            <h2>🎉 ゲーム終了 🎉</h2>
+            <div class="winner" id="winner-message"></div>
+            <div class="message" id="final-message"></div>
+            <div class="controls">
+                <button id="restart-button">もう一度遊ぶ</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ゲーム状態管理
+            const gameState = {
+                players: [
+                    { id: 'player', name: 'あなた', score: 0, hand: [] },
+                    { id: 'ai', name: 'AI', score: 0, hand: [] }
+                ],
+                currentPlayer: 'player',
+                deck: [],
+                gameActive: false,
+                selectedCard: null,
+                turnCount: 0
+            };
+
+            // DOM要素
+            const screens = {
+                start: document.getElementById('start-screen'),
+                game: document.getElementById('game-screen'),
+                gameOver: document.getElementById('game-over-screen')
+            };
+            
+            const buttons = {
+                start: document.getElementById('start-button'),
+                play: document.getElementById('play-button'),
+                pass: document.getElementById('pass-button'),
+                restart: document.getElementById('restart-button')
+            };
+            
+            const elements = {
+                playerHand: document.getElementById('player-hand'),
+                playerScore: document.getElementById('player-score'),
+                aiScore: document.getElementById('ai-score'),
+                gameMessage: document.getElementById('game-message'),
+                winnerMessage: document.getElementById('winner-message'),
+                finalMessage: document.getElementById('final-message')
+            };
+
+            // カードの定義
+            const suits = ['♠', '♥', '♦', '♣'];
+            const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+            const suitValues = { '♠': 4, '♥': 3, '♦': 2, '♣': 1 };
+            const rankValues = { 'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13 };
+
+            // ゲーム初期化
+            function initGame() {
+                createDeck();
+                shuffleDeck();
+                dealCards();
+                updateUI();
+                gameState.gameActive = true;
+                gameState.turnCount = 0;
+            }
+
+            // デッキ作成
+            function createDeck() {
+                gameState.deck = [];
+                for (let suit of suits) {
+                    for (let rank of ranks) {
+                        gameState.deck.push({ suit, rank });
+                    }
+                }
+            }
+
+            // デッキシャッフル
+            function shuffleDeck() {
+                for (let i = gameState.deck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [gameState.deck[i], gameState.deck[j]] = [gameState.deck[j], gameState.deck[i]];
+                }
+            }
+
+            // カード配布
+            function dealCards() {
+                gameState.players.forEach(player => {
+                    player.hand = [];
+                });
+                
+                // 各プレイヤーに13枚ずつ配る
+                for (let i = 0; i < 13; i++) {
+                    gameState.players[0].hand.push(gameState.deck.pop());
+                    gameState.players[1].hand.push(gameState.deck.pop());
+                }
+                
+                // ソート
+                gameState.players.forEach(player => {
+                    player.hand.sort((a, b) => {
+                        if (rankValues[a.rank] !== rankValues[b.rank]) {
+                            return rankValues[a.rank] - rankValues[b.rank];
+                        }
+                        return suitValues[a.suit] - suitValues[b.suit];
+                    });
+                });
+            }
+
+            // UI更新
+            function updateUI() {
+                // プレイヤー手札表示
+                elements.playerHand.innerHTML = '';
+                gameState.players[0].hand.forEach((card, index) => {
+                    const cardElement = createCardElement(card, index);
+                    elements.playerHand.appendChild(cardElement);
+                });
+                
+                // スコア更新
+                elements.playerScore.textContent = gameState.players[0].score;
+                elements.aiScore.textContent = gameState.players[1].score;
+                
+                // プレイヤー表示
+                document.querySelectorAll('.player').forEach(player => {
+                    player.classList.remove('active');
+                });
+                document.getElementById(gameState.currentPlayer).classList.add('active');
+                
+                // ゲームメッセージ更新
+                if (gameState.currentPlayer === 'player') {
+                    elements.gameMessage.textContent = 'あなたのターンです';
+                } else {
+                    elements.gameMessage.textContent = 'AIのターンです';
+                }
+            }
+
+            // カード要素作成
+            function createCardElement(card, index) {
+                const cardElement = document.createElement('div');
+                cardElement.className = `card ${card.suit === '♥' || card.suit === '♦' ? 'red' : 'black'}`;
+                cardElement.innerHTML = `
+                    <div class="card-top">${card.rank}</div>
+                    <div class="card-center">${card.suit}</div>
+                    <div class="card-bottom">${card.rank}</div>
+                `;
+                cardElement.dataset.index = index;
+                cardElement.classList.add('hand-card');
+                
+                // タップイベント
+                cardElement.addEventListener('click', () => {
+                    if (gameState.currentPlayer === 'player' && gameState.gameActive) {
+                        selectCard(index);
+                    }
+                });
+                
+                return cardElement;
+            }
+
+            // カード選択
+            function selectCard(index) {
+                // 選択解除
+                document.querySelectorAll('.hand-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                
+                // 新しい選択
+                const cardElement = document.querySelector(`[data-index="${index}"]`);
+                if (cardElement) {
+                    cardElement.classList.add('selected');
+                    gameState.selectedCard = index;
+                }
+            }
+
+            // カードを出す
+            function playCard() {
+                if (gameState.selectedCard === null || gameState.currentPlayer !== 'player') return;
+                
+                const player = gameState.players[0];
+                const card = player.hand[gameState.selectedCard];
+                
+                // カードを手札から削除
+                player.hand.splice(gameState.selectedCard, 1);
+                gameState.selectedCard = null;
+                
+                // ゲームメッセージ更新
+                elements.gameMessage.textContent = `あなたが${card.rank}${card.suit}を出しました`;
+                
+                // ターンをAIに移す
+                gameState.currentPlayer = 'ai';
+                updateUI();
+                
+                // AIのターン処理
+                setTimeout(aiTurn, 1000);
+            }
+
+            // AIのターン
+            function aiTurn() {
+                if (!gameState.gameActive) return;
+                
+                const ai = gameState.players[1];
+                
+                // AIが手札からランダムにカードを出す
+                if (ai.hand.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * ai.hand.length);
+                    const card = ai.hand[randomIndex];
+                    ai.hand.splice(randomIndex, 1);
+                    
+                    elements.gameMessage.textContent = `AIが${card.rank}${card.suit}を出しました`;
+                }
+                
+                // ターンをプレイヤーに戻す
+                gameState.currentPlayer = 'player';
+                updateUI();
+                
+                // ゲーム終了チェック
+                checkGameEnd();
+            }
+
+            // ゲーム終了チェック
+            function checkGameEnd() {
+                if (gameState.players[0].hand.length === 0 || gameState.players[1].hand.length === 0) {
+                    endGame();
+                }
+            }
+
+            // ゲーム終了
+            function endGame() {
+                gameState.gameActive = false;
+                
+                const player = gameState.players[0];
+                const ai = gameState.players[1];
+                
+                let winner = '';
+                let message = '';
+                
+                if (player.hand.length === 0) {
+                    winner = 'あなた';
+                    player.score++;
+                    message = 'おめでとうございます！あなたの勝ちです！';
+                } else if (ai.hand.length === 0) {
+                    winner = 'AI';
+                    ai.score++;
+                    message = '残念！AIの勝ちです。';
+                } else {
+                    winner = '引き分け';
+                    message = '引き分けです。';
+                }
+                
+                elements.winnerMessage.textContent = `${winner}の勝ち！`;
+                elements.finalMessage.textContent = message;
+                
+                // ゲームオーバー画面表示
+                screens.game.classList.add('hidden');
+                screens.gameOver.classList.remove('hidden');
+            }
+
+            // イベントリスナー
+            buttons.start.addEventListener('click', () => {
+                screens.start.classList.add('hidden');
+                screens.game.classList.remove('hidden');
+                initGame();
+            });
+
+            buttons.play.addEventListener('click', playCard);
+            buttons.pass.addEventListener('click', () => {
+                if (gameState.currentPlayer === 'player' && gameState.gameActive) {
+                    elements.gameMessage.textContent = 'パスしました';
+                    gameState.currentPlayer = 'ai';
+                    updateUI();
+                    setTimeout(aiTurn, 1000);
+                }
+            });
+
+            buttons.restart.addEventListener('click', () => {
+                screens.gameOver.classList.add('hidden');
+                screens.start.classList.remove('hidden');
+            });
+
+            // ゲーム初期化
+            screens.game.classList.add('hidden');
+            screens.gameOver.classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
