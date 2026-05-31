@@ -1,11 +1,783 @@
-nth-child(2) {
-  background-color: #ff6b6b;
-  animation: pulse 1s infinite;
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ブロックス CPU対戦</title>
+<style>
+  :root {
+    --bg: #f4f4f9;
+    --board-bg: #e2e8f0;
+    --grid-line: #cbd5e1;
+    --p1: #3b82f6; /* 青: あなた */
+    --p2: #eab308; /* 黄: CPU1 */
+    --p3: #ef4444; /* 赤: CPU2 */
+    --p4: #22c55e; /* 緑: CPU3 */
+    --p1-light: rgba(59, 130, 246, 0.4);
+    --invalid: rgba(239, 68, 68, 0.6);
+  }
+
+  body {
+    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    background-color: var(--bg);
+    color: #333;
+    margin: 0;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  h1 { margin: 10px 0; font-size: 1.5rem; }
+
+  /* HUD / 情報パネル */
+  .hud {
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    justify-content: space-between;
+    background: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 15px;
+    box-sizing: border-box;
+  }
+
+  .status-text { font-weight: bold; font-size: 1.1rem; }
+  
+  .score-board { display: flex; gap: 15px; }
+  .score-item { display: flex; align-items: center; gap: 5px; font-weight: bold; }
+  .score-label { font-size: 0.75rem; color: #64748b; font-weight: 700; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot.p1 { background: var(--p1); }
+  .dot.p2 { background: var(--p2); }
+  .dot.p3 { background: var(--p3); }
+  .dot.p4 { background: var(--p4); }
+
+  /* レイアウト */
+  .game-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    max-width: 1000px;
+    width: 100%;
+  }
+
+  /* 盤面 */
+  .board-wrapper {
+    background: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(20, 20px);
+    grid-template-rows: repeat(20, 20px);
+    gap: 1px;
+    background-color: var(--grid-line);
+    border: 2px solid #94a3b8;
+  }
+
+  .cell {
+    width: 20px;
+    height: 20px;
+    background-color: var(--board-bg);
+  }
+
+  .cell.p1 { background-color: var(--p1); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.2); }
+  .cell.p2 { background-color: var(--p2); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.2); }
+  .cell.p3 { background-color: var(--p3); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.2); }
+  .cell.p4 { background-color: var(--p4); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.2); }
+  
+  .cell.preview-valid { background-color: var(--p1-light); }
+  .cell.preview-invalid { background-color: var(--invalid); }
+  
+  /* マーカー（スタート位置） */
+  .cell[data-r="0"][data-c="0"] { position: relative; }
+  .cell[data-r="0"][data-c="0"]::after { content:''; position:absolute; top:2px; left:2px; width:4px; height:4px; background:var(--p1); border-radius:50%; }
+  .cell[data-r="0"][data-c="19"] { position: relative; }
+  .cell[data-r="0"][data-c="19"]::after { content:''; position:absolute; top:2px; right:2px; width:4px; height:4px; background:var(--p2); border-radius:50%; }
+  .cell[data-r="19"][data-c="19"] { position: relative; }
+  .cell[data-r="19"][data-c="19"]::after { content:''; position:absolute; bottom:2px; right:2px; width:4px; height:4px; background:var(--p3); border-radius:50%; }
+  .cell[data-r="19"][data-c="0"] { position: relative; }
+  .cell[data-r="19"][data-c="0"]::after { content:''; position:absolute; bottom:2px; left:2px; width:4px; height:4px; background:var(--p4); border-radius:50%; }
+
+
+  /* コントロール・インベントリ */
+  .side-panel {
+    background: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 320px;
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    background: #475569;
+    color: #fff;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+  }
+  button:hover:not(:disabled) { background: #334155; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  
+  .btn-pass { background: #ef4444; }
+  .btn-pass:hover:not(:disabled) { background: #dc2626; }
+
+  /* 選択中のピース表示 */
+  .active-piece-view {
+    min-height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--bg);
+    border-radius: 6px;
+    border: 1px dashed #cbd5e1;
+  }
+
+  /* ピース一覧 */
+  .inventory {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .piece-wrapper {
+    cursor: pointer;
+    padding: 4px;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    transition: transform 0.1s;
+  }
+  .piece-wrapper:hover { transform: scale(1.1); }
+  .piece-wrapper.selected { border-color: var(--p1); background: #eff6ff; }
+  .piece-wrapper.used { opacity: 0.2; pointer-events: none; }
+
+  .piece-grid {
+    display: grid;
+    gap: 1px;
+  }
+  .piece-block { width: 12px; height: 12px; background: var(--p1); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.2); }
+  .piece-empty { width: 12px; height: 12px; }
+
+  /* モーダル */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center;
+    z-index: 100;
+  }
+  .modal {
+    background: #fff; padding: 20px 30px; border-radius: 8px; text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  }
+  .modal h2 { margin-top: 0; }
+  .result-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+  .result-table th, .result-table td { padding: 8px; border-bottom: 1px solid #ddd; }
+  
+  @media (max-width: 600px) {
+    .board { grid-template-columns: repeat(20, 15px); grid-template-rows: repeat(20, 15px); }
+    .cell { width: 15px; height: 15px; }
+  }
+</style>
+</head>
+<body>
+
+  <h1>ブロックス CPU対戦</h1>
+  
+  <div class="hud">
+    <div class="status-text" id="statusText">あなたの番です (青)</div>
+    <div class="score-board">
+      <div class="score-item"><div class="dot p1"></div><span id="score-p1">89</span></div>
+      <div class="score-item"><div class="dot p2"></div><span id="score-p2">89</span></div>
+      <div class="score-item"><div class="dot p3"></div><span id="score-p3">89</span></div>
+      <div class="score-item"><div class="dot p4"></div><span id="score-p4">89</span></div>
+      <span class="score-label">残りマス</span>
+    </div>
+  </div>
+
+  <div class="game-container">
+    <div class="board-wrapper">
+      <div class="board" id="board"></div>
+    </div>
+
+    <div class="side-panel">
+      <div class="controls">
+        <button id="btn-rotate" onclick="rotateCurrentPiece()">🔄 回転</button>
+        <button id="btn-flip" onclick="flipCurrentPiece()">↔️ 反転</button>
+        <button id="btn-pass" class="btn-pass" onclick="playerPass()">⏭ パス</button>
+      </div>
+      
+      <div class="active-piece-view" id="activePieceView">
+        <span style="color:#94a3b8; font-size:0.9rem;">ピースを選択してください</span>
+      </div>
+
+      <div style="font-weight:bold; font-size:0.9rem; margin-top:5px;">残りピース (あなた)</div>
+      <div class="inventory" id="inventory"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="resultModal">
+    <div class="modal">
+      <h2>ゲーム終了！</h2>
+      <table class="result-table">
+        <thead><tr><th>プレイヤー</th><th>スコア</th></tr></thead>
+        <tbody id="resultBody"></tbody>
+      </table>
+      <button onclick="location.reload()">もう一度遊ぶ</button>
+    </div>
+  </div>
+
+<script>
+// --- 21個のポリオミノ（ピース）定義 ---
+// 1はブロックあり、0は空。
+const PIECE_SHAPES = [
+  [[1]], // 1
+  [[1,1]], // 2
+  [[1,1,1]], // 3-I
+  [[1,1],[1,0]], // 3-V
+  [[1,1,1,1]], // 4-I
+  [[1,1,1],[1,0,0]], // 4-L
+  [[1,1,1],[0,1,0]], // 4-T
+  [[1,1],[1,1]], // 4-O
+  [[1,1,0],[0,1,1]], // 4-Z
+  [[1,1,1,1,1]], // 5-I
+  [[1,1,1,1],[1,0,0,0]], // 5-L
+  [[1,1,1,1],[0,1,0,0]], // 5-Y
+  [[1,1,1],[1,0,0],[1,0,0]], // 5-V
+  [[1,1,1],[1,1,0]], // 5-P
+  [[1,1,1],[0,1,0],[0,1,0]], // 5-T
+  [[1,1,1],[1,0,1]], // 5-U
+  [[1,1,0],[0,1,1],[0,0,1]], // 5-W
+  [[1,1,0],[0,1,0],[0,1,1]], // 5-Z
+  [[0,1,1],[1,1,0],[0,1,0]], // 5-F
+  [[0,1,0],[1,1,1],[0,1,0]], // 5-X
+  [[1,1,0,0],[0,1,1,1]]  // 5-N
+];
+
+function getPieceSize(shape) {
+  return shape.flat().reduce((a, b) => a + b, 0);
 }
 
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+// --- ゲーム状態 ---
+let board = Array(20).fill().map(() => Array(20).fill(0));
+let players = {
+  1: { color: 'blue', name: 'あなた(青)', pieces: [], passed: false, firstTurn: true, lastPieceSize: 0 },
+  2: { color: 'yellow', name: 'CPU1(黄)', pieces: [], passed: false, firstTurn: true, lastPieceSize: 0 },
+  3: { color: 'red', name: 'CPU2(赤)', pieces: [], passed: false, firstTurn: true, lastPieceSize: 0 },
+  4: { color: 'green', name: 'CPU3(緑)', pieces: [], passed: false, firstTurn: true, lastPieceSize: 0 }
+};
+
+// プレイヤーのピースを初期化
+for (let p = 1; p <= 4; p++) {
+  players[p].pieces = PIECE_SHAPES.map((shape, id) => ({ id, shape, used: false }));
 }
-```
+
+let turn = 1;
+let selectedPieceIndex = -1;
+let activeShape = null;
+let gameOver = false;
+
+// --- DOM要素 ---
+const boardEl = document.getElementById('board');
+const inventoryEl = document.getElementById('inventory');
+const activePieceViewEl = document.getElementById('activePieceView');
+const statusText = document.getElementById('statusText');
+const EMPTY_ACTIVE_VIEW = '<span style="color:#94a3b8; font-size:0.9rem;">ピースを選択してください</span>';
+
+function cloneShape(shape) {
+  return shape.map(row => [...row]);
+}
+
+function getRemainingBlocks(player) {
+  return player.pieces
+    .filter(pc => !pc.used)
+    .reduce((sum, pc) => sum + getPieceSize(pc.shape), 0);
+}
+
+function setStatus(message) {
+  statusText.innerText = message;
+}
+
+// --- 盤面の初期描画 ---
+function initBoard() {
+  for (let r = 0; r < 20; r++) {
+    for (let c = 0; c < 20; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      boardEl.appendChild(cell);
+    }
+  }
+  
+  // マウスイベント（プレビューとクリック配置）
+  boardEl.addEventListener('mousemove', handleHover);
+  boardEl.addEventListener('mouseleave', clearPreview);
+  boardEl.addEventListener('click', handleClick);
+}
+
+// --- インベントリの描画 ---
+function renderInventory() {
+  inventoryEl.innerHTML = '';
+  players[1].pieces.forEach((piece, index) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'piece-wrapper' + (piece.used ? ' used' : '') + (index === selectedPieceIndex ? ' selected' : '');
+    wrapper.onclick = () => selectPiece(index);
+    
+    const grid = document.createElement('div');
+    grid.className = 'piece-grid';
+    grid.style.gridTemplateColumns = `repeat(${piece.shape[0].length}, 12px)`;
+    
+    for (let r = 0; r < piece.shape.length; r++) {
+      for (let c = 0; c < piece.shape[0].length; c++) {
+        const block = document.createElement('div');
+        block.className = piece.shape[r][c] ? 'piece-block' : 'piece-empty';
+        grid.appendChild(block);
+      }
+    }
+    wrapper.appendChild(grid);
+    inventoryEl.appendChild(wrapper);
+  });
+  updateScores();
+}
+
+function updateScores() {
+  for (let p = 1; p <= 4; p++) {
+    document.getElementById(`score-p${p}`).innerText = getRemainingBlocks(players[p]);
+  }
+}
+
+// --- ピースの選択・操作 ---
+function selectPiece(index) {
+  if (turn !== 1 || players[1].passed || gameOver) return;
+  if (players[1].pieces[index].used) return;
+
+  if (selectedPieceIndex === index) {
+    selectedPieceIndex = -1;
+    activeShape = null;
+    clearPreview();
+    activePieceViewEl.innerHTML = EMPTY_ACTIVE_VIEW;
+    renderInventory();
+    updateControls();
+    setStatus("ピースを選択してください");
+    return;
+  }
+  
+  selectedPieceIndex = index;
+  activeShape = cloneShape(players[1].pieces[index].shape);
+  renderInventory();
+  renderActivePiece();
+  updateControls();
+  setStatus("置きたい場所にマウスを合わせると、配置できるか確認できます");
+}
+
+function renderActivePiece() {
+  if (!activeShape) {
+    activePieceViewEl.innerHTML = EMPTY_ACTIVE_VIEW;
+    return;
+  }
+  activePieceViewEl.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'piece-grid';
+  grid.style.gridTemplateColumns = `repeat(${activeShape[0].length}, 16px)`;
+  
+  for (let r = 0; r < activeShape.length; r++) {
+    for (let c = 0; c < activeShape[0].length; c++) {
+      const block = document.createElement('div');
+      block.className = activeShape[r][c] ? 'piece-block' : 'piece-empty';
+      block.style.width = '16px';
+      block.style.height = '16px';
+      grid.appendChild(block);
+    }
+  }
+  activePieceViewEl.appendChild(grid);
+}
+
+function rotateCurrentPiece() {
+  if (turn !== 1 || players[1].passed || !activeShape || gameOver) return;
+  const M = activeShape.length;
+  const N = activeShape[0].length;
+  let newShape = Array(N).fill().map(() => Array(M).fill(0));
+  for (let r = 0; r < M; r++) {
+    for (let c = 0; c < N; c++) {
+      newShape[c][M - 1 - r] = activeShape[r][c];
+    }
+  }
+  activeShape = newShape;
+  clearPreview();
+  renderActivePiece();
+  updateControls();
+}
+
+function flipCurrentPiece() {
+  if (turn !== 1 || players[1].passed || !activeShape || gameOver) return;
+  activeShape = activeShape.map(row => [...row].reverse());
+  clearPreview();
+  renderActivePiece();
+  updateControls();
+}
+
+function playerPass() {
+  if (turn !== 1 || players[1].passed || gameOver) return;
+  if (hasAnyLegalMove(1)) {
+    setStatus("まだ置けるピースがあります。置ける手がなくなるまでパスできません");
+    updateControls();
+    return;
+  }
+  players[1].passed = true;
+  selectedPieceIndex = -1;
+  activeShape = null;
+  activePieceViewEl.innerHTML = '<span style="color:#94a3b8; font-size:0.9rem;">パスしました</span>';
+  renderInventory();
+  updateControls();
+  nextTurn();
+}
+
+// --- プレビューと配置判定 ---
+function handleHover(e) {
+  clearPreview();
+  if (turn !== 1 || !activeShape || players[1].passed) return;
+  
+  const cell = e.target.closest('.cell');
+  if (!cell) return;
+  
+  const r = parseInt(cell.dataset.r);
+  const c = parseInt(cell.dataset.c);
+  
+  const valid = isValidMove(1, activeShape, r, c);
+  drawPreview(1, activeShape, r, c, valid);
+}
+
+function clearPreview() {
+  document.querySelectorAll('.cell.preview-valid, .cell.preview-invalid').forEach(el => {
+    el.classList.remove('preview-valid', 'preview-invalid');
+  });
+}
+
+function drawPreview(playerNum, shape, startR, startC, isValid) {
+  const className = isValid ? 'preview-valid' : 'preview-invalid';
+  for (let r = 0; r < shape.length; r++) {
+    for (let c = 0; c < shape[0].length; c++) {
+      if (shape[r][c]) {
+        const br = startR + r;
+        const bc = startC + c;
+        if (br >= 0 && br < 20 && bc >= 0 && bc < 20) {
+          const targetCell = document.querySelector(`.cell[data-r="${br}"][data-c="${bc}"]`);
+          if (targetCell && !targetCell.classList.contains('p1') && !targetCell.classList.contains('p2') && !targetCell.classList.contains('p3') && !targetCell.classList.contains('p4')) {
+            targetCell.classList.add(className);
+          }
+        }
+      }
+    }
+  }
+}
+
+function handleClick(e) {
+  if (turn !== 1 || players[1].passed || gameOver) return;
+  if (!activeShape) {
+    setStatus("先に右側の一覧からピースを選んでください");
+    return;
+  }
+  const cell = e.target.closest('.cell');
+  if (!cell) return;
+  
+  const r = parseInt(cell.dataset.r);
+  const c = parseInt(cell.dataset.c);
+  
+  if (isValidMove(1, activeShape, r, c)) {
+    placePieceOnBoard(1, selectedPieceIndex, activeShape, r, c);
+    players[1].firstTurn = false;
+    selectedPieceIndex = -1;
+    activeShape = null;
+    activePieceViewEl.innerHTML = '<span style="color:#94a3b8; font-size:0.9rem;">ピースを選択してください</span>';
+    clearPreview();
+    renderInventory();
+    updateControls();
+    nextTurn();
+  } else {
+    setStatus("そこには置けません。自分のピースとは角だけでつなげ、辺で接しないように置きます");
+  }
+}
+
+// --- コアルール判定 ---
+function isValidMove(playerNum, shape, startR, startC) {
+  let touchesCorner = false;
+  const isFirstTurn = players[playerNum].firstTurn;
+
+  for (let r = 0; r < shape.length; r++) {
+    for (let c = 0; c < shape[0].length; c++) {
+      if (shape[r][c]) {
+        const br = startR + r;
+        const bc = startC + c;
+
+        // ボード外
+        if (br < 0 || br >= 20 || bc < 0 || bc >= 20) return false;
+
+        // すでにピースがある
+        if (board[br][bc] !== 0) return false;
+
+        // 辺の接触チェック（自分の色とは辺で接してはいけない）
+        if (br > 0 && board[br - 1][bc] === playerNum) return false;
+        if (br < 19 && board[br + 1][bc] === playerNum) return false;
+        if (bc > 0 && board[br][bc - 1] === playerNum) return false;
+        if (bc < 19 && board[br][bc + 1] === playerNum) return false;
+
+        // 角の接触チェック
+        if (!isFirstTurn) {
+          if (br > 0 && bc > 0 && board[br - 1][bc - 1] === playerNum) touchesCorner = true;
+          if (br > 0 && bc < 19 && board[br - 1][bc + 1] === playerNum) touchesCorner = true;
+          if (br < 19 && bc > 0 && board[br + 1][bc - 1] === playerNum) touchesCorner = true;
+          if (br < 19 && bc < 19 && board[br + 1][bc + 1] === playerNum) touchesCorner = true;
+        }
+
+        // 最初のターンの四隅チェック
+        if (isFirstTurn) {
+          if (playerNum === 1 && br === 0 && bc === 0) touchesCorner = true;
+          if (playerNum === 2 && br === 0 && bc === 19) touchesCorner = true;
+          if (playerNum === 3 && br === 19 && bc === 19) touchesCorner = true;
+          if (playerNum === 4 && br === 19 && bc === 0) touchesCorner = true;
+        }
+      }
+    }
+  }
+  return touchesCorner;
+}
+
+function placePieceOnBoard(playerNum, pieceIndex, shape, startR, startC) {
+  if (gameOver || !players[playerNum].pieces[pieceIndex] || players[playerNum].pieces[pieceIndex].used) return false;
+  for (let r = 0; r < shape.length; r++) {
+    for (let c = 0; c < shape[0].length; c++) {
+      if (shape[r][c]) {
+        const br = startR + r;
+        const bc = startC + c;
+        board[br][bc] = playerNum;
+        const cell = document.querySelector(`.cell[data-r="${br}"][data-c="${bc}"]`);
+        cell.classList.add(`p${playerNum}`);
+      }
+    }
+  }
+  players[playerNum].pieces[pieceIndex].used = true;
+  players[playerNum].lastPieceSize = getPieceSize(shape);
+  updateScores();
+  return true;
+}
+
+// --- ターン進行とAI ---
+function hasAnyLegalMove(playerNum) {
+  if (players[playerNum].passed) return false;
+
+  for (let piece of players[playerNum].pieces) {
+    if (piece.used) continue;
+    const orientations = getAllOrientations(piece.shape);
+    for (let shape of orientations) {
+      for (let r = 0; r < 20; r++) {
+        for (let c = 0; c < 20; c++) {
+          if (isValidMove(playerNum, shape, r, c)) return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+function updateControls() {
+  const isPlayerTurn = turn === 1 && !players[1].passed && !gameOver;
+  const canTransform = isPlayerTurn && Boolean(activeShape);
+  const canPass = isPlayerTurn && !hasAnyLegalMove(1);
+
+  document.getElementById('btn-rotate').disabled = !canTransform;
+  document.getElementById('btn-flip').disabled = !canTransform;
+  document.getElementById('btn-pass').disabled = !canPass;
+}
+
+function nextTurn() {
+  clearPreview();
+  selectedPieceIndex = -1;
+  activeShape = null;
+  activePieceViewEl.innerHTML = EMPTY_ACTIVE_VIEW;
+  updateControls();
+
+  if (Object.values(players).every(p => p.passed)) {
+    endGame();
+    return;
+  }
+
+  for (let i = 0; i < 4; i++) {
+    turn = (turn % 4) + 1;
+    
+    if (players[turn].passed) continue;
+
+    if (!hasAnyLegalMove(turn)) {
+      players[turn].passed = true;
+      setStatus(`${players[turn].name}は置ける手がないためパスしました`);
+      continue;
+    }
+
+    setStatus(players[turn].name + (turn === 1 ? "の番です" : "が考え中..."));
+    renderInventory();
+
+    if (turn !== 1) {
+      updateControls();
+      setTimeout(playCPU, 120); // UI更新のために少し待機
+    } else {
+      updateControls();
+    }
+    return;
+  }
+
+  endGame();
+}
+
+// 全ての回転・反転パターンを取得
+function getAllOrientations(baseShape) {
+  let orientations = [];
+  let current = baseShape;
+  
+  const shapeToStr = (s) => s.map(r => r.join('')).join('|');
+  const seen = new Set();
+
+  for (let i = 0; i < 4; i++) {
+    const s1 = shapeToStr(current);
+    if (!seen.has(s1)) { seen.add(s1); orientations.push(current); }
+    
+    let flipped = current.map(row => [...row].reverse());
+    const s2 = shapeToStr(flipped);
+    if (!seen.has(s2)) { seen.add(s2); orientations.push(flipped); }
+    
+    // 90度回転
+    const M = current.length;
+    const N = current[0].length;
+    let next = Array(N).fill().map(() => Array(M).fill(0));
+    for (let r = 0; r < M; r++) {
+      for (let c = 0; c < N; c++) {
+        next[c][M - 1 - r] = current[r][c];
+      }
+    }
+    current = next;
+  }
+  return orientations;
+}
+
+// CPUの評価関数：開始位置からの距離（陣地の拡大）を評価
+function calculateMoveScore(playerNum, shape, startR, startC) {
+  let centerR = startR + shape.length / 2;
+  let centerC = startC + shape[0].length / 2;
+  let score = 0;
+  
+  if (playerNum === 1) score = centerR + centerC;
+  else if (playerNum === 2) score = centerR + (19 - centerC);
+  else if (playerNum === 3) score = (19 - centerR) + (19 - centerC);
+  else if (playerNum === 4) score = (19 - centerR) + centerC;
+  
+  // 単調な動きを防ぐためのランダムノイズ
+  score += Math.random() * 2;
+  return score;
+}
+
+function playCPU() {
+  const p = players[turn];
+  if (gameOver || p.passed) return;
+  let bestMove = null;
+  let maxScore = -1;
+
+  // 大きいピースから順にチェック
+  let availablePieces = p.pieces.filter(pc => !pc.used).sort((a,b) => getPieceSize(b.shape) - getPieceSize(a.shape));
+  let moveFoundForCurrentSize = false;
+
+  for (let piece of availablePieces) {
+    let shapesToTest = getAllOrientations(piece.shape);
+    for (let shape of shapesToTest) {
+      for (let r = 0; r < 20; r++) {
+        for (let c = 0; c < 20; c++) {
+          if (isValidMove(turn, shape, r, c)) {
+            moveFoundForCurrentSize = true;
+            let score = calculateMoveScore(turn, shape, r, c);
+            if (score > maxScore) {
+              maxScore = score;
+              bestMove = { pieceIdx: piece.id, shape: shape, r: r, c: c };
+            }
+          }
+        }
+      }
+    }
+    // 大きいピースが置けるなら、小さいピースは探索しない（思考速度UPと陣地拡大の最適化）
+    if (moveFoundForCurrentSize) break;
+  }
+
+  if (bestMove) {
+    placePieceOnBoard(turn, bestMove.pieceIdx, bestMove.shape, bestMove.r, bestMove.c);
+    p.firstTurn = false;
+    nextTurn();
+  } else {
+    p.passed = true;
+    setStatus(`${p.name}は置ける手がないためパスしました`);
+    nextTurn();
+  }
+}
+
+// --- ゲーム終了とスコア計算 ---
+function calculateFinalScore(player) {
+  let unplacedBlocks = player.pieces.filter(pc => !pc.used).reduce((sum, pc) => sum + getPieceSize(pc.shape), 0);
+  
+  if (unplacedBlocks === 0) {
+    // 置ききりボーナス +15、最後が1マスなら +20 (実質 1マスのサイズ分を相殺して公式計算に合致)
+    return player.lastPieceSize === 1 ? 20 : 15;
+  } else {
+    return -unplacedBlocks;
+  }
+}
+
+function endGame() {
+  gameOver = true;
+  setStatus("ゲーム終了！");
+  updateControls();
+  const tbody = document.getElementById('resultBody');
+  tbody.innerHTML = '';
+  
+  let results = [];
+  for (let p = 1; p <= 4; p++) {
+    results.push({
+      name: players[p].name,
+      score: calculateFinalScore(players[p])
+    });
+  }
+  
+  results.sort((a, b) => b.score - a.score);
+  
+  results.forEach(res => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${res.name}</td><td>${res.score > 0 ? '+'+res.score : res.score} 点</td>`;
+    tbody.appendChild(tr);
+  });
+  
+  document.getElementById('resultModal').style.display = 'flex';
+}
+
+// 初期化実行
+initBoard();
+renderInventory();
+updateControls();
+
+</script>
+
+</body>
+</html>
