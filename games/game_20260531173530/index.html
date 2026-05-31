@@ -123,7 +123,6 @@
     border: 2px solid var(--line);
     text-align: center;
     border-radius: 8px;
-    /* CSSでは初期表示をブロックにしておきます */
     display: block;
     z-index: 10;
   }
@@ -165,13 +164,13 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// --- ファミコン風 物理演算定数 ---
+// --- 遊びやすく調整した物理演算定数 ---
 const GRAVITY = 0.35;
-const JUMP_FORCE = -8.2;
-const MAX_SPEED = 3.2;
-const ACCEL = 0.25;       // 氷上の歩き出しの鈍さ
-const FRICTION = 0.96;    // 氷の滑りやすさ（1.0に近いほど滑る）
-const AIR_CONTROL = 0.05; // 空中での制御の効かなさ（原作リスペクト）
+const JUMP_FORCE = -8.5;  // ジャンプ力を少し上げて余裕を持たせた
+const MAX_SPEED = 3.5;    // 少しだけ移動を速く
+const ACCEL = 0.4;        // 歩き出しを機敏に（元0.25）
+const FRICTION = 0.85;    // ツルツル滑りすぎないように摩擦を強化（元0.96）
+const AIR_CONTROL = 0.25; // 空中でもかなり左右に動けるように緩和（元0.05）
 const TILE_SIZE = 32;
 
 // 階層設定
@@ -192,8 +191,8 @@ let state = {
 let player = { x: 200, y: 0, vx: 0, vy: 0, width: 24, height: 32, isGrounded: false, dir: 1 };
 let blocks = [];
 let particles = [];
-let enemies = []; // トッピー
-let birds = [];   // ニットピッカー
+let enemies = []; 
+let birds = [];   
 let condor = null;
 
 function generateMap() {
@@ -215,12 +214,15 @@ function generateMap() {
     
     // 穴の位置を決定
     const gapStart = Math.floor(Math.random() * 8) + 1;
-    const gapWidth = Math.floor(Math.random() * 2) + 2;
+    
+    // --- 難易度緩和：序盤の穴を小さくする ---
+    let gapWidth = 1; 
+    if (floor >= 4) gapWidth = 2; // 4階から穴が2マスに
+    if (floor >= 6) gapWidth = Math.floor(Math.random() * 2) + 2; // 上層はランダム
 
     for (let i = 0; i < Math.ceil(canvas.width / TILE_SIZE); i++) {
       // 0階（最下層）は穴なし。それ以外は穴を空ける。
       if (floor > 0 && i >= gapStart && i < gapStart + gapWidth) {
-         // ボーナスステージの雲は点在させる
          if (isBonus && Math.random() > 0.5) continue;
          if (!isBonus) continue;
       }
@@ -234,26 +236,26 @@ function generateMap() {
       });
     }
 
-    // 敵の配置 (氷の山のみ)
-    if (floor >= 2 && floor < MOUNTAIN_FLOORS && Math.random() > 0.2) {
+    // 敵の配置 (難易度緩和：3階から出現させ、速度を遅くする)
+    if (floor >= 3 && floor < MOUNTAIN_FLOORS && Math.random() > 0.3) {
       enemies.push({
         x: (gapStart > 6 ? 2 : 10) * TILE_SIZE,
         y: floorY - 24,
-        vx: gapStart > 6 ? 1.5 : -1.5,
+        vx: gapStart > 6 ? 1.0 : -1.0, // 元1.5から遅くした
         width: 28,
         height: 24,
         type: 'topi',
-        state: 'walk' // walk, carry
+        state: 'walk'
       });
     }
 
-    // 鳥の配置 (3階以上)
-    if (floor >= 3 && Math.random() > 0.4) {
+    // 鳥の配置 (難易度緩和：5階から出現させる)
+    if (floor >= 5 && Math.random() > 0.5) {
       birds.push({
         x: Math.random() > 0.5 ? 0 : canvas.width,
         y: floorY - 50,
         baseY: floorY - 50,
-        vx: Math.random() > 0.5 ? 2 : -2,
+        vx: Math.random() > 0.5 ? 1.5 : -1.5, // 少し遅くした
         width: 24,
         height: 16,
         time: Math.random() * 100
@@ -320,7 +322,7 @@ function update() {
   if (!state.running) return;
   state.frame++;
 
-  // --- プレイヤーの物理演算 (ファミコン特有の挙動) ---
+  // --- プレイヤーの物理演算 ---
   const currentAccel = player.isGrounded ? ACCEL : AIR_CONTROL;
   
   if (state.keys.left) {
@@ -330,24 +332,23 @@ function update() {
     player.vx += currentAccel;
     player.dir = 1;
   } else {
-    // 氷の摩擦（滑る）
+    // 摩擦
     if (player.isGrounded) {
-      // 雲の上は少し滑りにくい
       const isCloudFloor = state.maxFloorReached > MOUNTAIN_FLOORS;
-      player.vx *= (isCloudFloor ? 0.8 : FRICTION);
+      player.vx *= (isCloudFloor ? 0.7 : FRICTION);
+    } else {
+       // 空中でもボタンを離せば少しだけ減速する（遊びやすさアップ）
+       player.vx *= 0.98;
     }
   }
 
-  // 速度制限
   if (player.vx > MAX_SPEED) player.vx = MAX_SPEED;
   if (player.vx < -MAX_SPEED) player.vx = -MAX_SPEED;
 
-  // X軸の移動と画面端のループ処理
   player.x += player.vx;
   if (player.x < -player.width) player.x = canvas.width;
   if (player.x > canvas.width) player.x = -player.width;
 
-  // Y軸の移動（重力）
   player.vy += GRAVITY;
   player.y += player.vy;
   player.isGrounded = false;
@@ -357,16 +358,16 @@ function update() {
     let b = blocks[i];
     
     if (rectIntersect(player, b)) {
-      // 上から乗った場合（着地）
+      // 上から乗った場合
       if (player.vy > 0 && player.y + player.height - player.vy <= b.y + 10) {
         player.y = b.y - player.height;
         player.vy = 0;
         player.isGrounded = true;
       } 
-      // 下から突き上げた場合（ブロック破壊）
-      else if (player.vy < 0 && player.y - player.vy >= b.y + b.height - 10) {
+      // 下から突き上げた場合（当たり判定を少し広くして割りやすくした）
+      else if (player.vy < 0 && player.y - player.vy >= b.y + b.height - 14) {
         player.y = b.y + b.height;
-        player.vy = 1; // 下にはじかれる
+        player.vy = 1; 
         
         if (b.type === 'breakable') {
           createParticles(b.x + b.width/2, b.y + b.height/2, false);
@@ -374,7 +375,6 @@ function update() {
           state.score += 10;
           updateScore();
         } else if (b.type === 'cloud') {
-           // 雲は壊れないがボヨンと跳ね返る
            player.vy = 2;
         }
       }
@@ -385,23 +385,18 @@ function update() {
   enemies.forEach(e => {
     e.x += e.vx;
     
-    // 画面端で反転
     if (e.x < 0 || e.x + e.width > canvas.width) {
        e.vx *= -1;
     }
 
-    // 足元のブロックを確認
     const checkX = e.vx > 0 ? e.x + e.width + 5 : e.x - 5;
     const blockUnder = blocks.find(b => 
        b.y === e.y + e.height && 
        checkX >= b.x && checkX <= b.x + b.width
     );
 
-    // 足元にブロックがない（穴がある）場合
     if (!blockUnder) {
-        // 穴を修復する
         const gridX = Math.floor(checkX / TILE_SIZE) * TILE_SIZE;
-        // すでに修復済みでなければブロック生成
         if (!blocks.some(b => b.x === gridX && b.y === e.y + e.height)) {
             blocks.push({
                 x: gridX,
@@ -412,11 +407,9 @@ function update() {
             });
             createParticles(gridX + 16, e.y + e.height + 8, false);
         }
-        // 修復したらUターン
         e.vx *= -1;
     }
 
-    // プレイヤーと接触でゲームオーバー
     if (rectIntersect(player, e)) gameOver();
   });
 
@@ -424,7 +417,7 @@ function update() {
   birds.forEach(b => {
     b.time += 0.05;
     b.x += b.vx;
-    b.y = b.baseY + Math.sin(b.time) * 30; // サインカーブで飛ぶ
+    b.y = b.baseY + Math.sin(b.time) * 30; 
 
     if (b.x < -50) b.x = canvas.width + 20;
     if (b.x > canvas.width + 50) b.x = -20;
@@ -432,7 +425,7 @@ function update() {
     if (rectIntersect(player, b)) gameOver();
   });
 
-  // --- コンドル（クリア目標）の挙動 ---
+  // --- コンドルの挙動 ---
   if (condor) {
       condor.time += 0.03;
       condor.x += condor.vx;
@@ -440,7 +433,6 @@ function update() {
       
       if (condor.x < 50 || condor.x > canvas.width - 50 - condor.width) condor.vx *= -1;
 
-      // 掴まったらクリア！
       if (rectIntersect(player, condor)) {
           state.score += 3000;
           updateScore();
@@ -448,7 +440,7 @@ function update() {
       }
   }
 
-  // --- パーティクル更新 ---
+  // --- パーティクル ---
   for (let i = particles.length - 1; i >= 0; i--) {
     let p = particles[i];
     p.x += p.vx;
@@ -458,14 +450,12 @@ function update() {
     if (p.life <= 0) particles.splice(i, 1);
   }
 
-  // --- カメラと進行度の更新 ---
-  // プレイヤーが上に行ったらカメラを追従させる
+  // --- カメラと階層の進行 ---
   const targetCameraY = 400 - player.y;
   if (targetCameraY > state.cameraY) {
     state.cameraY += (targetCameraY - state.cameraY) * 0.15;
   }
 
-  // 現在の階層を計算 (y=560が1階、以降100pxごと)
   const currentFloor = Math.floor((560 - player.y) / FLOOR_HEIGHT) + 1;
   if (currentFloor > state.maxFloorReached) {
     state.maxFloorReached = currentFloor;
@@ -473,7 +463,6 @@ function update() {
     updateScore();
   }
 
-  // 落下判定（カメラ外の下に落ちたらミス）
   if (player.y > 600 - state.cameraY + 50) {
     gameOver();
   }
@@ -485,7 +474,7 @@ function draw() {
   ctx.save();
   ctx.translate(0, state.cameraY);
 
-  // 背景の山のシルエット（固定）
+  // 山のシルエット
   ctx.fillStyle = '#0a1526';
   ctx.beginPath();
   ctx.moveTo(canvas.width/2, 560 - (TOTAL_FLOORS * FLOOR_HEIGHT) - 200);
@@ -493,17 +482,16 @@ function draw() {
   ctx.lineTo(-100, 600);
   ctx.fill();
 
-  // --- ブロック描画 ---
+  // ブロック
   blocks.forEach(b => {
     if (b.type === 'breakable') {
       ctx.fillStyle = 'var(--ice)'; 
       ctx.fillRect(b.x, b.y, b.width, b.height);
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(b.x, b.y, b.width, 2); // ハイライト
+      ctx.fillRect(b.x, b.y, b.width, 2); 
       ctx.strokeStyle = 'var(--blue)';
       ctx.strokeRect(b.x, b.y, b.width, b.height);
     } else {
-      // ボーナスステージの雲
       ctx.fillStyle = 'var(--cloud)';
       ctx.beginPath();
       ctx.arc(b.x + 8, b.y + 8, 8, 0, Math.PI*2);
@@ -513,24 +501,22 @@ function draw() {
     }
   });
 
-  // --- 敵（トッピー風）描画 ---
+  // 敵
   enemies.forEach(e => {
     const walkAnim = (Math.floor(state.frame / 8) % 2 === 0) ? 2 : 0;
     ctx.fillStyle = 'var(--muted)';
     ctx.fillRect(e.x, e.y + walkAnim, e.width, e.height - walkAnim);
-    // 顔（目）
     ctx.fillStyle = '#fff';
     ctx.fillRect(e.x + (e.vx > 0 ? 18 : 6), e.y + 6 + walkAnim, 4, 4);
   });
 
-  // --- 鳥（ニットピッカー風）描画 ---
+  // 鳥
   birds.forEach(b => {
     const flap = (Math.floor(state.frame / 5) % 2 === 0);
     ctx.fillStyle = 'var(--red)';
     ctx.beginPath();
     ctx.arc(b.x + b.width/2, b.y + b.height/2, b.height/2, 0, Math.PI*2);
     ctx.fill();
-    // 翼
     ctx.fillStyle = '#ff8888';
     if (flap) {
         ctx.fillRect(b.x + 4, b.y - 8, 16, 8);
@@ -539,32 +525,30 @@ function draw() {
     }
   });
 
-  // --- コンドル描画 ---
+  // コンドル
   if (condor) {
       const flap = (Math.floor(state.frame / 10) % 2 === 0);
       ctx.fillStyle = '#d89b42';
-      ctx.fillRect(condor.x + 10, condor.y + 10, 40, 20); // 胴体
+      ctx.fillRect(condor.x + 10, condor.y + 10, 40, 20);
       ctx.fillStyle = 'var(--cloud)';
       if (flap) {
-          ctx.fillRect(condor.x, condor.y, 60, 10); // 翼 上
+          ctx.fillRect(condor.x, condor.y, 60, 10);
       } else {
-          ctx.fillRect(condor.x, condor.y + 30, 60, 10); // 翼 下
+          ctx.fillRect(condor.x, condor.y + 30, 60, 10);
       }
       ctx.fillStyle = 'var(--red)';
-      ctx.fillRect(condor.x + (condor.vx > 0 ? 50 : 0), condor.y + 10, 10, 10); // くちばし
+      ctx.fillRect(condor.x + (condor.vx > 0 ? 50 : 0), condor.y + 10, 10, 10);
   }
 
-  // --- プレイヤー描画 ---
-  ctx.fillStyle = 'var(--blue)'; // ポポ
+  // プレイヤー
+  ctx.fillStyle = 'var(--blue)'; 
   ctx.fillRect(player.x, player.y, player.width, player.height);
-  // パーカーの顔部分
   ctx.fillStyle = '#ffccaa';
   ctx.fillRect(player.x + (player.dir > 0 ? 12 : 4), player.y + 8, 8, 8);
-  // ハンマー
   ctx.fillStyle = 'var(--red)';
   ctx.fillRect(player.x + (player.dir > 0 ? 18 : -2), player.y + (player.isGrounded ? 16 : 4), 8, 14);
 
-  // --- パーティクル描画 ---
+  // パーティクル
   particles.forEach(p => {
     ctx.fillStyle = p.color;
     ctx.globalAlpha = p.life / 25;
@@ -623,7 +607,7 @@ bindBtn('btnJump', 'jump');
 
 // --- 初期表示のセットアップ ---
 document.getElementById('message').style.display = 'block';
-generateMap(); // マップを生成して背景に描画しておく
+generateMap(); 
 draw();
 </script>
 </body>
