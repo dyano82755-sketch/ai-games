@@ -206,7 +206,6 @@
     display: block;
     width: 100%;
     height: 100%;
-    /* 修正: スマホではみ出す原因になっていたmin-heightを撤廃 */
     image-rendering: pixelated;
     touch-action: none;
   }
@@ -379,7 +378,6 @@
     .app {
       height: auto;
       min-height: 100dvh;
-      /* 修正: Canvasの高さを固定させず、画面の余白(1fr)に完全追従させる */
       grid-template-rows: auto 1fr auto;
     }
 
@@ -406,7 +404,6 @@
     .app {
       gap: 7px;
       padding: 7px;
-      /* 修正: 余白に柔軟に収まるように1frに設定 */
       grid-template-rows: auto 1fr auto;
     }
 
@@ -600,58 +597,59 @@
     modalActions: document.getElementById("modalActions")
   };
 
+  // 1度も死なずに完全クリアできるように再設計されたマップ
   const levels = [
     [
       "########################",
-      "#P    ---H---      G E #",
-      "#BBBBB   H   BBBBBBBBBB#",
-      "#    H   H   H         #",
-      "#  --H   H   H--       #",
-      "#  H H   H   H H      G#",
-      "#  H BBBBBBBBB H    BBB#",
-      "#  H H   G   H H    H  #",
-      "#BBB H BBBBB H BBBB H  #",
-      "#G   H H A H H H    H G#",
-      "#BBBBB H   H H H   HBBB#",
-      "#      H   H H H    H  #",
-      "#BBBBBBB   BBB BBBB H  #",
-      "#G                  H  #",
+      "#P         H         E #",
+      "#BBBBBBBB  H  BBBBBBBBB#",
+      "#       H  H  H        #",
+      "# G     H  H  H      G #",
+      "#BBBB   H  H  H   BBBBB#",
+      "#       H  H  H        #",
+      "#  BBBBBB  H  BBBBBB   #",
+      "#  H       H       H   #",
+      "#  H   G   H   G   H   #",
+      "#  H BBBBBBBBBBBBB H   #",
+      "#  H H     A     H H   #",
+      "#BBBBB     H     BBBBBB#",
+      "#G         H         G #",
       "#BBBBBBBBBBBBBBBBBBBBBB#",
       "########################"
     ],
     [
       "########################",
-      "#P   H       G       E #",
-      "#BBBBHBBBBBBBBBBBBBBBBB#",
-      "#    H       H         #",
-      "#----HBBBB---H---BBB---#",
-      "#    H    G  H       A #",
-      "#  BBBBBBBBBBBBBB      #",
-      "#  H         H     G   #",
-      "#BBBBBB   ---H---BBBBBB#",
-      "#      H     H         #",
-      "#  G   H BBBBBBBB H    #",
-      "#BBBBBBH        A H    #",
-      "#      H---BBBB---H    #",
-      "#   G  H     H    H  G #",
+      "#P   H     G       H E #",
+      "#BB  H  BBBBBBB    H BB#",
+      "#    H  H     H    H   #",
+      "#  --H  H  G  H    H-- #",
+      "#    H  H BBB H    H   #",
+      "#BB  H  H     H    H   #",
+      "#    H  BBBBBBB    H   #",
+      "#    H             H   #",
+      "#  BBBBBBBBBBBBBBBBB   #",
+      "#  H       G       H   #",
+      "#  H   BBBBBBBBB   H   #",
+      "#  H   H   A   H   H   #",
+      "#G H   H       H   H G #",
       "#BBBBBBBBBBBBBBBBBBBBBB#",
       "########################"
     ],
     [
       "########################",
-      "#P G      H       G  E #",
-      "#BBBBBBBB H BBBBBBBBBBB#",
-      "#         H H          #",
-      "#----BB---H-H---BBBB---#",
-      "#    H    G H  H    A  #",
-      "#    H BBBBBBB H       #",
-      "#    H       H H    G  #",
-      "#BBBBBBB --- H H--BBBBB#",
-      "#      H     H H       #",
-      "# G    H BBBBBBBBBB H  #",
-      "#BBBB  H        A   H  #",
-      "#      H---BBBB-----H  #",
-      "#   G  H     H      H  #",
+      "#P    G          G   E #",
+      "#BBBBBB          BBBBBB#",
+      "#     H          H     #",
+      "# G   H----------H   G #",
+      "#BB   H  H    H  H   BB#",
+      "#     H  H  G H  H     #",
+      "#   BBBBBBBBBBBBBBBB   #",
+      "#   H              H   #",
+      "#   H G          G H   #",
+      "#   H BB        BB H   #",
+      "#   H  H   A    H  H   #",
+      "#   H  H        H  H   #",
+      "#G  H  BBBBBBBBBB  H  G#",
       "#BBBBBBBBBBBBBBBBBBBBBB#",
       "########################"
     ]
@@ -709,12 +707,11 @@
     canvas.height = Math.max(1, Math.floor(rect.height * dpr));
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     
-    // 修正: 画面幅・高さに合わせてタイルサイズを完全に可変にする（下限を撤廃）
     const padding = 8;
     const tileByW = (rect.width - padding) / state.width;
     const tileByH = (rect.height - padding) / state.height;
     state.tileSize = Math.floor(Math.min(tileByW, tileByH));
-    if (state.tileSize > 34) state.tileSize = 34; // 大きくなりすぎるのを防ぐPC向け上限
+    if (state.tileSize > 34) state.tileSize = 34;
 
     state.offsetX = Math.floor((rect.width - state.width * state.tileSize) / 2);
     state.offsetY = Math.floor((rect.height - state.height * state.tileSize) / 2);
@@ -985,7 +982,6 @@
     if (!guard.carryingGold) return;
     guard.carryingGold = false;
     
-    // 金塊は空きスペースが見つかるまで浮上する（FC版特有のギミック）
     let dropY = guard.y - 1;
     while (dropY >= 0 && !canOccupy(guard.x, dropY)) {
       dropY--;
@@ -994,7 +990,6 @@
     if (dropY >= 0 && !state.gold.has(keyOf(guard.x, dropY))) {
       state.gold.set(keyOf(guard.x, dropY), { x: guard.x, y: dropY });
     } else {
-      // 浮上先がない場合は初期位置に安全に配置
       state.gold.set(keyOf(guard.spawnX, guard.spawnY), { x: guard.spawnX, y: guard.spawnY });
     }
   }
@@ -1002,21 +997,18 @@
   function stepGuard(guard, time) {
     const hole = holeAt(guard.x, guard.y);
 
-    // 穴に落ちた時の処理（這い上がり対応）
     if (hole) {
       if (!guard.inHole) {
-        // 穴に落ちた瞬間
         guard.inHole = true;
-        guard.trappedUntil = time + 2500; // 2.5秒間もがく
+        guard.trappedUntil = time + 2500;
         state.score += 75;
         floatText(guard.x, guard.y, "+75", "#b8ffbc");
         dropGuardGold(guard);
         return;
       } else {
         if (time < guard.trappedUntil) {
-          return; // まだもがいている
+          return; 
         } else {
-          // 時間が来たら這い上がる！
           if (canOccupy(guard.x, guard.y - 1)) {
             moveEntity(guard, 0, -1);
             guard.inHole = false;
@@ -1033,7 +1025,6 @@
       return;
     }
 
-    // 金塊泥棒ロジック（50%の確率で拾う）
     if (!guard.carryingGold && state.gold.has(keyOf(guard.x, guard.y))) {
        if (Math.random() < 0.5) {
            state.gold.delete(keyOf(guard.x, guard.y));
@@ -1326,7 +1317,6 @@
       ctx.fillRect(r.x + s * 0.36, r.y - s * 0.08, s * 0.28, s * 0.08);
     }
 
-    // 敵が金塊を背負っている視覚エフェクト
     if (entity.carryingGold) {
       ctx.fillStyle = "#f6c945";
       ctx.fillRect(x + s * 0.1, y + s * 0.1, s * 0.25, s * 0.2);
@@ -1500,7 +1490,6 @@
     });
   });
 
-  // スワイプ操作の実装
   let touchStartX = 0;
   let touchStartY = 0;
   let currentSwipeDir = "";
