@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ロードランナー</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to bottom, #1a2980, #26d0ce);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        #gameContainer {
+            width: 100%;
+            max-width: 500px;
+            height: 80vh;
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            transition: opacity 0.3s;
+        }
+
+        #startScreen {
+            z-index: 10;
+        }
+
+        #gameOverScreen {
+            z-index: 20;
+            display: none;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            background: linear-gradient(to bottom, #ff8c00, #ff4500);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        #gameArea {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #road {
+            position: absolute;
+            width: 100%;
+            height: 80%;
+            bottom: 0;
+            background: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #road::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                90deg,
+                #333,
+                #333 20px,
+                #555 20px,
+                #555 40px
+            );
+            animation: roadMove 0.5s linear infinite;
+        }
+
+        @keyframes roadMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 40px 0; }
+        }
+
+        #player {
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 60px;
+            z-index: 5;
+        }
+
+        #player::before {
+            content: "🚶";
+            font-size: 60px;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .obstacle {
+            position: absolute;
+            bottom: 10%;
+            width: 40px;
+            height: 60px;
+            z-index: 4;
+        }
+
+        .obstacle::before {
+            content: "🚗";
+            font-size: 60px;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1.5rem;
+            z-index: 3;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            z-index: 6;
+        }
+
+        .control-btn {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            cursor: pointer;
+            user-select: none;
+            backdrop-filter: blur(5px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .control-btn:active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        #instructions {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 500px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            h2 {
+                font-size: 1.5rem;
+            }
+            
+            .btn {
+                padding: 12px 25px;
+                font-size: 1rem;
+            }
+            
+            .control-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="startScreen" class="screen">
+            <h1>🏃‍♂️ ロードランナー 🏃‍♀️</h1>
+            <p>スイッチを押して走り続けよう！</p>
+            <p>障害物を避けながらスコアを稼ごう！</p>
+            <div id="instructions">
+                <p>📱 タッチ操作で左右移動</p>
+                <p>🖱️ マウスでも操作可能</p>
+            </div>
+            <button id="startBtn" class="btn">スタート</button>
+        </div>
+
+        <div id="gameOverScreen" class="screen">
+            <h2>ゲームオーバー</h2>
+            <p id="finalScore">スコア: 0</p>
+            <button id="restartBtn" class="btn">リスタート</button>
+        </div>
+
+        <div id="gameArea">
+            <div id="score">0</div>
+            <div id="road"></div>
+            <div id="player"></div>
+            <div id="controls">
+                <div class="control-btn" id="leftBtn">⬅️</div>
+                <div class="control-btn" id="rightBtn">➡️</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ゲーム状態
+            let gameState = 'start'; // 'start', 'playing', 'gameover'
+            let score = 0;
+            let playerX = 50;
+            let obstacles = [];
+            let gameSpeed = 2;
+            let gameLoop;
+            let obstacleInterval;
+            
+            // 要素取得
+            const startScreen = document.getElementById('startScreen');
+            const gameOverScreen = document.getElementById('gameOverScreen');
+            const startBtn = document.getElementById('startBtn');
+            const restartBtn = document.getElementById('restartBtn');
+            const gameArea = document.getElementById('gameArea');
+            const player = document.getElementById('player');
+            const scoreElement = document.getElementById('score');
+            const leftBtn = document.getElementById('leftBtn');
+            const rightBtn = document.getElementById('rightBtn');
+            const road = document.getElementById('road');
+            
+            // ゲーム開始
+            startBtn.addEventListener('click', startGame);
+            restartBtn.addEventListener('click', startGame);
+            
+            // ボタン操作
+            leftBtn.addEventListener('click', () => movePlayer(-1));
+            rightBtn.addEventListener('click', () => movePlayer(1));
+            
+            // タッチ操作
+            let touchStartX = 0;
+            gameArea.addEventListener('touchstart', (e) => {
+                touchStartX = e.touches[0].clientX;
+                e.preventDefault();
+            });
+            
+            gameArea.addEventListener('touchmove', (e) => {
+                if (gameState !== 'playing') return;
+                const touchX = e.touches[0].clientX;
+                const diff = touchX - touchStartX;
+                
+                if (Math.abs(diff) > 20) {
+                    if (diff > 0) {
+                        movePlayer(1);
+                    } else {
+                        movePlayer(-1);
+                    }
+                    touchStartX = touchX;
+                }
+                e.preventDefault();
+            });
+            
+            // マウス操作
+            gameArea.addEventListener('mousedown', (e) => {
+                if (gameState !== 'playing') return;
+                const rect = gameArea.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const centerX = rect.width / 2;
+                
+                if (mouseX < centerX) {
+                    movePlayer(-1);
+                } else {
+                    movePlayer(1);
+                }
+            });
+            
+            function startGame() {
+                gameState = 'playing';
+                score = 0;
+                playerX = 50;
+                obstacles = [];
+                gameSpeed = 2;
+                
+                startScreen.style.display = 'none';
+                gameOverScreen.style.display = 'none';
+                scoreElement.textContent = score;
+                player.style.left = '50%';
+                
+                // 障害物を削除
+                document.querySelectorAll('.obstacle').forEach(obs => obs.remove());
+                
+                // ゲームループ開始
+                if (gameLoop) clearInterval(gameLoop);
+                if (obstacleInterval) clearInterval(obstacleInterval);
+                
+                gameLoop = setInterval(updateGame, 20);
+                obstacleInterval = setInterval(createObstacle, 1000);
+            }
+            
+            function movePlayer(direction) {
+                if (gameState !== 'playing') return;
+                
+                playerX += direction * 5;
+                playerX = Math.max(5, Math.min(95, playerX));
+                player.style.left = playerX + '%';
+            }
+            
+            function createObstacle() {
+                if (gameState !== 'playing') return;
+                
+                const obstacle = document.createElement('div');
+                obstacle.className = 'obstacle';
+                obstacle.style.left = Math.random() * 90 + 5 + '%';
+                gameArea.appendChild(obstacle);
+                obstacles.push({
+                    element: obstacle,
+                    x: parseFloat(obstacle.style.left),
+                    y: 0
+                });
+            }
+            
+            function updateGame() {
+                if (gameState !== 'playing') return;
+                
+                // スコア更新
+                score += 1;
+                scoreElement.textContent = score;
+                
+                // 障害物移動
+                obstacles.forEach((obs, index) => {
+                    const currentY = obs.y + gameSpeed;
+                    obs.y = currentY;
+                    obs.element.style.bottom = currentY + '%';
+                    
+                    // 画面外に出たら削除
+                    if (currentY > 100) {
+                        obs.element.remove();
+                        obstacles.splice(index, 1);
+                    }
+                });
+                
+                // 衝突判定
+                checkCollision();
+                
+                // スピードアップ
+                if (score % 500 === 0) {
+                    gameSpeed += 0.1;
+                }
+            }
+            
+            function checkCollision() {
+                const playerRect = player.getBoundingClientRect();
+                const playerLeft = playerX;
+                const playerRight = playerX + 5;
+                
+                for (let obs of obstacles) {
+                    const obsRect = obs.element.getBoundingClientRect();
+                    const obsLeft = parseFloat(obs.element.style.left) / 100 * 500;
+                    const obsRight = obsLeft + 40;
+                    
+                    if (playerLeft < obsRight && playerRight > obsLeft) {
+                        if (playerRect.bottom > obsRect.top && playerRect.top < obsRect.bottom) {
+                            gameOver();
+                            return;
+                        }
+                    }
+                }
+            }
+            
+            function gameOver() {
+                gameState = 'gameover';
+                clearInterval(gameLoop);
+                clearInterval(obstacleInterval);
+                
+                document.getElementById('finalScore').textContent = 'スコア: ' + score;
+                gameOverScreen.style.display = 'flex';
+            }
+        });
+    </script>
+</body>
+</html>
