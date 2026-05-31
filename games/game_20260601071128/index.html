@@ -1,393 +1,630 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>ドラえもん ひみつ道具クイズRPG</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      touch-action: manipulation;
-    }
-
-    body {
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: white;
-    }
-
-    #game-container {
-      width: 100%;
-      max-width: 500px;
-      height: 100vh;
-      max-height: 800px;
-      position: relative;
-      overflow: hidden;
-      background: rgba(0,0,0,0.7);
-      border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }
-
-    .screen {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      text-align: center;
-      transition: opacity 0.5s ease;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    h1 {
-      font-size: 2.5rem;
-      margin-bottom: 20px;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-    }
-
-    .character {
-      font-size: 5rem;
-      margin: 20px 0;
-      animation: float 3s ease-in-out infinite;
-    }
-
-    .btn {
-      background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-      border: none;
-      padding: 15px 30px;
-      font-size: 1.2rem;
-      border-radius: 50px;
-      margin: 10px;
-      cursor: pointer;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-      transition: all 0.3s ease;
-      color: white;
-      font-weight: bold;
-    }
-
-    .btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-    }
-
-    .btn:active {
-      transform: translateY(1px);
-    }
-
-    .question {
-      font-size: 1.5rem;
-      margin: 20px 0;
-      padding: 20px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 15px;
-      backdrop-filter: blur(10px);
-    }
-
-    .options {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      width: 100%;
-      margin: 20px 0;
-    }
-
-    .option {
-      padding: 15px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-size: 1rem;
-    }
-
-    .option:hover {
-      background: rgba(255,255,255,0.2);
-      transform: scale(1.05);
-    }
-
-    .health-bar {
-      width: 100%;
-      height: 20px;
-      background: rgba(255,255,255,0.2);
-      border-radius: 10px;
-      margin: 20px 0;
-      overflow: hidden;
-    }
-
-    .health-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #ff6b6b, #ee5a24);
-      border-radius: 10px;
-      transition: width 0.5s ease;
-    }
-
-    .enemy {
-      font-size: 4rem;
-      margin: 20px 0;
-    }
-
-    .game-over {
-      background: rgba(0,0,0,0.8);
-    }
-
-    .collection {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-      margin: 20px 0;
-    }
-
-    .tool {
-      font-size: 2rem;
-      padding: 10px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 10px;
-    }
-
-    .damage {
-      position: absolute;
-      color: #ff6b6b;
-      font-size: 2rem;
-      animation: damage 1s ease-out;
-      pointer-events: none;
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
-
-    @keyframes damage {
-      0% { transform: translateY(0); opacity: 1; }
-      100% { transform: translateY(-50px); opacity: 0; }
-    }
-
-    @media (max-width: 500px) {
-      h1 { font-size: 2rem; }
-      .character { font-size: 4rem; }
-      .question { font-size: 1.2rem; }
-      .btn { padding: 12px 24px; font-size: 1rem; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ドラえもん ひみつ道具クイズRPG</title>
+<style>
+  :root {
+    --dora-blue: #0090D6;
+    --dora-red: #E50012;
+    --dora-yellow: #FFD900;
+    --dora-white: #FFFFFF;
+    --bg-dark: #121212;
+    --panel-bg: #f0f8ff;
+    --text-main: #333333;
+  }
+  
+  * { box-sizing: border-box; font-family: "Hiragino Maru Gothic ProN", "Yu Rounded Gothic", sans-serif; user-select: none; }
+  body { margin: 0; background: var(--bg-dark); color: var(--text-main); display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+  
+  #app { width: 100%; max-width: 480px; height: 100vh; max-height: 850px; background: var(--dora-blue); position: relative; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+  
+  .screen { display: none; flex-direction: column; height: 100%; padding: 15px; overflow-y: auto; background: var(--panel-bg); }
+  .screen.active { display: flex; }
+  
+  /* ボタン装飾 */
+  button {
+    background: var(--dora-white); color: var(--dora-blue); border: 3px solid var(--dora-blue);
+    padding: 12px; border-radius: 24px; font-size: 16px; font-weight: 900; cursor: pointer; transition: 0.1s;
+    box-shadow: 0 4px 0 var(--dora-blue);
+  }
+  button:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
+  button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+  button.danger { background: var(--dora-red); color: white; border-color: #b3000d; box-shadow: 0 4px 0 #b3000d; }
+  button.warning { background: var(--dora-yellow); color: #333; border-color: #cca600; box-shadow: 0 4px 0 #cca600; }
+  
+  /* タイトル画面 */
+  .title-container { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 20px; background: var(--dora-blue); color: white; }
+  .title-text { font-size: 32px; font-weight: 900; text-shadow: 2px 2px 0 var(--dora-red); margin-bottom: 10px; line-height: 1.3; }
+  .title-bell { width: 80px; height: 80px; background: var(--dora-yellow); border-radius: 50%; border: 4px solid #333; position: relative; margin: 20px auto; display: flex; justify-content: center; align-items: center; font-size: 40px;}
+  
+  /* ヘッダー */
+  .header { display: flex; justify-content: space-between; align-items: center; background: var(--dora-blue); color: white; padding: 12px; border-radius: 12px; margin-bottom: 15px; font-size: 15px; font-weight: bold; border: 3px solid #006090;}
+  
+  /* メニュー画面 */
+  .menu-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-top: 20px; }
+  .menu-btn { font-size: 18px; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+  
+  /* バトル画面 */
+  .battle-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; background: #e0e0e0; border-radius: 12px; margin-bottom: 15px; border: 3px solid #ccc;}
+  .enemy-sprite { font-size: 100px; transition: 0.1s; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3)); }
+  .enemy-info { text-align: center; margin-bottom: 20px; width: 80%; }
+  
+  .hp-bar-bg { width: 100%; height: 24px; background: #333; border-radius: 12px; overflow: hidden; border: 3px solid #555; position: relative;}
+  .hp-bar-fill { height: 100%; background: var(--dora-red); transition: 0.3s; }
+  .hp-bar-fill.player { background: #00cc00; }
+  .hp-text { position: absolute; width: 100%; text-align: center; font-size: 14px; font-weight: 900; line-height: 20px; top: 0; color: white; text-shadow: 1px 1px 0 #000;}
+  
+  /* クイズエリア */
+  .quiz-box { background: white; padding: 15px; border-radius: 12px; border: 3px solid var(--dora-blue); margin-bottom: 10px; }
+  .gadget-hint { display: flex; align-items: center; gap: 8px; background: #eef8ff; border: 2px dashed #86c8eb; border-radius: 12px; padding: 8px; margin-bottom: 10px; font-size: 12px; font-weight: 900; color: #09577e; }
+  .question-text { font-size: 16px; margin-bottom: 15px; font-weight: bold; line-height: 1.5; }
+  .options { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .option-btn { font-size: 14px; text-align: left; padding: 15px; background: #f9f9f9; border-color: #ddd; color: #333; box-shadow: 0 4px 0 #ddd;}
+  .option-btn.correct { background: #e7f9ed; border-color: #2eaf5d; box-shadow: 0 4px 0 #2eaf5d; }
+  .option-btn.wrong { background: #ffe9e9; border-color: #d43d3d; box-shadow: 0 4px 0 #d43d3d; }
+  
+  /* エフェクト */
+  .combo-text { font-size: 24px; color: var(--dora-red); font-weight: 900; position: absolute; top: 10px; left: 10px; text-shadow: 2px 2px 0 white; }
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+  .shake { animation: shake 0.3s; }
+  @keyframes attack { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px) scale(1.1); } }
+  .attack-anim { animation: attack 0.2s; }
+  
+  /* 図鑑画面 */
+  .encyclopedia-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow-y: auto; max-height: 500px; padding: 5px; }
+  .gadget-card { background: white; border: 3px solid #ccc; border-radius: 12px; padding: 10px; text-align: center; transition: 0.2s; cursor: pointer; }
+  .gadget-card.unlocked { border-color: var(--dora-yellow); background: #fffbe6; }
+  .gadget-name { font-size: 11px; font-weight: bold; }
+  .gadget-visual { width: 62px; height: 62px; margin: 0 auto 6px; display: grid; place-items: center; }
+  .gadget-visual.locked { filter: grayscale(100%); opacity: 0.35; }
+  .gadget-art { width: 56px; height: 56px; position: relative; border-radius: 14px; background: #eaf7ff; border: 3px solid #333; overflow: hidden; box-shadow: inset 0 -5px 0 rgba(0,0,0,0.08); }
+  .gadget-art::before, .gadget-art::after { content: ""; position: absolute; }
+  .gadget-art span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 30px; }
+  .gadget-door { background: linear-gradient(90deg, #ff7aa8 0 18%, #ff9fbd 18% 100%); border-radius: 8px; }
+  .gadget-door::before { width: 7px; height: 7px; border-radius: 50%; background: #ffd900; right: 8px; top: 25px; }
+  .gadget-copter { border-radius: 50%; background: #eefaff; }
+  .gadget-copter::before { width: 48px; height: 7px; background: #39a7e0; border-radius: 99px; left: 2px; top: 13px; box-shadow: 0 17px 0 -2px #ffd900; }
+  .gadget-copter::after { width: 5px; height: 25px; background: #555; left: 25px; top: 18px; border-radius: 4px; }
+  .gadget-time { background: linear-gradient(#9ee5ff, #1c7fb5); border-radius: 50%; }
+  .gadget-time::before { inset: 10px; border: 3px solid white; border-radius: 50%; }
+  .gadget-time::after { width: 4px; height: 17px; background: white; left: 25px; top: 15px; transform-origin: bottom; transform: rotate(42deg); box-shadow: 0 13px 0 0 #333; }
+  .gadget-bread { background: #f2bd73; border-radius: 16px 16px 10px 10px; }
+  .gadget-bread::before { inset: 12px 9px; border-top: 4px solid rgba(90,45,20,0.35); border-bottom: 4px solid rgba(90,45,20,0.35); }
+  .gadget-konnyaku { background: #f6f1d1; border-radius: 50%; }
+  .gadget-konnyaku::before { width: 36px; height: 26px; border-radius: 12px; background: #d7c08b; left: 8px; top: 14px; transform: rotate(-12deg); box-shadow: inset 0 0 0 4px rgba(255,255,255,0.35); }
+  .gadget-small, .gadget-big { background: #f9fbff; border-radius: 50%; }
+  .gadget-small::before, .gadget-big::before { width: 26px; height: 14px; border-radius: 12px; background: #3b82f6; left: 12px; top: 20px; transform: rotate(-24deg); }
+  .gadget-small::after, .gadget-big::after { width: 18px; height: 18px; border-radius: 50%; background: #ffd900; right: 8px; top: 12px; box-shadow: 0 0 14px #ffd900; }
+  .gadget-small span, .gadget-big span { font-size: 10px; font-weight: 900; color: #333; align-items: end; padding-bottom: 7px; }
+  .gadget-camera { background: #dce4ef; border-radius: 10px; }
+  .gadget-camera::before { width: 34px; height: 26px; background: #333; border-radius: 7px; left: 9px; top: 17px; }
+  .gadget-camera::after { width: 16px; height: 16px; border: 4px solid #86c8eb; border-radius: 50%; left: 18px; top: 20px; }
+  .gadget-phone { background: #e50012; border-radius: 8px; }
+  .gadget-phone::before { inset: 8px 13px; background: white; border-radius: 4px; box-shadow: 0 18px 0 -5px #333; }
+  .gadget-phone::after { width: 22px; height: 5px; background: #333; left: 16px; top: 8px; border-radius: 4px; }
+  .gadget-pocket { background: #0090d6; border-radius: 18px 18px 24px 24px; }
+  .gadget-pocket::before { width: 42px; height: 24px; background: white; border: 3px solid #333; border-radius: 0 0 28px 28px; left: 4px; top: 19px; }
+  .gadget-cannon { background: #f5f5f5; border-radius: 50%; }
+  .gadget-cannon::before { width: 28px; height: 28px; border: 7px solid #333; border-radius: 50%; left: 7px; top: 14px; }
+  .gadget-cannon::after { width: 20px; height: 10px; border-radius: 50%; background: rgba(80,170,255,0.65); right: 4px; top: 23px; box-shadow: 9px 0 14px rgba(80,170,255,0.5); }
+  .gadget-cape { background: #f7f7ff; }
+  .gadget-cape::before { width: 38px; height: 44px; background: linear-gradient(135deg, rgba(160,210,255,0.35), rgba(255,255,255,0.1)); border: 3px solid #87b9e6; border-radius: 18px 18px 8px 8px; left: 7px; top: 5px; transform: skewX(-8deg); }
+  
+  /* モーダル */
+  .modal { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100; padding: 20px; text-align: center; }
+  .modal.active { display: flex; }
+  .modal-box { background: white; padding: 25px; border-radius: 16px; border: 4px solid var(--dora-blue); width: 100%; max-width: 400px; }
+  .modal-title { font-size: 24px; color: var(--dora-red); margin-bottom: 15px; font-weight: 900;}
+</style>
 </head>
 <body>
-  <div id="game-container">
-    <!-- スタート画面 -->
-    <div id="start-screen" class="screen">
-      <h1>ドラえもん ひみつ道具クイズRPG</h1>
-      <div class="character">🤖</div>
-      <p>ドラえもんのひみつ道具をもっと知ろう！</p>
-      <button id="start-btn" class="btn">ゲーム開始</button>
-    </div>
 
-    <!-- プレイ画面 -->
-    <div id="game-screen" class="screen hidden">
-      <div class="character">🎯</div>
-      <div class="question" id="question">問題が表示されます</div>
-      <div class="options" id="options"></div>
-      <div class="enemy">👾</div>
-      <div class="health-bar">
-        <div class="health-fill" id="enemy-health" style="width: 100%"></div>
-      </div>
-      <div class="collection" id="collection"></div>
-    </div>
-
-    <!-- ゲームオーバー画面 -->
-    <div id="game-over-screen" class="screen hidden game-over">
-      <h1>ゲームオーバー</h1>
-      <div class="character">😢</div>
-      <p>ひみつ道具をすべて集めた！</p>
-      <div class="collection" id="final-collection"></div>
-      <button id="restart-btn" class="btn">もう一度遊ぶ</button>
+<div id="app">
+  <div id="screen-title" class="screen active" style="background: var(--dora-blue);">
+    <div class="title-container">
+      <div class="title-text">ひみつ道具<br>クイズRPG</div>
+      <div class="title-bell">🔔</div>
+      <p style="font-size: 14px; font-weight: bold;">ネズミたちを知識で撃退し、<br>ひみつ道具図鑑を完成させよう！</p>
+      <button onclick="startGame()" class="warning" style="width: 220px; padding: 15px; font-size: 20px; margin-top: 20px;">冒険に出る</button>
+      <button onclick="resetData()" class="danger" style="width: 220px; margin-top: 10px;">データを消す</button>
     </div>
   </div>
 
-  <script>
-    // ゲーム状態管理
-    const gameState = {
-      currentScreen: 'start',
-      playerHealth: 100,
-      enemyHealth: 100,
-      collectedTools: [],
-      currentQuestion: 0,
-      questions: [
-        {
-          question: "どこでもドアの効果は？",
-          options: ["空を飛ぶ", "どこでも行ける", "物を増やす", "時間停止"],
-          correct: 1
-        },
-        {
-          question: "スパイシーな味の玉の効果は？",
-          options: ["火がつく", "熱い", "味が変わる", "毒になる"],
-          correct: 0
-        },
-        {
-          question: "ミステリーの効果は？",
-          options: ["魔法が使える", "人を変身させる", "謎を解く", "時間停止"],
-          correct: 2
-        },
-        {
-          question: "タイムマシンの効果は？",
-          options: ["未来を見せる", "過去に戻る", "未来に飛ぶ", "時間の流れを止める"],
-          correct: 1
-        },
-        {
-          question: "万能の効果は？",
-          options: ["すべての物に使える", "すべての問題を解決する", "すべての人に使える", "すべての場所に使える"],
-          correct: 0
-        }
-      ]
+  <div id="screen-town" class="screen">
+    <div class="header">
+      <div>
+        <div>ドラえもん Lv: <span id="town-lv">1</span></div>
+        <div style="font-size: 12px; margin-top: 4px;">HP: <span id="town-hp">100/100</span></div>
+      </div>
+      <div style="text-align: right;">
+        <div style="color: var(--dora-yellow); font-size: 18px;">🪙 <span id="town-coins">0</span></div>
+        <div style="font-size: 12px; margin-top: 4px;">図鑑: <span id="town-dex">0/12</span></div>
+      </div>
+    </div>
+    
+    <h3 style="margin: 0 0 10px 0; color: var(--dora-blue);">メニュー</h3>
+    <div class="menu-grid">
+      <button class="menu-btn" onclick="startBattle()">
+        <span>⚔️ パトロールに行く</span>
+        <span style="font-size: 12px; color: #666;">敵を倒してコインをゲット</span>
+      </button>
+      <button class="menu-btn warning" onclick="openGacha()">
+        <span>🎁 四次元ガチャ (100🪙)</span>
+        <span style="font-size: 12px; color: #333;">ランダムな道具を図鑑に登録</span>
+      </button>
+      <button class="menu-btn" style="background: white; color: var(--text-main); border-color: #ccc; box-shadow: 0 4px 0 #ccc;" onclick="openEncyclopedia()">
+        <span>📖 ひみつ道具図鑑</span>
+        <span style="font-size: 12px; color: #666;">集めた道具を確認する</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="screen-battle" class="screen">
+    <div class="header" style="margin-bottom: 10px;">
+      <div>Lv: <span id="battle-lv"></span></div>
+      <div style="flex:1; margin: 0 15px;">
+        <div class="hp-bar-bg"><div id="battle-player-hp-fill" class="hp-bar-fill player"></div><div id="battle-player-hp-text" class="hp-text">100/100</div></div>
+      </div>
+      <button onclick="fleeBattle()" class="danger" style="padding: 6px 12px; font-size: 12px;">逃げる</button>
+    </div>
+    
+    <div class="battle-area">
+      <div id="combo-display" class="combo-text"></div>
+      <div class="enemy-info">
+        <div id="enemy-name" style="font-size: 20px; font-weight: 900; margin-bottom: 5px; color: #333;"></div>
+        <div id="enemy-sprite" class="enemy-sprite">🐭</div>
+        <div class="hp-bar-bg" style="width: 100%; margin: 0 auto; height: 20px;"><div id="enemy-hp-fill" class="hp-bar-fill"></div><div id="enemy-hp-text" class="hp-text" style="font-size: 12px; line-height: 16px;"></div></div>
+      </div>
+    </div>
+    
+    <div class="quiz-box">
+      <div style="font-size:12px; color:var(--dora-red); font-weight:bold; margin-bottom:5px;">💡 ひみつ道具クイズ</div>
+      <div id="gadget-hint" class="gadget-hint"></div>
+      <div id="question-text" class="question-text">読み込み中...</div>
+      <div class="options" id="quiz-options"></div>
+    </div>
+  </div>
+
+  <div id="screen-encyclopedia" class="screen">
+    <div class="header" style="margin-bottom: 10px;">
+      <div>📖 ひみつ道具図鑑</div>
+      <div>収集率: <span id="encyclopedia-count">0/12</span></div>
+    </div>
+    <div class="encyclopedia-grid" id="encyclopedia-grid"></div>
+    <button onclick="showScreen('screen-town')" style="margin-top: 20px;">街へ戻る</button>
+  </div>
+
+  <div id="modal" class="modal">
+    <div class="modal-box">
+      <h2 id="modal-title" class="modal-title">結果</h2>
+      <div id="modal-content" style="font-size: 16px; margin-bottom: 20px; line-height: 1.6; font-weight: bold; color: #333;"></div>
+      <div id="modal-actions" style="display:flex; gap:10px; justify-content:center;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==========================================================================
+   データベース (クイズ・敵・ひみつ道具)
+   ========================================================================== */
+const GADGET_DB = {
+  door: { name: "どこでもドア", emoji: "🚪", art: "door", attack: "ドアを開いてネズミの背後へワープ！", desc: "行きたい場所を言いながら扉を開けると、その場所につながる道具。" },
+  copter: { name: "タケコプター", emoji: "🚁", art: "copter", attack: "空から急降下してネズミをびっくりさせた！", desc: "頭につけると、空を自由に飛ぶことができる道具。" },
+  time: { name: "タイムマシン", emoji: "🕰️", art: "time", attack: "一瞬だけ時間をずらして先制攻撃！", desc: "過去や未来に自由に行くことができる乗り物。" },
+  bread: { name: "アンキパン", emoji: "🍞", art: "bread", attack: "覚えた知識がひらめいて強烈な一撃！", desc: "ノートなどに押し付けて食べると、その内容を暗記できる。" },
+  konnyaku: { name: "ほんやくコンニャク", emoji: "🍢", art: "konnyaku", attack: "ネズミ語を読み切って弱点を見抜いた！", desc: "食べると、あらゆる言語を理解して話せるようになる。" },
+  small: { name: "スモールライト", emoji: "🔦", art: "small", attack: "光でネズミを小さくして戦力ダウン！", desc: "光を当てると、物や人を小さくすることができる。" },
+  big: { name: "ビッグライト", emoji: "🔦", art: "big", attack: "大きくなった道具で迫力の一撃！", desc: "光を当てると、物や人を大きくすることができる。" },
+  camera: { name: "きせかえカメラ", emoji: "📷", art: "camera", attack: "ネズミを変な衣装に着替えさせて混乱！", desc: "服の絵や写真を入れてシャッターを押すと、その服に着替えられる。" },
+  phone: { name: "もしもボックス", emoji: "☎️", art: "phone", attack: "『もしもネズミが弱かったら』で世界を書き換えた！", desc: "『もしもこんな世界だったら』と言うと、その通りのパラレルワールドになる。" },
+  pocket: { name: "四次元ポケット", emoji: "👝", art: "pocket", attack: "ポケットから追加道具を取り出して追撃！", desc: "中は四次元空間になっていて、たくさんの道具をしまっておける。" },
+  cannon: { name: "空気砲", emoji: "💨", art: "cannon", attack: "『ドカン！』空気の弾でネズミを吹き飛ばした！", desc: "手にはめて『ドカン！』と言うと、空気の塊が発射される武器。" },
+  cape: { name: "透明マント", emoji: "🧥", art: "cape", attack: "姿を消してネズミの死角から攻撃！", desc: "かぶると姿が透明になり、誰からも見えなくなる。" }
+};
+
+const QUIZ_DB = [
+  { gadget: "door", q: "「どこでもドア」の効果は？", opts: ["行きたい場所に行ける", "空を飛べる", "時間を移動できる", "透明になる"], ans: 0 },
+  { gadget: "copter", q: "「タケコプター」の効果は？", opts: ["空を飛べる", "力が強くなる", "足が速くなる", "水の中を息継ぎなしで泳げる"], ans: 0 },
+  { gadget: "time", q: "「タイムマシン」の出入り口は、のび太の部屋のどこにある？", opts: ["机の引き出し", "押し入れ", "ベッドの下", "窓の外"], ans: 0 },
+  { gadget: "bread", q: "「アンキパン」の効果は？", opts: ["食べると内容を暗記できる", "食べるとお腹がいっぱいになる", "食べると頭が良くなる", "食べると力が湧いてくる"], ans: 0 },
+  { gadget: "konnyaku", q: "「ほんやくコンニャク」の効果は？", opts: ["あらゆる言語がわかる", "動物と話せるようになるだけ", "宇宙人と話せるようになるだけ", "おいしいコンニャク"], ans: 0 },
+  { gadget: "small", q: "「スモールライト」の効果は？", opts: ["物や人を小さくする", "物や人を大きくする", "暗いところを明るくする", "時間を止める"], ans: 0 },
+  { gadget: "big", q: "「ビッグライト」の効果は？", opts: ["物や人を大きくする", "物や人を小さくする", "敵を吹き飛ばす", "重さを軽くする"], ans: 0 },
+  { gadget: "camera", q: "「きせかえカメラ」の効果は？", opts: ["服の絵を入れて撮ると着替えられる", "透明な服になる", "過去の自分を撮れる", "服を綺麗に洗える"], ans: 0 },
+  { gadget: "phone", q: "「もしもボックス」の効果は？", opts: ["パラレルワールドを作れる", "誰とでも電話できる", "欲しいものが届く", "どこへでも行ける"], ans: 0 },
+  { gadget: "pocket", q: "「四次元ポケット」の効果は？", opts: ["たくさんの道具をしまえる", "お金が無限に出てくる", "未来の道具がランダムで出る", "人が入れる部屋になっている"], ans: 0 },
+  { gadget: "cannon", q: "「空気砲」を使う時の掛け声は？", opts: ["「ドカン！」", "「バン！」", "「ズドン！」", "「発射！」"], ans: 0 },
+  { gadget: "cape", q: "「透明マント」の効果は？", opts: ["かぶると姿が消える", "かぶると空を飛べる", "かぶると攻撃を跳ね返す", "かぶると暖かくなる"], ans: 0 }
+];
+
+const ENEMY_DB = [
+  { name: "チビネズミ", emoji: "🐭", hp: 30, atk: 5, xp: 10, coin: 10 },
+  { name: "ドブネズミ", emoji: "🐀", hp: 50, atk: 12, xp: 20, coin: 25 },
+  { name: "メカネズミ", emoji: "🤖🐭", hp: 80, atk: 20, xp: 35, coin: 40 },
+  { name: "ボスネズミ", emoji: "👑🐭", hp: 200, atk: 35, xp: 100, coin: 150 }
+];
+
+/* ==========================================================================
+   システム状態・セーブデータ
+   ========================================================================== */
+let state = {
+  player: { lv: 1, xp: 0, coins: 0, hp: 100 },
+  encyclopedia: [] // 獲得した道具のキーを格納
+};
+
+let battle = { enemy: null, currentHp: 0, combo: 0, currentQ: null, answerLocked: false };
+
+function saveGame() { localStorage.setItem('doraRpgSave', JSON.stringify(state)); }
+function normalizeState() {
+  state.player = state.player || {};
+  state.player.lv = Number.isFinite(state.player.lv) ? state.player.lv : 1;
+  state.player.xp = Number.isFinite(state.player.xp) ? state.player.xp : 0;
+  state.player.coins = Number.isFinite(state.player.coins) ? state.player.coins : 0;
+  if (!Array.isArray(state.encyclopedia)) {
+    state.encyclopedia = Array.isArray(state.player.encyclopedia) ? state.player.encyclopedia : [];
+  }
+  state.encyclopedia = [...new Set(state.encyclopedia)].filter(key => GADGET_DB[key]);
+  state.player.hp = Number.isFinite(state.player.hp) ? state.player.hp : getMaxHp();
+}
+function loadGame() {
+  const s = localStorage.getItem('doraRpgSave');
+  if (s) state = JSON.parse(s);
+  normalizeState();
+}
+function resetData() {
+  if (confirm("本当にデータを消去しますか？")) { localStorage.removeItem('doraRpgSave'); location.reload(); }
+}
+
+/* ==========================================================================
+   計算・ユーティリティ
+   ========================================================================== */
+function getMaxHp() { return 90 + (state.player.lv * 10); }
+function getAtk() { return 15 + (state.player.lv * 5); }
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function renderGadgetIcon(key, locked = false) {
+  const gadget = GADGET_DB[key];
+  if (!gadget) return '';
+  const label = key === 'small' ? 'SMALL' : key === 'big' ? 'BIG' : '';
+  return `<div class="gadget-visual ${locked ? 'locked' : ''}" title="${gadget.name}">
+    <div class="gadget-art gadget-${gadget.art}" aria-label="${gadget.name}"><span>${label}</span></div>
+  </div>`;
+}
+
+function setQuizOptionsEnabled(enabled) {
+  document.querySelectorAll('#quiz-options button').forEach(btn => {
+    btn.disabled = !enabled;
+  });
+}
+
+// 簡易サウンドエフェクト
+let audioCtx;
+function playSound(type) {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  
+  if (type === 'correct') {
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(800, audioCtx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+  } else if (type === 'damage') {
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.2);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+  } else if (type === 'win') {
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.1);
+    osc.frequency.setValueAtTime(800, audioCtx.currentTime + 0.2);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+  }
+}
+
+/* ==========================================================================
+   画面遷移・UI更新
+   ========================================================================== */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startGame() {
+  loadGame();
+  state.player.hp = getMaxHp(); // 街に戻ると全回復
+  updateTownUI();
+  showScreen('screen-town');
+}
+
+function updateTownUI() {
+  normalizeState();
+  document.getElementById('town-lv').innerText = state.player.lv;
+  document.getElementById('town-hp').innerText = `${state.player.hp}/${getMaxHp()}`;
+  document.getElementById('town-coins').innerText = state.player.coins;
+  document.getElementById('town-dex').innerText = `${state.encyclopedia.length}/${Object.keys(GADGET_DB).length}`;
+}
+
+/* ==========================================================================
+   バトルシステム
+   ========================================================================== */
+function startBattle() {
+  // 敵をランダム（レベルに応じて強い敵が出やすくなる）に選出
+  let r = Math.random() * state.player.lv;
+  let eIdx = 0;
+  if (r > 15) eIdx = 3;
+  else if (r > 8) eIdx = 2;
+  else if (r > 3) eIdx = 1;
+  
+  const template = ENEMY_DB[eIdx];
+  // レベル補正
+  const multiplier = 1 + (state.player.lv * 0.1);
+  battle.enemy = { 
+    ...template, 
+    hp: Math.floor(template.hp * multiplier), 
+    atk: Math.floor(template.atk * multiplier),
+    xp: Math.floor(template.xp * multiplier),
+    coin: Math.floor(template.coin * multiplier)
+  };
+  battle.currentHp = battle.enemy.hp;
+  battle.combo = 0;
+  battle.answerLocked = false;
+  
+  updateBattleUI();
+  nextQuestion();
+  showScreen('screen-battle');
+}
+
+function updateBattleUI() {
+  document.getElementById('battle-lv').innerText = state.player.lv;
+  
+  const pMax = getMaxHp();
+  const pPct = Math.max(0, (state.player.hp / pMax) * 100);
+  document.getElementById('battle-player-hp-fill').style.width = pPct + '%';
+  document.getElementById('battle-player-hp-text').innerText = `${state.player.hp}/${pMax}`;
+  
+  document.getElementById('enemy-name').innerText = battle.enemy.name;
+  document.getElementById('enemy-sprite').innerText = battle.enemy.emoji;
+  
+  const ePct = Math.max(0, (battle.currentHp / battle.enemy.hp) * 100);
+  document.getElementById('enemy-hp-fill').style.width = ePct + '%';
+  document.getElementById('enemy-hp-text').innerText = `${battle.currentHp}/${battle.enemy.hp}`;
+  
+  document.getElementById('combo-display').innerText = battle.combo > 1 ? `${battle.combo} COMBO!` : "";
+}
+
+function nextQuestion() {
+  closeModal();
+  battle.answerLocked = false;
+  const q = QUIZ_DB[Math.floor(Math.random() * QUIZ_DB.length)];
+  battle.currentQ = q;
+  const gadget = GADGET_DB[q.gadget];
+  document.getElementById('gadget-hint').innerHTML = `${renderGadgetIcon(q.gadget, false)}<span>今回使う道具: ${gadget.name}</span>`;
+  document.getElementById('question-text').innerText = q.q;
+  
+  let opts = q.opts.map((text, idx) => ({ text, isCorrect: idx === q.ans }));
+  opts = shuffle(opts);
+  
+  const optBox = document.getElementById('quiz-options');
+  optBox.innerHTML = "";
+  opts.forEach(opt => {
+    let btn = document.createElement('button');
+    btn.className = "option-btn";
+    btn.innerText = opt.text;
+    btn.onclick = () => answerQuiz(opt.isCorrect, btn);
+    optBox.appendChild(btn);
+  });
+}
+
+function answerQuiz(isCorrect, selectedButton) {
+  if (battle.answerLocked || document.getElementById('modal').classList.contains('active')) return;
+  battle.answerLocked = true;
+  setQuizOptionsEnabled(false);
+
+  const sprite = document.getElementById('enemy-sprite');
+  const app = document.getElementById('app');
+  const gadget = GADGET_DB[battle.currentQ.gadget];
+  
+  if (isCorrect) {
+    playSound('correct');
+    battle.combo++;
+    selectedButton?.classList.add('correct');
+    
+    // コンボ倍率
+    let mult = 1.0;
+    if (battle.combo >= 5) mult = 2.5;
+    else if (battle.combo >= 3) mult = 1.5;
+    const hasDexBonus = state.encyclopedia.includes(battle.currentQ.gadget);
+    if (hasDexBonus) mult *= 1.2;
+    
+    let dmg = Math.floor(getAtk() * mult);
+    battle.currentHp = Math.max(0, battle.currentHp - dmg);
+    
+    // 攻撃アニメーション
+    sprite.classList.add('shake');
+    document.querySelector('.battle-area').classList.add('attack-anim');
+    setTimeout(() => {
+      sprite.classList.remove('shake');
+      document.querySelector('.battle-area').classList.remove('attack-anim');
+    }, 300);
+    
+    updateBattleUI();
+    document.getElementById('combo-display').innerText = `${gadget.name}発動！ ${dmg}ダメージ${hasDexBonus ? ' 図鑑ボーナス!' : ''}`;
+    
+    if (battle.currentHp === 0) {
+      setTimeout(handleVictory, 500);
+    } else {
+      setTimeout(nextQuestion, 500);
+    }
+  } else {
+    playSound('damage');
+    battle.combo = 0;
+    selectedButton?.classList.add('wrong');
+    
+    // 敵の攻撃
+    app.classList.add('shake');
+    setTimeout(() => app.classList.remove('shake'), 300);
+    let dmg = battle.enemy.atk;
+    state.player.hp -= dmg;
+    
+    updateBattleUI();
+    
+    if (state.player.hp <= 0) {
+      state.player.hp = 0;
+      updateBattleUI();
+      showModal("敗北...", "ネズミにやられてしまった...<br>街に戻ります。", [{ text: "戻る", cb: startGame }]);
+    } else {
+      showModal("不正解！", `敵の反撃！<br><span style='color:var(--dora-red);font-size:24px;'>${dmg}</span> ダメージを受けた！`, [{ text: "次へ", cb: () => { closeModal(); nextQuestion(); } }]);
+    }
+  }
+}
+
+function handleVictory() {
+  playSound('win');
+  const xp = battle.enemy.xp;
+  const coin = battle.enemy.coin;
+  state.player.xp += xp;
+  state.player.coins += coin;
+  
+  let msg = `ネズミを撃退した！<br><br><span style='color:var(--dora-blue)'>+${xp} XP</span><br><span style='color:var(--dora-yellow)'>+${coin} 🪙</span><br>`;
+  
+  let xpNeed = state.player.lv * 50;
+  while (state.player.xp >= xpNeed) {
+    state.player.lv++;
+    state.player.xp -= xpNeed;
+    msg += `<br><span style="color:var(--dora-red); font-size:20px;">レベルアップ！ Lv${state.player.lv}になった！</span>`;
+    xpNeed = state.player.lv * 50;
+  }
+  
+  saveGame();
+  showModal("勝利！", msg, [
+    { text: "続けてパトロール", cb: () => { closeModal(); startBattle(); } },
+    { text: "街へ戻る", cb: startGame }
+  ]);
+}
+
+function fleeBattle() {
+  showModal("逃走", "急いで逃げ出した...", [{ text: "街へ戻る", cb: startGame }]);
+}
+
+/* ==========================================================================
+   四次元ガチャ & 図鑑
+   ========================================================================== */
+function openGacha() {
+  normalizeState();
+  if (state.player.coins < 100) {
+    showModal("コイン不足", "ガチャを回すには<br>100🪙必要だよ！", [{ text: "戻る", cb: closeModal }]);
+    return;
+  }
+  
+  // 図鑑コンプリート確認
+  const keys = Object.keys(GADGET_DB);
+  if (state.encyclopedia.length >= keys.length) {
+    showModal("コンプリート！", "すべてのひみつ道具を<br>集め終わっているよ！", [{ text: "戻る", cb: closeModal }]);
+    return;
+  }
+
+  state.player.coins -= 100;
+  
+  // 未所持の道具からランダムに選ぶ
+  const unowned = keys.filter(k => !state.encyclopedia.includes(k));
+  const pulledId = unowned[Math.floor(Math.random() * unowned.length)];
+  const gadget = GADGET_DB[pulledId];
+  
+  state.encyclopedia.push(pulledId);
+  playSound('win');
+  saveGame();
+  updateTownUI();
+  
+  showModal("ガチャ結果", `
+    ${renderGadgetIcon(pulledId, false)}
+    <div style="color:var(--dora-blue); font-size:20px; margin: 10px 0;">${gadget.name}</div>
+    <div style="font-size:14px; font-weight:normal;">${gadget.desc}</div>
+  `, [{ text: "OK", cb: closeModal }]);
+}
+
+function openEncyclopedia() {
+  normalizeState();
+  const grid = document.getElementById('encyclopedia-grid');
+  grid.innerHTML = "";
+  
+  const keys = Object.keys(GADGET_DB);
+  document.getElementById('encyclopedia-count').innerText = `${state.encyclopedia.length}/${keys.length}`;
+  
+  keys.forEach(key => {
+    const isUnlocked = state.encyclopedia.includes(key);
+    const g = GADGET_DB[key];
+    
+    let card = document.createElement('div');
+    card.className = `gadget-card ${isUnlocked ? 'unlocked' : ''}`;
+    
+    if (isUnlocked) {
+      card.innerHTML = `
+        ${renderGadgetIcon(key, false)}
+        <div class="gadget-name">${g.name}</div>
+      `;
+      card.onclick = () => {
+        showModal(g.name, `${renderGadgetIcon(key, false)}<div style="font-size:14px; font-weight:normal; margin-top:10px;">${g.desc}</div>`, [{ text: "閉じる", cb: closeModal }]);
+      };
+    } else {
+      card.innerHTML = `
+        ${renderGadgetIcon(key, true)}
+        <div class="gadget-name">未発見</div>
+      `;
+    }
+    grid.appendChild(card);
+  });
+  
+  showScreen('screen-encyclopedia');
+}
+
+/* ==========================================================================
+   汎用モーダル
+   ========================================================================== */
+function showModal(title, contentHTML, buttons) {
+  document.getElementById('modal-title').innerHTML = title;
+  document.getElementById('modal-content').innerHTML = contentHTML;
+  
+  const actions = document.getElementById('modal-actions');
+  actions.innerHTML = "";
+  buttons.forEach(b => {
+    let btn = document.createElement('button');
+    btn.innerText = b.text;
+    if (b.text === "街へ戻る") btn.classList.add('danger');
+    else btn.classList.add('warning');
+    btn.onclick = () => {
+      closeModal();
+      b.cb();
     };
+    actions.appendChild(btn);
+  });
+  
+  document.getElementById('modal').classList.add('active');
+}
 
-    // DOM要素
-    const startScreen = document.getElementById('start-screen');
-    const gameScreen = document.getElementById('game-screen');
-    const gameOverScreen = document.getElementById('game-over-screen');
-    const startBtn = document.getElementById('start-btn');
-    const restartBtn = document.getElementById('restart-btn');
-    const questionEl = document.getElementById('question');
-    const optionsEl = document.getElementById('options');
-    const enemyHealthEl = document.getElementById('enemy-health');
-    const collectionEl = document.getElementById('collection');
-    const finalCollectionEl = document.getElementById('final-collection');
+function closeModal() {
+  document.getElementById('modal').classList.remove('active');
+}
 
-    // ゲーム開始
-    startBtn.addEventListener('click', () => {
-      gameState.currentScreen = 'game';
-      startScreen.classList.add('hidden');
-      gameScreen.classList.remove('hidden');
-      loadQuestion();
-    });
-
-    // ゲームリスタート
-    restartBtn.addEventListener('click', () => {
-      gameState.currentScreen = 'start';
-      gameOverScreen.classList.add('hidden');
-      startScreen.classList.remove('hidden');
-      resetGame();
-    });
-
-    // ゲームリセット
-    function resetGame() {
-      gameState.currentQuestion = 0;
-      gameState.collectedTools = [];
-      gameState.enemyHealth = 100;
-      updateHealthBar();
-      updateCollection();
-    }
-
-    // 問題読み込み
-    function loadQuestion() {
-      if (gameState.currentQuestion >= gameState.questions.length) {
-        endGame();
-        return;
-      }
-
-      const question = gameState.questions[gameState.currentQuestion];
-      questionEl.textContent = question.question;
-      optionsEl.innerHTML = '';
-
-      question.options.forEach((option, index) => {
-        const optionEl = document.createElement('div');
-        optionEl.className = 'option';
-        optionEl.textContent = option;
-        optionEl.addEventListener('click', () => checkAnswer(index));
-        optionsEl.appendChild(optionEl);
-      });
-    }
-
-    // 正解判定
-    function checkAnswer(selectedIndex) {
-      const question = gameState.questions[gameState.currentQuestion];
-      const isCorrect = selectedIndex === question.correct;
-
-      if (isCorrect) {
-        // 正解
-        gameState.enemyHealth -= 20;
-        updateHealthBar();
-        addDamageEffect();
-        gameState.collectedTools.push(question.question);
-        updateCollection();
-        
-        setTimeout(() => {
-          gameState.currentQuestion++;
-          loadQuestion();
-        }, 1000);
-      } else {
-        // 不正解
-        gameState.playerHealth -= 10;
-        updateHealthBar();
-        
-        if (gameState.playerHealth <= 0) {
-          endGame();
-        } else {
-          setTimeout(() => {
-            gameState.currentQuestion++;
-            loadQuestion();
-          }, 1000);
-        }
-      }
-    }
-
-    // ダメージエフェクト
-    function addDamageEffect() {
-      const damageEl = document.createElement('div');
-      damageEl.className = 'damage';
-      damageEl.textContent = '💥';
-      damageEl.style.left = '50%';
-      damageEl.style.top = '50%';
-      gameScreen.appendChild(damageEl);
-      
-      setTimeout(() => {
-        damageEl.remove();
-      }, 1000);
-    }
-
-    // ヘルスバー更新
-    function updateHealthBar() {
-      enemyHealthEl.style.width = `${gameState.enemyHealth}%`;
-    }
-
-    // 図鑑更新
-    function updateCollection() {
-      collectionEl.innerHTML = '';
-      finalCollectionEl.innerHTML = '';
-      
-      gameState.collectedTools.forEach(tool => {
-        const toolEl = document.createElement('div');
-        toolEl.className = 'tool';
-        toolEl.textContent = '🔑';
-        collectionEl.appendChild(toolEl);
-        
-        const finalToolEl = document.createElement('div');
-        finalToolEl.className = 'tool';
-        finalToolEl.textContent = '🔑';
-        finalCollectionEl.appendChild(finalToolEl);
-      });
-    }
-
-    // ゲーム終了
-    function endGame() {
-      gameScreen.classList.add('hidden');
-      gameOverScreen.classList.remove('hidden');
-    }
-
-    // 初期化
-    updateCollection();
-  </script>
+// 初期化実行
+loadGame();
+</script>
 </body>
 </html>
