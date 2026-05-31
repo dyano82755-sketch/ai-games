@@ -848,7 +848,7 @@
       state.lastPlayerStep = time;
       stepPlayer(time);
       collectGold();
-      checkExit();
+      checkExit(); // ← ここから呼ばれる
     }
     if (time - state.lastGuardStep > 220) {
       state.lastGuardStep = time;
@@ -935,22 +935,29 @@
     if (uncollected === 0) playTone(960, 0.16, "triangle", 0.08);
   }
 
+  // ★ 修正箇所：無限スコアアップのバグを修正
   function checkExit() {
     if (tileAt(state.player.x, state.player.y) !== TILE.ESCAPE || !escapeActive()) return;
+    
+    // ゲームの進行を確実に止める
+    state.running = false; 
+    
     state.score += 1000 + state.lives * 300;
     saveBest();
+    updateHud();
+
     if (state.levelIndex < levels.length - 1) {
       showModal("STAGE CLEAR", `スコア ${state.score}。次の面へ進みます。`, [
         { label: "NEXT", className: "play", action: () => {
           state.levelIndex++;
           hideModal();
           loadLevel(state.levelIndex);
+          state.running = true; // NEXTボタンで再開
           playTone(660, 0.1, "square");
         } }
       ]);
       return;
     }
-    state.running = false;
     showModal("ALL CLEAR", `スコア ${state.score}。BEST ${state.best}。`, [
       { label: "もう一度", className: "play", action: startGame }
     ]);
