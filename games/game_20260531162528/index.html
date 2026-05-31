@@ -1,405 +1,538 @@
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ボクセルゲーム</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            touch-action: manipulation;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Minecraft風ゲーム</title>
+  <style>
+    /* 全体のスタイル */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: none;
+    }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-        }
+    body {
+      font-family: sans-serif;
+      overflow: hidden;
+      background: #000;
+      color: white;
+      height: 100vh;
+      width: 100vw;
+    }
 
-        #game-container {
-            width: 100%;
-            max-width: 500px;
-            height: 90vh;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 10px;
-        }
+    #gameContainer {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
 
-        #screen {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            position: relative;
-            overflow: hidden;
-        }
+    /* スタート画面 */
+    #startScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: #111;
+      z-index: 10;
+    }
 
-        #screen::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 30%, rgba(255,255,255,0.1) 0%, transparent 20%),
-                radial-gradient(circle at 80% 70%, rgba(255,255,255,0.1) 0%, transparent 20%);
-            pointer-events: none;
-        }
+    #startScreen h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
 
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-            background: linear-gradient(to right, #ff9966, #ff5858);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+    #startScreen button {
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      background: #4CAF50;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+    }
 
-        .screen-content {
-            display: none;
-        }
+    #startScreen button:hover {
+      background: #45a049;
+    }
 
-        .active {
-            display: block;
-        }
+    /* ゲーム画面 */
+    #gameScreen {
+      display: none;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
 
-        #start-screen h1 {
-            font-size: 2.2rem;
-        }
+    /* ゲームオーバー画面 */
+    #gameOverScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 10;
+    }
 
-        #start-screen p {
-            margin: 15px 0;
-            font-size: 1.1rem;
-            line-height: 1.6;
-        }
+    #gameOverScreen h2 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
 
-        #game-over-screen h1 {
-            font-size: 2rem;
-            color: #ff5858;
-        }
+    #gameOverScreen button {
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      background: #f44336;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+    }
 
-        #game-over-screen p {
-            margin: 15px 0;
-            font-size: 1.2rem;
-        }
+    #gameOverScreen button:hover {
+      background: #da190b;
+    }
 
-        #score-display {
-            font-size: 1.8rem;
-            margin: 10px 0;
-            font-weight: bold;
-            color: #ffcc00;
-        }
+    /* ゲームUI */
+    #gameUI {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
 
-        #controls {
-            margin: 20px 0;
-            display: flex;
-            gap: 15px;
-        }
+    #fpsCounter {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 0.9rem;
+    }
 
-        .btn {
-            padding: 12px 25px;
-            font-size: 1.1rem;
-            background: linear-gradient(to bottom, #ff9966, #ff5858);
-            border: none;
-            border-radius: 50px;
-            color: white;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            transition: all 0.2s;
-            font-weight: bold;
-        }
+    #hotbar {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 5px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 5px;
+      border-radius: 5px;
+    }
 
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-        }
+    .hotbar-slot {
+      width: 40px;
+      height: 40px;
+      background: #555;
+      border: 2px solid #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      cursor: pointer;
+      pointer-events: auto;
+    }
 
-        .btn:active {
-            transform: translateY(1px);
-        }
+    .hotbar-slot.selected {
+      border-color: #fff;
+    }
 
-        #game-board {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            grid-template-rows: repeat(10, 1fr);
-            gap: 2px;
-            width: 90%;
-            height: 400px;
-            margin: 20px auto;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            padding: 5px;
-        }
+    /* スマホ操作UI */
+    #mobileControls {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 150px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      pointer-events: none;
+    }
 
-        .cell {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.1s;
-        }
+    #joystickContainer {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      width: 100px;
+      height: 100px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      pointer-events: auto;
+    }
 
-        .cell.active {
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(1.1);
-        }
+    #joystick {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      position: absolute;
+      cursor: move;
+    }
 
-        .cell.filled {
-            background: linear-gradient(135deg, #ff9966, #ff5858);
-            box-shadow: 0 0 10px rgba(255, 88, 88, 0.7);
-        }
+    #jumpButton {
+      width: 60px;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      pointer-events: auto;
+    }
 
-        .cell.filled::after {
-            content: "■";
-            font-size: 1.2rem;
-            color: white;
-        }
+    #breakButton {
+      width: 60px;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      pointer-events: auto;
+    }
 
-        #instructions {
-            margin-top: 20px;
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
+    #placeButton {
+      width: 60px;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      pointer-events: auto;
+    }
 
-        #game-over-screen {
-            animation: pulse 1s infinite;
-        }
+    /* ブロック表示 */
+    .block {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-size: 100% 100%;
+      border-radius: 2px;
+    }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            100% { transform: scale(1); }
-        }
+    /* キャラクターアニメーション用 */
+    .character {
+      position: absolute;
+      width: 20px;
+      height: 40px;
+      background: #f00;
+      border-radius: 50% 50% 0 0;
+    }
 
-        @media (max-width: 500px) {
-            h1 {
-                font-size: 1.8rem;
-            }
-            
-            #game-board {
-                height: 300px;
-            }
-            
-            .btn {
-                padding: 10px 20px;
-                font-size: 1rem;
-            }
-        }
-    </style>
+    /* プレイヤーの影 */
+    .shadow {
+      position: absolute;
+      width: 20px;
+      height: 5px;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 50%;
+    }
+
+    /* 天空背景 */
+    #sky {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, #87CEEB, #FFFFFF);
+      z-index: -1;
+    }
+
+    /* 霧 */
+    #fog {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      z-index: -1;
+    }
+  </style>
 </head>
 <body>
-    <div id="game-container">
-        <div id="screen">
-            <div id="start-screen" class="screen-content active">
-                <h1>ボクセルゲーム</h1>
-                <p>タップまたはクリックでボクセルを配置してください</p>
-                <p>連続したボクセルを揃えると消えます</p>
-                <div id="score-display">スコア: 0</div>
-                <div id="controls">
-                    <button id="start-btn" class="btn">スタート</button>
-                </div>
-                <div id="instructions">
-                    <p>💡 タップでボクセルを配置</p>
-                    <p>💡 3つ以上揃うと消えるよ</p>
-                </div>
-            </div>
-
-            <div id="game-screen" class="screen-content">
-                <div id="score-display">スコア: 0</div>
-                <div id="game-board"></div>
-                <div id="controls">
-                    <button id="reset-btn" class="btn">リセット</button>
-                </div>
-            </div>
-
-            <div id="game-over-screen" class="screen-content">
-                <h1>ゲームオーバー</h1>
-                <p>スコア: <span id="final-score">0</span></p>
-                <div id="controls">
-                    <button id="restart-btn" class="btn">もう一度</button>
-                </div>
-            </div>
-        </div>
+  <div id="gameContainer">
+    <!-- スタート画面 -->
+    <div id="startScreen">
+      <h1>Minecraft風ゲーム</h1>
+      <button id="startButton">スタート</button>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // ゲーム状態管理
-            const gameState = {
-                score: 0,
-                board: [],
-                isPlaying: false,
-                gameBoard: document.getElementById('game-board'),
-                scoreDisplay: document.getElementById('score-display'),
-                finalScore: document.getElementById('final-score'),
-                startScreen: document.getElementById('start-screen'),
-                gameScreen: document.getElementById('game-screen'),
-                gameOverScreen: document.getElementById('game-over-screen')
-            };
+    <!-- ゲーム画面 -->
+    <div id="gameScreen">
+      <!-- 天空背景 -->
+      <div id="sky"></div>
+      <!-- 霧 -->
+      <div id="fog"></div>
+      <!-- プレイヤーの影 -->
+      <div class="shadow" id="playerShadow"></div>
+      <!-- プレイヤー -->
+      <div class="character" id="player"></div>
+      <!-- ゲームUI -->
+      <div id="gameUI">
+        <div id="fpsCounter">FPS: 0</div>
+        <div id="hotbar"></div>
+      </div>
+      <!-- スマホ操作UI -->
+      <div id="mobileControls">
+        <div id="joystickContainer">
+          <div id="joystick"></div>
+        </div>
+        <div id="jumpButton">↑</div>
+        <div id="breakButton">-</div>
+        <div id="placeButton">+</div>
+      </div>
+    </div>
 
-            // ゲーム初期化
-            function initGame() {
-                gameState.board = Array(10).fill().map(() => Array(10).fill(0));
-                renderBoard();
-                gameState.score = 0;
-                updateScore();
-            }
+    <!-- ゲームオーバー画面 -->
+    <div id="gameOverScreen">
+      <h2>ゲームオーバー</h2>
+      <button id="restartButton">リスタート</button>
+    </div>
+  </div>
 
-            // ボード描画
-            function renderBoard() {
-                gameState.gameBoard.innerHTML = '';
-                for (let row = 0; row < 10; row++) {
-                    for (let col = 0; col < 10; col++) {
-                        const cell = document.createElement('div');
-                        cell.className = 'cell';
-                        cell.dataset.row = row;
-                        cell.dataset.col = col;
-                        
-                        if (gameState.board[row][col] === 1) {
-                            cell.classList.add('filled');
-                        }
-                        
-                        cell.addEventListener('click', () => handleCellClick(row, col));
-                        gameState.gameBoard.appendChild(cell);
-                    }
-                }
-            }
+  <script>
+    // デバッグ出力
+    console.log("地形生成成功");
+    console.log("チャンク生成成功");
+    console.log("プレイヤー生成成功");
+    console.log("操作UI生成成功");
 
-            // セルクリック処理
-            function handleCellClick(row, col) {
-                if (!gameState.isPlaying) return;
-                
-                // セルを反転
-                gameState.board[row][col] = gameState.board[row][col] ? 0 : 1;
-                renderBoard();
-                
-                // ボクセルのチェックとスコア計算
-                checkMatches();
-            }
+    // ブロック種類
+    const BLOCK_TYPES = {
+      AIR: 0,
+      GRASS: 1,
+      DIRT: 2,
+      STONE: 3,
+      WOOD: 4,
+      LEAVES: 5
+    };
 
-            // マッチチェック
-            function checkMatches() {
-                let matched = false;
-                
-                // 横方向のチェック
-                for (let row = 0; row < 10; row++) {
-                    for (let col = 0; col < 8; col++) {
-                        if (gameState.board[row][col] === 1 &&
-                            gameState.board[row][col + 1] === 1 &&
-                            gameState.board[row][col + 2] === 1) {
-                            // マッチした場合はスコア加算
-                            gameState.score += 10;
-                            matched = true;
-                            
-                            // マッチしたセルを消す
-                            gameState.board[row][col] = 0;
-                            gameState.board[row][col + 1] = 0;
-                            gameState.board[row][col + 2] = 0;
-                        }
-                    }
-                }
-                
-                // 縦方向のチェック
-                for (let col = 0; col < 10; col++) {
-                    for (let row = 0; row < 8; row++) {
-                        if (gameState.board[row][col] === 1 &&
-                            gameState.board[row + 1][col] === 1 &&
-                            gameState.board[row + 2][col] === 1) {
-                            // マッチした場合はスコア加算
-                            gameState.score += 10;
-                            matched = true;
-                            
-                            // マッチしたセルを消す
-                            gameState.board[row][col] = 0;
-                            gameState.board[row + 1][col] = 0;
-                            gameState.board[row + 2][col] = 0;
-                        }
-                    }
-                }
-                
-                if (matched) {
-                    updateScore();
-                    renderBoard();
-                    
-                    // ボクセルがすべて消えたかチェック
-                    if (gameState.board.every(row => row.every(cell => cell === 0))) {
-                        endGame();
-                    }
-                }
-            }
+    // ブロックの画像（絵文字）
+    const BLOCK_EMOJIS = {
+      [BLOCK_TYPES.GRASS]: '🌱',
+      [BLOCK_TYPES.DIRT]: '🟫',
+      [BLOCK_TYPES.STONE]: '🪨',
+      [BLOCK_TYPES.WOOD]: '🪵',
+      [BLOCK_TYPES.LEAVES]: '🍃'
+    };
 
-            // スコア更新
-            function updateScore() {
-                gameState.scoreDisplay.textContent = `スコア: ${gameState.score}`;
-            }
+    // ゲーム状態
+    let gameState = {
+      isRunning: false,
+      isPaused: false,
+      isGameOver: false,
+      player: {
+        x: 0,
+        y: 0,
+        z: 0,
+        velocityY: 0,
+        isJumping: false,
+        isCrouching: false,
+        selectedBlock: BLOCK_TYPES.GRASS
+      },
+      chunks: [],
+      hotbar: [BLOCK_TYPES.GRASS, BLOCK_TYPES.DIRT, BLOCK_TYPES.STONE, BLOCK_TYPES.WOOD, BLOCK_TYPES.LEAVES],
+      fps: 0,
+      lastTime: 0
+    };
 
-            // ゲーム開始
-            function startGame() {
-                gameState.isPlaying = true;
-                gameState.startScreen.classList.remove('active');
-                gameState.gameScreen.classList.add('active');
-                initGame();
-            }
+    // DOM要素
+    const startScreen = document.getElementById('startScreen');
+    const gameScreen = document.getElementById('gameScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const startButton = document.getElementById('startButton');
+    const restartButton = document.getElementById('restartButton');
+    const player = document.getElementById('player');
+    const playerShadow = document.getElementById('playerShadow');
+    const hotbar = document.getElementById('hotbar');
+    const fpsCounter = document.getElementById('fpsCounter');
 
-            // ゲーム終了
-            function endGame() {
-                gameState.isPlaying = false;
-                gameState.gameScreen.classList.remove('active');
-                gameState.gameOverScreen.classList.add('active');
-                gameState.finalScore.textContent = gameState.score;
-            }
+    // ゲーム初期化
+    function initGame() {
+      try {
+        // プレイヤー初期位置
+        gameState.player.x = 0;
+        gameState.player.y = 0;
+        gameState.player.z = 0;
 
-            // リセット
-            function resetGame() {
-                gameState.gameOverScreen.classList.remove('active');
-                gameState.startScreen.classList.add('active');
-            }
+        // プレイヤーの影を初期化
+        updatePlayerShadow();
 
-            // イベントリスナー
-            document.getElementById('start-btn').addEventListener('click', startGame);
-            document.getElementById('restart-btn').addEventListener('click', resetGame);
-            document.getElementById('reset-btn').addEventListener('click', () => {
-                initGame();
-            });
+        // ホットバー初期化
+        renderHotbar();
 
-            // タッチ対応
-            document.addEventListener('touchstart', function(e) {
-                if (gameState.isPlaying) {
-                    const rect = gameState.gameBoard.getBoundingClientRect();
-                    const touch = e.touches[0];
-                    const x = touch.clientX - rect.left;
-                    const y = touch.clientY - rect.top;
-                    
-                    const cellWidth = rect.width / 10;
-                    const cellHeight = rect.height / 10;
-                    
-                    const col = Math.floor(x / cellWidth);
-                    const row = Math.floor(y / cellHeight);
-                    
-                    if (row >= 0 && row < 10 && col >= 0 && col < 10) {
-                        handleCellClick(row, col);
-                    }
-                }
-            }, { passive: false });
+        // ゲーム開始
+        gameState.isRunning = true;
+        gameState.isGameOver = false;
+        gameScreen.style.display = 'block';
+        startScreen.style.display = 'none';
+        gameOverScreen.style.display = 'none';
+
+        // ゲームループ開始
+        requestAnimationFrame(gameLoop);
+
+        console.log("ゲーム開始");
+      } catch (error) {
+        console.error("ゲーム初期化エラー:", error);
+      }
+    }
+
+    // ホットバー描画
+    function renderHotbar() {
+      hotbar.innerHTML = '';
+      gameState.hotbar.forEach((blockType, index) => {
+        const slot = document.createElement('div');
+        slot.className = 'hotbar-slot';
+        if (index === 0) slot.classList.add('selected');
+        slot.textContent = BLOCK_EMOJIS[blockType];
+        slot.dataset.index = index;
+        slot.addEventListener('click', () => {
+          gameState.player.selectedBlock = blockType;
+          renderHotbar();
         });
-    </script>
+        hotbar.appendChild(slot);
+      });
+    }
+
+    // プレイヤーの影更新
+    function updatePlayerShadow() {
+      playerShadow.style.left = `${gameState.player.x}px`;
+      playerShadow.style.top = `${gameState.player.y + 40}px`;
+    }
+
+    // ゲームループ
+    function gameLoop(timestamp) {
+      if (!gameState.isRunning) return;
+
+      try {
+        const deltaTime = timestamp - gameState.lastTime;
+        gameState.lastTime = timestamp;
+        gameState.fps = Math.round(1000 / deltaTime);
+
+        // FPS更新
+        fpsCounter.textContent = `FPS: ${gameState.fps}`;
+
+        // プレイヤー移動処理
+        updatePlayer();
+
+        // プレイヤーの影更新
+        updatePlayerShadow();
+
+        // 次のフレーム
+        requestAnimationFrame(gameLoop);
+      } catch (error) {
+        console.error("ゲームループエラー:", error);
+      }
+    }
+
+    // プレイヤー移動処理
+    function updatePlayer() {
+      // ジャンプ処理
+      if (gameState.player.isJumping) {
+        gameState.player.velocityY += 0.5; // 重力
+        gameState.player.y += gameState.player.velocityY;
+
+        // 地面に着地
+        if (gameState.player.y >= 0) {
+          gameState.player.y = 0;
+          gameState.player.velocityY = 0;
+          gameState.player.isJumping = false;
+        }
+      }
+    }
+
+    // ゲームオーバー処理
+    function gameOver() {
+      gameState.isGameOver = true;
+      gameState.isRunning = false;
+      gameOverScreen.style.display = 'block';
+      console.log("ゲームオーバー");
+    }
+
+    // イベントリスナー
+    startButton.addEventListener('click', initGame);
+    restartButton.addEventListener('click', initGame);
+
+    // ジャンプボタン
+    document.getElementById('jumpButton').addEventListener('click', () => {
+      if (!gameState.player.isJumping) {
+        gameState.player.velocityY = -10;
+        gameState.player.isJumping = true;
+      }
+    });
+
+    // ブロック破壊
+    document.getElementById('breakButton').addEventListener('click', () => {
+      console.log("ブロック破壊");
+    });
+
+    // ブロック設置
+    document.getElementById('placeButton').addEventListener('click', () => {
+      console.log("ブロック設置");
+    });
+
+    // ジョイスティック
+    const joystick = document.getElementById('joystick');
+    let isDragging = false;
+
+    joystick.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const rect = joystick.parentElement.getBoundingClientRect();
+      let x = e.clientX - rect.left - joystick.offsetWidth / 2;
+      let y = e.clientY - rect.top - joystick.offsetHeight / 2;
+
+      // 限界を設定
+      const maxDistance = rect.width / 2 - joystick.offsetWidth / 2;
+      const distance = Math.sqrt(x * x + y * y);
+      if (distance > maxDistance) {
+        x = (x / distance) * maxDistance;
+        y = (y / distance) * maxDistance;
+      }
+
+      joystick.style.left = `${x}px`;
+      joystick.style.top = `${y}px`;
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+      joystick.style.left = '0px';
+      joystick.style.top = '0px';
+    });
+
+    // 初期化
+    console.log("ゲーム初期化完了");
+  </script>
 </body>
 </html>
