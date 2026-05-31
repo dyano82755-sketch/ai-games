@@ -123,7 +123,8 @@
     border: 2px solid var(--line);
     text-align: center;
     border-radius: 8px;
-    display: none;
+    /* CSSでは初期表示をブロックにしておきます */
+    display: block;
     z-index: 10;
   }
 
@@ -620,7 +621,9 @@ bindBtn('btnLeft', 'left');
 bindBtn('btnRight', 'right');
 bindBtn('btnJump', 'jump');
 
-// 初期表示
+// --- 初期表示のセットアップ ---
+document.getElementById('message').style.display = 'block';
+generateMap(); // マップを生成して背景に描画しておく
 draw();
 </script>
 </body>
