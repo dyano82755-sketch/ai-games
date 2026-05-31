@@ -1,538 +1,1479 @@
-```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Minecraft風ゲーム</title>
-  <style>
-    /* 全体のスタイル */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      touch-action: none;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>マイクラ風ゲーム</title>
+<style>
+  :root {
+    --ink: #17222a;
+    --muted: #63717b;
+    --panel: #f9f2dc;
+    --line: #18262d;
+    --green: #3ead5f;
+    --blue: #2683d9;
+    --gold: #e5aa2f;
+    --red: #d94c3e;
+    --violet: #7258d8;
+    --shadow: rgba(14, 24, 31, 0.28);
+  }
 
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+    overflow: hidden;
+    color: var(--ink);
+    background:
+      linear-gradient(180deg, #79d7ff 0 49%, #77bf5d 49% 100%);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+  }
+
+  button {
+    font: inherit;
+    touch-action: manipulation;
+  }
+
+  .app {
+    width: min(1260px, 100%);
+    height: 100dvh;
+    min-height: 100dvh;
+    margin: 0 auto;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .hud,
+  .stage,
+  .controls,
+  .modal-box {
+    border: 2px solid rgba(24, 38, 45, 0.88);
+    border-radius: 8px;
+    box-shadow: 0 10px 24px var(--shadow);
+  }
+
+  .hud {
+    min-height: 72px;
+    display: grid;
+    grid-template-columns: minmax(250px, 1fr) repeat(6, auto);
+    gap: 8px;
+    align-items: center;
+    padding: 8px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.18)),
+      var(--panel);
+  }
+
+  .brand {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .block-mark {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    flex: 0 0 auto;
+  }
+
+  .block-mark span,
+  .block-mark::before,
+  .block-mark::after {
+    position: absolute;
+    content: "";
+    border: 2px solid var(--line);
+  }
+
+  .block-mark span {
+    left: 9px;
+    top: 16px;
+    width: 30px;
+    height: 27px;
+    background: #865334;
+  }
+
+  .block-mark::before {
+    left: 9px;
+    top: 5px;
+    width: 30px;
+    height: 16px;
+    background: #4ebd63;
+    transform: skewX(-28deg);
+  }
+
+  .block-mark::after {
+    right: 2px;
+    top: 16px;
+    width: 13px;
+    height: 27px;
+    background: #5d3927;
+    transform: skewY(31deg);
+  }
+
+  .brand-title {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+  }
+
+  .brand-title strong {
+    font-size: 1.18rem;
+    line-height: 1.08;
+  }
+
+  .brand-title span {
+    max-width: 100%;
+    color: var(--muted);
+    font-size: 0.84rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .stat {
+    min-width: 78px;
+    min-height: 46px;
+    display: grid;
+    align-content: center;
+    gap: 2px;
+    padding: 5px 8px;
+    text-align: center;
+    border: 1px solid rgba(24, 38, 45, 0.18);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.58);
+  }
+
+  .stat span {
+    color: var(--muted);
+    font-size: 0.66rem;
+    line-height: 1;
+  }
+
+  .stat b {
+    font-size: 1rem;
+    line-height: 1.12;
+  }
+
+  .btn,
+  .tool-btn,
+  .pad-btn {
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    background: linear-gradient(180deg, #ffffff, #ecdba8);
+    cursor: pointer;
+    font-weight: 880;
+    box-shadow: 0 4px 0 rgba(24, 38, 45, 0.34);
+  }
+
+  .btn {
+    min-height: 44px;
+    padding: 0 14px;
+  }
+
+  .btn.icon {
+    width: 46px;
+    padding: 0;
+  }
+
+  .btn.play,
+  .tool-btn.mine {
+    color: #fff;
+    background: linear-gradient(180deg, #5fd08c, #248c57);
+  }
+
+  .tool-btn.place {
+    color: #fff;
+    background: linear-gradient(180deg, #5ca9ed, #246eb8);
+  }
+
+  .btn:active,
+  .tool-btn:active,
+  .pad-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 rgba(24, 38, 45, 0.34);
+  }
+
+  .stage {
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 40%),
+      #8edfff;
+  }
+
+  #gameCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 320px;
+    image-rendering: pixelated;
+  }
+
+  .message {
+    position: absolute;
+    left: 50%;
+    bottom: 12px;
+    width: min(720px, calc(100% - 24px));
+    min-height: 42px;
+    transform: translateX(-50%);
+    display: grid;
+    place-items: center;
+    padding: 8px 12px;
+    border: 2px solid rgba(24, 38, 45, 0.82);
+    border-radius: 8px;
+    background: rgba(249, 242, 220, 0.92);
+    text-align: center;
+    font-weight: 840;
+  }
+
+  .controls {
+    min-height: 118px;
+    display: grid;
+    grid-template-columns: minmax(170px, 1fr) auto auto minmax(170px, 1fr);
+    gap: 10px;
+    align-items: center;
+    padding: 8px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.16)),
+      #d8edbc;
+  }
+
+  .mini-panel {
+    min-width: 0;
+    display: grid;
+    gap: 5px;
+    font-weight: 780;
+    line-height: 1.28;
+  }
+
+  .mini-panel small {
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+
+  .dpad {
+    width: 174px;
+    height: 96px;
+    display: grid;
+    grid-template-columns: repeat(3, 54px);
+    grid-template-rows: repeat(2, 44px);
+    gap: 6px;
+  }
+
+  .pad-btn {
+    min-width: 0;
+    min-height: 0;
+    background: linear-gradient(180deg, #ffffff, #cceef7);
+    font-size: 1.22rem;
+  }
+
+  .pad-btn.up {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .pad-btn.left {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .pad-btn.down {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .pad-btn.right {
+    grid-column: 3;
+    grid-row: 2;
+  }
+
+  .tools {
+    display: grid;
+    grid-template-columns: repeat(2, 92px);
+    gap: 8px;
+  }
+
+  .tool-btn {
+    min-height: 48px;
+    padding: 0 8px;
+  }
+
+  .bar-wrap {
+    justify-self: end;
+    width: min(260px, 100%);
+    display: grid;
+    gap: 6px;
+  }
+
+  .bar {
+    width: 100%;
+    height: 16px;
+    overflow: hidden;
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.66);
+  }
+
+  .bar span {
+    display: block;
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--violet), #52d4ff);
+    transition: width 160ms ease;
+  }
+
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: none;
+    place-items: center;
+    padding: 16px;
+    background: rgba(14, 24, 31, 0.5);
+  }
+
+  .modal.show {
+    display: grid;
+  }
+
+  .modal-box {
+    width: min(570px, 100%);
+    padding: 18px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.2)),
+      var(--panel);
+    text-align: center;
+  }
+
+  .modal-box h1 {
+    margin: 0;
+    font-size: 1.9rem;
+    line-height: 1.1;
+  }
+
+  .modal-box p {
+    margin: 10px auto 0;
+    max-width: 480px;
+    color: #4a5861;
+    line-height: 1.55;
+    font-weight: 720;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  @media (max-width: 940px) {
     body {
-      font-family: sans-serif;
-      overflow: hidden;
-      background: #000;
-      color: white;
-      height: 100vh;
-      width: 100vw;
+      overflow: auto;
     }
 
-    #gameContainer {
-      position: relative;
-      width: 100%;
-      height: 100%;
+    .app {
+      height: auto;
+      min-height: 100dvh;
+      grid-template-rows: auto minmax(440px, 1fr) auto;
     }
 
-    /* スタート画面 */
-    #startScreen {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      background: #111;
-      z-index: 10;
+    .hud {
+      grid-template-columns: minmax(210px, 1fr) repeat(4, auto);
     }
 
-    #startScreen h1 {
-      font-size: 2.5rem;
-      margin-bottom: 1rem;
-    }
-
-    #startScreen button {
-      padding: 1rem 2rem;
-      font-size: 1.2rem;
-      background: #4CAF50;
-      border: none;
-      border-radius: 5px;
-      color: white;
-      cursor: pointer;
-    }
-
-    #startScreen button:hover {
-      background: #45a049;
-    }
-
-    /* ゲーム画面 */
-    #gameScreen {
+    .hud .stat:nth-of-type(n+4) {
       display: none;
-      width: 100%;
-      height: 100%;
-      position: relative;
     }
 
-    /* ゲームオーバー画面 */
-    #gameOverScreen {
-      position: absolute;
-      top: 0;
-      left: 0;
+    .controls {
+      grid-template-columns: 1fr auto auto;
+    }
+
+    .bar-wrap {
+      grid-column: 1 / -1;
       width: 100%;
-      height: 100%;
+      justify-self: stretch;
+    }
+  }
+
+  @media (max-width: 590px) {
+    .app {
+      gap: 7px;
+      padding: 7px;
+      grid-template-rows: auto minmax(400px, 1fr) auto;
+    }
+
+    .hud {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      min-height: 0;
+    }
+
+    .brand {
+      grid-column: 1 / -1;
+    }
+
+    .block-mark {
+      width: 42px;
+      height: 42px;
+    }
+
+    .brand-title strong {
+      font-size: 1.02rem;
+    }
+
+    .brand-title span {
+      font-size: 0.76rem;
+    }
+
+    .stat {
+      min-width: 0;
+      min-height: 38px;
+      padding: 4px 3px;
+    }
+
+    .stat span {
+      font-size: 0.6rem;
+    }
+
+    .stat b {
+      font-size: 0.86rem;
+    }
+
+    .btn {
+      min-height: 38px;
+      padding: 0 8px;
+      font-size: 0.86rem;
+    }
+
+    .btn.icon {
+      width: 40px;
+    }
+
+    .message {
+      bottom: 8px;
+      min-height: 38px;
+      padding: 6px 8px;
+      font-size: 0.84rem;
+    }
+
+    .controls {
+      grid-template-columns: 1fr;
+      min-height: 0;
+      gap: 8px;
+    }
+
+    .mini-panel {
       display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      background: rgba(0, 0, 0, 0.8);
-      z-index: 10;
     }
 
-    #gameOverScreen h2 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
+    .dpad {
+      justify-self: center;
+      width: 168px;
+      height: 92px;
+      grid-template-columns: repeat(3, 52px);
+      grid-template-rows: repeat(2, 42px);
     }
 
-    #gameOverScreen button {
-      padding: 1rem 2rem;
-      font-size: 1.2rem;
-      background: #f44336;
-      border: none;
-      border-radius: 5px;
-      color: white;
-      cursor: pointer;
+    .tools {
+      justify-self: center;
+      grid-template-columns: repeat(2, 86px);
     }
 
-    #gameOverScreen button:hover {
-      background: #da190b;
-    }
-
-    /* ゲームUI */
-    #gameUI {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-    }
-
-    #fpsCounter {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(0, 0, 0, 0.5);
-      padding: 5px 10px;
-      border-radius: 5px;
+    .tool-btn {
+      min-height: 44px;
       font-size: 0.9rem;
     }
 
-    #hotbar {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 5px;
-      background: rgba(0, 0, 0, 0.5);
-      padding: 5px;
-      border-radius: 5px;
-    }
-
-    .hotbar-slot {
-      width: 40px;
-      height: 40px;
-      background: #555;
-      border: 2px solid #333;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+    .modal-box h1 {
       font-size: 1.5rem;
-      cursor: pointer;
-      pointer-events: auto;
     }
-
-    .hotbar-slot.selected {
-      border-color: #fff;
-    }
-
-    /* スマホ操作UI */
-    #mobileControls {
-      position: absolute;
-      bottom: 0;
-      width: 100%;
-      height: 150px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 20px;
-      pointer-events: none;
-    }
-
-    #joystickContainer {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      width: 100px;
-      height: 100px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      pointer-events: auto;
-    }
-
-    #joystick {
-      width: 40px;
-      height: 40px;
-      background: rgba(255, 255, 255, 0.8);
-      border-radius: 50%;
-      position: absolute;
-      cursor: move;
-    }
-
-    #jumpButton {
-      width: 60px;
-      height: 60px;
-      background: rgba(255, 255, 255, 0.5);
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 1.5rem;
-      pointer-events: auto;
-    }
-
-    #breakButton {
-      width: 60px;
-      height: 60px;
-      background: rgba(255, 255, 255, 0.5);
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 1.5rem;
-      pointer-events: auto;
-    }
-
-    #placeButton {
-      width: 60px;
-      height: 60px;
-      background: rgba(255, 255, 255, 0.5);
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 1.5rem;
-      pointer-events: auto;
-    }
-
-    /* ブロック表示 */
-    .block {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background-size: 100% 100%;
-      border-radius: 2px;
-    }
-
-    /* キャラクターアニメーション用 */
-    .character {
-      position: absolute;
-      width: 20px;
-      height: 40px;
-      background: #f00;
-      border-radius: 50% 50% 0 0;
-    }
-
-    /* プレイヤーの影 */
-    .shadow {
-      position: absolute;
-      width: 20px;
-      height: 5px;
-      background: rgba(0, 0, 0, 0.5);
-      border-radius: 50%;
-    }
-
-    /* 天空背景 */
-    #sky {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(to bottom, #87CEEB, #FFFFFF);
-      z-index: -1;
-    }
-
-    /* 霧 */
-    #fog {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(255, 255, 255, 0.1);
-      z-index: -1;
-    }
-  </style>
+  }
+</style>
 </head>
 <body>
-  <div id="gameContainer">
-    <!-- スタート画面 -->
-    <div id="startScreen">
-      <h1>Minecraft風ゲーム</h1>
-      <button id="startButton">スタート</button>
-    </div>
-
-    <!-- ゲーム画面 -->
-    <div id="gameScreen">
-      <!-- 天空背景 -->
-      <div id="sky"></div>
-      <!-- 霧 -->
-      <div id="fog"></div>
-      <!-- プレイヤーの影 -->
-      <div class="shadow" id="playerShadow"></div>
-      <!-- プレイヤー -->
-      <div class="character" id="player"></div>
-      <!-- ゲームUI -->
-      <div id="gameUI">
-        <div id="fpsCounter">FPS: 0</div>
-        <div id="hotbar"></div>
-      </div>
-      <!-- スマホ操作UI -->
-      <div id="mobileControls">
-        <div id="joystickContainer">
-          <div id="joystick"></div>
-        </div>
-        <div id="jumpButton">↑</div>
-        <div id="breakButton">-</div>
-        <div id="placeButton">+</div>
+<div class="app">
+  <header class="hud">
+    <div class="brand">
+      <div class="block-mark" aria-hidden="true"><span></span></div>
+      <div class="brand-title">
+        <strong>ブロッククラフト・ラッシュ</strong>
+        <span id="statusText">鉱石を掘ってゲートを開けよう</span>
       </div>
     </div>
+    <div class="stat"><span>ORE</span><b id="oreText">0/3</b></div>
+    <div class="stat"><span>BLOCK</span><b id="blockText">0</b></div>
+    <div class="stat"><span>HEART</span><b id="heartText">3</b></div>
+    <div class="stat"><span>SCORE</span><b id="scoreText">0</b></div>
+    <button class="btn icon" id="muteBtn" type="button" aria-label="音を切り替え">♪</button>
+    <button class="btn play" id="startBtn" type="button">あそぶ</button>
+  </header>
 
-    <!-- ゲームオーバー画面 -->
-    <div id="gameOverScreen">
-      <h2>ゲームオーバー</h2>
-      <button id="restartButton">リスタート</button>
+  <main class="stage" aria-label="ブロッククラフトのステージ">
+    <canvas id="gameCanvas"></canvas>
+    <div class="message" id="messageText">あそぶを押してスタート</div>
+  </main>
+
+  <footer class="controls">
+    <div class="mini-panel">
+      <b>ミッション</b>
+      <small id="missionText">鉱石を3つ掘って、紫のゲートへ。</small>
     </div>
+    <div class="dpad" aria-label="移動ボタン">
+      <button class="pad-btn up" type="button" data-move="0,-1" aria-label="上へ">▲</button>
+      <button class="pad-btn left" type="button" data-move="-1,0" aria-label="左へ">◀</button>
+      <button class="pad-btn down" type="button" data-move="0,1" aria-label="下へ">▼</button>
+      <button class="pad-btn right" type="button" data-move="1,0" aria-label="右へ">▶</button>
+    </div>
+    <div class="tools" aria-label="道具ボタン">
+      <button class="tool-btn mine" id="mineBtn" type="button">ほる</button>
+      <button class="tool-btn place" id="placeBtn" type="button">おく</button>
+    </div>
+    <div class="bar-wrap">
+      <div class="mini-panel">
+        <b id="toolText">道具: ピッケル</b>
+        <small id="bestText">ベスト 0</small>
+      </div>
+      <div class="bar" aria-label="ゲートの開き具合"><span id="progressBar"></span></div>
+    </div>
+  </footer>
+</div>
+
+<div class="modal show" id="modal">
+  <div class="modal-box">
+    <h1 id="modalTitle">ブロッククラフト・ラッシュ</h1>
+    <p id="modalText">ブロックを掘ると素材になります。集めた素材で水や溶岩に足場を置き、鉱石を3つ掘ってゲートへ向かいましょう。</p>
+    <div class="modal-actions" id="modalActions"></div>
   </div>
+</div>
 
-  <script>
-    // デバッグ出力
-    console.log("地形生成成功");
-    console.log("チャンク生成成功");
-    console.log("プレイヤー生成成功");
-    console.log("操作UI生成成功");
+<script>
+(() => {
+  const TILE = {
+    EMPTY: 0,
+    DIRT: 1,
+    STONE: 2,
+    ORE: 3,
+    WATER: 4,
+    LAVA: 5,
+    BRIDGE: 6,
+    BEDROCK: 7,
+    PORTAL: 8,
+    WOOD: 9
+  };
 
-    // ブロック種類
-    const BLOCK_TYPES = {
-      AIR: 0,
-      GRASS: 1,
-      DIRT: 2,
-      STONE: 3,
-      WOOD: 4,
-      LEAVES: 5
-    };
+  const targetOre = 3;
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+  const el = {
+    status: document.getElementById("statusText"),
+    ore: document.getElementById("oreText"),
+    block: document.getElementById("blockText"),
+    heart: document.getElementById("heartText"),
+    score: document.getElementById("scoreText"),
+    start: document.getElementById("startBtn"),
+    mute: document.getElementById("muteBtn"),
+    mine: document.getElementById("mineBtn"),
+    place: document.getElementById("placeBtn"),
+    message: document.getElementById("messageText"),
+    mission: document.getElementById("missionText"),
+    tool: document.getElementById("toolText"),
+    best: document.getElementById("bestText"),
+    progress: document.getElementById("progressBar"),
+    modal: document.getElementById("modal"),
+    modalTitle: document.getElementById("modalTitle"),
+    modalText: document.getElementById("modalText"),
+    modalActions: document.getElementById("modalActions")
+  };
 
-    // ブロックの画像（絵文字）
-    const BLOCK_EMOJIS = {
-      [BLOCK_TYPES.GRASS]: '🌱',
-      [BLOCK_TYPES.DIRT]: '🟫',
-      [BLOCK_TYPES.STONE]: '🪨',
-      [BLOCK_TYPES.WOOD]: '🪵',
-      [BLOCK_TYPES.LEAVES]: '🍃'
-    };
+  const colors = {
+    grass: "#55b964",
+    grassDark: "#3b884d",
+    dirt: "#8b5837",
+    dirtDark: "#5c3828",
+    stone: "#8c969b",
+    stoneDark: "#5d686f",
+    ore: "#6b6570",
+    oreGlow: "#52d4ff",
+    water: "#2d91d6",
+    waterDark: "#16639b",
+    lava: "#f06a37",
+    lavaDark: "#9c3327",
+    red: "#d94c3e",
+    bridge: "#b77942",
+    bridgeDark: "#7d4d2d",
+    bedrock: "#29343b",
+    portal: "#6f4bd8",
+    portalDark: "#2f234d",
+    wood: "#b06e3d",
+    woodDark: "#6e4329",
+    player: "#38c7d2",
+    playerDark: "#146d78",
+    mob: "#58c74f",
+    mobDark: "#2a7d35",
+    line: "rgba(22, 35, 42, 0.72)",
+    shadow: "rgba(13, 22, 28, 0.25)"
+  };
 
-    // ゲーム状態
-    let gameState = {
-      isRunning: false,
-      isPaused: false,
-      isGameOver: false,
-      player: {
-        x: 0,
-        y: 0,
-        z: 0,
-        velocityY: 0,
-        isJumping: false,
-        isCrouching: false,
-        selectedBlock: BLOCK_TYPES.GRASS
-      },
-      chunks: [],
-      hotbar: [BLOCK_TYPES.GRASS, BLOCK_TYPES.DIRT, BLOCK_TYPES.STONE, BLOCK_TYPES.WOOD, BLOCK_TYPES.LEAVES],
-      fps: 0,
-      lastTime: 0
-    };
+  const maps = [
+    [
+      "################",
+      "#P..D..S..O...#",
+      "#..DD..S..S...#",
+      "#..WWWWW..D...#",
+      "#..W...W..D.OE#",
+      "#..W.S.W..SS..#",
+      "#..W...W......#",
+      "#..WWWWW..O...#",
+      "#...D...SS....#",
+      "#......M......#",
+      "################"
+    ],
+    [
+      "################",
+      "#P.D..S....O..#",
+      "#..D..S.WWW...#",
+      "#..D..S.W.O.E#",
+      "#..D....W....#",
+      "#..WWWWWW.S..#",
+      "#....O...S...#",
+      "#.SSSS..D....#",
+      "#....M....L..#",
+      "#........L...#",
+      "################"
+    ],
+    [
+      "################",
+      "#P..D...S..O..#",
+      "#.SSS.WWW.S...#",
+      "#.....W...S...#",
+      "#.O...W.LLL.E#",
+      "#.....W...S...#",
+      "#.SSS.WWW.S...#",
+      "#.....D...O...#",
+      "#..M.....SS...#",
+      "#.......D.....#",
+      "################"
+    ]
+  ];
 
-    // DOM要素
-    const startScreen = document.getElementById('startScreen');
-    const gameScreen = document.getElementById('gameScreen');
-    const gameOverScreen = document.getElementById('gameOverScreen');
-    const startButton = document.getElementById('startButton');
-    const restartButton = document.getElementById('restartButton');
-    const player = document.getElementById('player');
-    const playerShadow = document.getElementById('playerShadow');
-    const hotbar = document.getElementById('hotbar');
-    const fpsCounter = document.getElementById('fpsCounter');
+  const state = {
+    running: false,
+    paused: false,
+    muted: false,
+    level: 0,
+    grid: [],
+    width: 0,
+    height: 0,
+    player: { x: 1, y: 1, drawX: 1, drawY: 1, dx: 1, dy: 0, hurtUntil: 0, step: 0 },
+    mobs: [],
+    ore: 0,
+    blocks: 0,
+    hearts: 3,
+    score: 0,
+    moves: 0,
+    best: Number(localStorage.getItem("blockCraftRushBest") || 0),
+    particles: [],
+    floatTexts: [],
+    tileSize: 44,
+    offsetX: 0,
+    offsetY: 0,
+    audio: null
+  };
 
-    // ゲーム初期化
-    function initGame() {
-      try {
-        // プレイヤー初期位置
-        gameState.player.x = 0;
-        gameState.player.y = 0;
-        gameState.player.z = 0;
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
 
-        // プレイヤーの影を初期化
-        updatePlayerShadow();
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = clamp(window.devicePixelRatio || 1, 1, 2);
+    canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+    canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    computeLayout(rect.width, rect.height);
+  }
 
-        // ホットバー初期化
-        renderHotbar();
+  function computeLayout(width, height) {
+    const tileByW = (width - 30) / Math.max(1, state.width);
+    const tileByH = (height - 72) / Math.max(1, state.height);
+    state.tileSize = clamp(Math.floor(Math.min(tileByW, tileByH)), 28, 58);
+    state.offsetX = Math.floor((width - state.tileSize * state.width) / 2);
+    state.offsetY = Math.max(16, Math.floor((height - state.tileSize * state.height) / 2) - 8);
+  }
 
-        // ゲーム開始
-        gameState.isRunning = true;
-        gameState.isGameOver = false;
-        gameScreen.style.display = 'block';
-        startScreen.style.display = 'none';
-        gameOverScreen.style.display = 'none';
+  function startGame() {
+    state.running = true;
+    state.paused = false;
+    state.level = 0;
+    state.score = 0;
+    state.hearts = 3;
+    loadLevel(state.level);
+    hideModal();
+    setMessage("ピッケルを構えてスタート！");
+    playTone(520, 0.08, "triangle");
+    playTone(760, 0.11, "triangle", 0.06);
+  }
 
-        // ゲームループ開始
-        requestAnimationFrame(gameLoop);
+  function loadLevel(index) {
+    const rows = maps[index % maps.length];
+    state.height = rows.length;
+    state.width = Math.max(...rows.map(row => row.length));
+    state.grid = [];
+    state.mobs = [];
+    state.ore = 0;
+    state.blocks = 0;
+    state.moves = 0;
+    state.particles = [];
+    state.floatTexts = [];
 
-        console.log("ゲーム開始");
-      } catch (error) {
-        console.error("ゲーム初期化エラー:", error);
-      }
-    }
-
-    // ホットバー描画
-    function renderHotbar() {
-      hotbar.innerHTML = '';
-      gameState.hotbar.forEach((blockType, index) => {
-        const slot = document.createElement('div');
-        slot.className = 'hotbar-slot';
-        if (index === 0) slot.classList.add('selected');
-        slot.textContent = BLOCK_EMOJIS[blockType];
-        slot.dataset.index = index;
-        slot.addEventListener('click', () => {
-          gameState.player.selectedBlock = blockType;
-          renderHotbar();
-        });
-        hotbar.appendChild(slot);
-      });
-    }
-
-    // プレイヤーの影更新
-    function updatePlayerShadow() {
-      playerShadow.style.left = `${gameState.player.x}px`;
-      playerShadow.style.top = `${gameState.player.y + 40}px`;
-    }
-
-    // ゲームループ
-    function gameLoop(timestamp) {
-      if (!gameState.isRunning) return;
-
-      try {
-        const deltaTime = timestamp - gameState.lastTime;
-        gameState.lastTime = timestamp;
-        gameState.fps = Math.round(1000 / deltaTime);
-
-        // FPS更新
-        fpsCounter.textContent = `FPS: ${gameState.fps}`;
-
-        // プレイヤー移動処理
-        updatePlayer();
-
-        // プレイヤーの影更新
-        updatePlayerShadow();
-
-        // 次のフレーム
-        requestAnimationFrame(gameLoop);
-      } catch (error) {
-        console.error("ゲームループエラー:", error);
-      }
-    }
-
-    // プレイヤー移動処理
-    function updatePlayer() {
-      // ジャンプ処理
-      if (gameState.player.isJumping) {
-        gameState.player.velocityY += 0.5; // 重力
-        gameState.player.y += gameState.player.velocityY;
-
-        // 地面に着地
-        if (gameState.player.y >= 0) {
-          gameState.player.y = 0;
-          gameState.player.velocityY = 0;
-          gameState.player.isJumping = false;
+    rows.forEach((row, y) => {
+      const tiles = [];
+      for (let x = 0; x < state.width; x++) {
+        const char = row[x] || "#";
+        if (char === "P") {
+          state.player.x = x;
+          state.player.y = y;
+          state.player.drawX = x;
+          state.player.drawY = y;
+          state.player.dx = 1;
+          state.player.dy = 0;
+          tiles.push(TILE.EMPTY);
+        } else if (char === "M") {
+          state.mobs.push({ x, y, drawX: x, drawY: y, dx: -1, dy: 0, mood: Math.random() * 10 });
+          tiles.push(TILE.EMPTY);
+        } else {
+          tiles.push(tileFromChar(char));
         }
       }
+      state.grid.push(tiles);
+    });
+
+    computeLayout(canvas.clientWidth || 900, canvas.clientHeight || 500);
+    updateHud();
+  }
+
+  function tileFromChar(char) {
+    if (char === "#") return TILE.BEDROCK;
+    if (char === "D") return TILE.DIRT;
+    if (char === "S") return TILE.STONE;
+    if (char === "O") return TILE.ORE;
+    if (char === "W") return TILE.WATER;
+    if (char === "L") return TILE.LAVA;
+    if (char === "E") return TILE.PORTAL;
+    if (char === "T") return TILE.WOOD;
+    return TILE.EMPTY;
+  }
+
+  function tileAt(x, y) {
+    if (x < 0 || y < 0 || y >= state.height || x >= state.width) return TILE.BEDROCK;
+    return state.grid[y][x];
+  }
+
+  function setTile(x, y, tile) {
+    if (x < 0 || y < 0 || y >= state.height || x >= state.width) return;
+    state.grid[y][x] = tile;
+  }
+
+  function isWalkable(tile) {
+    return tile === TILE.EMPTY || tile === TILE.BRIDGE || tile === TILE.PORTAL;
+  }
+
+  function isMineable(tile) {
+    return tile === TILE.DIRT || tile === TILE.STONE || tile === TILE.ORE || tile === TILE.WOOD;
+  }
+
+  function cellCenter(x, y) {
+    const s = state.tileSize;
+    return {
+      x: state.offsetX + x * s + s / 2,
+      y: state.offsetY + y * s + s / 2
+    };
+  }
+
+  function targetCell() {
+    return {
+      x: state.player.x + state.player.dx,
+      y: state.player.y + state.player.dy
+    };
+  }
+
+  function move(dx, dy) {
+    if (!state.running) {
+      startGame();
+      return;
+    }
+    if (state.paused) return;
+    state.player.dx = dx;
+    state.player.dy = dy;
+    const nx = state.player.x + dx;
+    const ny = state.player.y + dy;
+    const tile = tileAt(nx, ny);
+
+    if (isWalkable(tile)) {
+      state.player.x = nx;
+      state.player.y = ny;
+      state.player.step = 1;
+      state.moves++;
+      if (tile === TILE.PORTAL) {
+        tryPortal();
+      } else {
+        setMessage("足音がブロックにひびく。");
+      }
+      afterAction();
+      return;
     }
 
-    // ゲームオーバー処理
-    function gameOver() {
-      gameState.isGameOver = true;
-      gameState.isRunning = false;
-      gameOverScreen.style.display = 'block';
-      console.log("ゲームオーバー");
+    if (tile === TILE.WATER || tile === TILE.LAVA) {
+      setMessage("足場を置けば渡れそう。");
+      playTone(220, 0.05, "sine");
+      return;
+    }
+    if (isMineable(tile)) {
+      setMessage("目の前のブロックを掘れる。");
+      playTone(180, 0.05, "square");
+      return;
+    }
+    setMessage("黒い岩は硬すぎる。");
+    playTone(150, 0.05, "square");
+  }
+
+  function mineBlock() {
+    if (!state.running) {
+      startGame();
+      return;
+    }
+    if (state.paused) return;
+    const t = targetCell();
+    const tile = tileAt(t.x, t.y);
+    if (!isMineable(tile)) {
+      setMessage(tile === TILE.WATER || tile === TILE.LAVA ? "液体は掘れない。足場を置こう。" : "そこは掘れない。");
+      playTone(150, 0.06, "square");
+      return;
     }
 
-    // イベントリスナー
-    startButton.addEventListener('click', initGame);
-    restartButton.addEventListener('click', initGame);
+    setTile(t.x, t.y, TILE.EMPTY);
+    state.blocks += tile === TILE.WOOD ? 2 : 1;
+    state.moves++;
+    let gained = 50;
+    if (tile === TILE.ORE) {
+      state.ore++;
+      gained = 220;
+      setMessage(state.ore >= targetOre ? "鉱石がそろった。ゲートが光りだした！" : `鉱石ゲット。あと${targetOre - state.ore}こ。`);
+      burst(t.x, t.y, colors.oreGlow, 18);
+      playTone(720, 0.08, "triangle");
+      playTone(980, 0.12, "triangle", 0.06);
+    } else {
+      setMessage("ブロック素材を手に入れた。");
+      burst(t.x, t.y, tile === TILE.STONE ? colors.stone : colors.dirt, 10);
+      playTone(tile === TILE.STONE ? 260 : 310, 0.07, "square");
+    }
+    state.score += gained;
+    floatText(t.x, t.y, `+${gained}`, tile === TILE.ORE ? colors.oreGlow : "#5b3a24");
+    afterAction();
+  }
 
-    // ジャンプボタン
-    document.getElementById('jumpButton').addEventListener('click', () => {
-      if (!gameState.player.isJumping) {
-        gameState.player.velocityY = -10;
-        gameState.player.isJumping = true;
+  function placeBlock() {
+    if (!state.running) {
+      startGame();
+      return;
+    }
+    if (state.paused) return;
+    if (state.blocks <= 0) {
+      setMessage("置ける素材がない。近くの土や石を掘ろう。");
+      playTone(150, 0.07, "square");
+      return;
+    }
+    const t = targetCell();
+    const tile = tileAt(t.x, t.y);
+    if (tile !== TILE.WATER && tile !== TILE.LAVA) {
+      setMessage("水か溶岩の上に足場を置ける。");
+      playTone(190, 0.05, "sine");
+      return;
+    }
+
+    setTile(t.x, t.y, TILE.BRIDGE);
+    state.blocks--;
+    state.score += tile === TILE.LAVA ? 130 : 80;
+    state.moves++;
+    setMessage(tile === TILE.LAVA ? "熱い場所に足場を置いた！" : "足場ができた。渡れるぞ。");
+    burst(t.x, t.y, colors.bridge, 12);
+    playTone(420, 0.06, "triangle");
+    afterAction();
+  }
+
+  function afterAction() {
+    moveMobs();
+    checkMobHit();
+    saveBest();
+    updateHud();
+  }
+
+  function moveMobs() {
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    state.mobs.forEach(mob => {
+      const towardPlayer = Math.random() < 0.46;
+      let options = dirs.filter(([dx, dy]) => {
+        const nx = mob.x + dx;
+        const ny = mob.y + dy;
+        return isWalkable(tileAt(nx, ny)) && tileAt(nx, ny) !== TILE.PORTAL;
+      });
+      if (!options.length) return;
+      if (towardPlayer) {
+        options.sort((a, b) => {
+          const da = Math.abs(mob.x + a[0] - state.player.x) + Math.abs(mob.y + a[1] - state.player.y);
+          const db = Math.abs(mob.x + b[0] - state.player.x) + Math.abs(mob.y + b[1] - state.player.y);
+          return da - db;
+        });
+      } else {
+        options = options.sort(() => Math.random() - 0.5);
       }
+      const [dx, dy] = options[0];
+      mob.dx = dx;
+      mob.dy = dy;
+      mob.x += dx;
+      mob.y += dy;
     });
+  }
 
-    // ブロック破壊
-    document.getElementById('breakButton').addEventListener('click', () => {
-      console.log("ブロック破壊");
+  function checkMobHit() {
+    const hit = state.mobs.some(mob => mob.x === state.player.x && mob.y === state.player.y);
+    if (!hit) return;
+    state.hearts--;
+    state.player.hurtUntil = performance.now() + 900;
+    burst(state.player.x, state.player.y, colors.red, 18);
+    floatText(state.player.x, state.player.y, "-1", colors.red);
+    playTone(120, 0.14, "sawtooth");
+    if (state.hearts <= 0) {
+      gameOver();
+      return;
+    }
+    state.player.x = 1;
+    state.player.y = 1;
+    state.player.drawX = 1;
+    state.player.drawY = 1;
+    setMessage("ハートが減った。もう一度入り口から。");
+  }
+
+  function tryPortal() {
+    if (state.ore < targetOre) {
+      setMessage(`ゲートはまだ眠っている。鉱石あと${targetOre - state.ore}こ。`);
+      playTone(220, 0.08, "sine");
+      return;
+    }
+
+    state.score += Math.max(0, 600 - state.moves * 6) + state.hearts * 180;
+    saveBest();
+    if (state.level < maps.length - 1) {
+      showModal("ゲート突破！", `スコア ${state.score}。次の島は少し手ごわいです。`, [
+        { label: "次へ", className: "play", action: () => {
+          state.level++;
+          loadLevel(state.level);
+          hideModal();
+          setMessage("新しい島に到着。");
+        } }
+      ]);
+      playTone(650, 0.12, "triangle");
+      playTone(920, 0.18, "triangle", 0.08);
+      return;
+    }
+
+    state.running = false;
+    showModal("完全クリア！", `スコア ${state.score}。ベスト ${state.best}。ブロック使い、かなりいい感じです。`, [
+      { label: "もう一度", className: "play", action: startGame }
+    ]);
+    setMessage("クリア！");
+  }
+
+  function gameOver() {
+    state.running = false;
+    saveBest();
+    showModal("ゲームオーバー", `スコア ${state.score}。鉱石 ${state.ore}/${targetOre}。`, [
+      { label: "もう一度", className: "play", action: startGame }
+    ]);
+    setMessage("あそぶを押すと再スタート。");
+  }
+
+  function togglePause() {
+    if (!state.running) {
+      startGame();
+      return;
+    }
+    state.paused = !state.paused;
+    setMessage(state.paused ? "一時停止中" : "再開！");
+    updateHud();
+  }
+
+  function updateHud() {
+    el.ore.textContent = `${state.ore}/${targetOre}`;
+    el.block.textContent = state.blocks;
+    el.heart.textContent = "♥".repeat(Math.max(0, state.hearts)) || "0";
+    el.score.textContent = state.score;
+    el.best.textContent = `ベスト ${state.best}`;
+    el.progress.style.width = `${clamp(state.ore / targetOre, 0, 1) * 100}%`;
+    el.start.textContent = state.running ? (state.paused ? "つづき" : "一時停止") : "あそぶ";
+    el.status.textContent = state.ore >= targetOre ? "ゲートへ向かおう" : "鉱石を掘ってゲートを開けよう";
+    el.mission.textContent = state.ore >= targetOre ? "紫のゲートへ。" : "鉱石を3つ掘って、紫のゲートへ。";
+    el.tool.textContent = `向き: ${directionLabel()}`;
+  }
+
+  function directionLabel() {
+    if (state.player.dx === 1) return "右";
+    if (state.player.dx === -1) return "左";
+    if (state.player.dy === 1) return "下";
+    return "上";
+  }
+
+  function setMessage(text) {
+    el.message.textContent = text;
+  }
+
+  function saveBest() {
+    if (state.score <= state.best) return;
+    state.best = state.score;
+    localStorage.setItem("blockCraftRushBest", String(state.best));
+  }
+
+  function showModal(title, text, actions) {
+    el.modalTitle.textContent = title;
+    el.modalText.textContent = text;
+    el.modalActions.innerHTML = "";
+    actions.forEach(action => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `btn ${action.className || ""}`;
+      button.textContent = action.label;
+      button.addEventListener("click", action.action);
+      el.modalActions.appendChild(button);
     });
+    el.modal.classList.add("show");
+  }
 
-    // ブロック設置
-    document.getElementById('placeButton').addEventListener('click', () => {
-      console.log("ブロック設置");
-    });
+  function hideModal() {
+    el.modal.classList.remove("show");
+  }
 
-    // ジョイスティック
-    const joystick = document.getElementById('joystick');
-    let isDragging = false;
+  function draw(time) {
+    drawBackground(time);
+    drawGrid(time);
+    drawParticles(time);
+    drawFloatTexts();
+    requestAnimationFrame(draw);
+  }
 
-    joystick.addEventListener('mousedown', (e) => {
-      isDragging = true;
-      e.preventDefault();
-    });
+  function drawBackground(time) {
+    const w = canvas.clientWidth || 900;
+    const h = canvas.clientHeight || 500;
+    const grd = ctx.createLinearGradient(0, 0, 0, h);
+    grd.addColorStop(0, "#85dcff");
+    grd.addColorStop(0.48, "#d8f7ff");
+    grd.addColorStop(0.49, "#73c45b");
+    grd.addColorStop(1, "#4b934b");
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, w, h);
 
-    document.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      const rect = joystick.parentElement.getBoundingClientRect();
-      let x = e.clientX - rect.left - joystick.offsetWidth / 2;
-      let y = e.clientY - rect.top - joystick.offsetHeight / 2;
+    ctx.save();
+    ctx.globalAlpha = 0.34;
+    ctx.fillStyle = "#ffffff";
+    drawCloud(w * 0.2, h * 0.14, 54);
+    drawCloud(w * 0.78, h * 0.19, 64);
+    ctx.restore();
 
-      // 限界を設定
-      const maxDistance = rect.width / 2 - joystick.offsetWidth / 2;
-      const distance = Math.sqrt(x * x + y * y);
-      if (distance > maxDistance) {
-        x = (x / distance) * maxDistance;
-        y = (y / distance) * maxDistance;
+    ctx.save();
+    ctx.globalAlpha = 0.15;
+    ctx.fillStyle = "#1f5d31";
+    for (let i = 0; i < 18; i++) {
+      ctx.fillRect((i * 83) % w, h * 0.68 + (i % 4) * 26, 44, 5);
+    }
+    ctx.restore();
+  }
+
+  function drawCloud(x, y, s) {
+    ctx.beginPath();
+    ctx.arc(x, y, s * 0.34, 0, Math.PI * 2);
+    ctx.arc(x + s * 0.3, y - s * 0.09, s * 0.46, 0, Math.PI * 2);
+    ctx.arc(x + s * 0.7, y, s * 0.32, 0, Math.PI * 2);
+    ctx.rect(x - s * 0.12, y, s * 0.92, s * 0.25);
+    ctx.fill();
+  }
+
+  function drawGrid(time) {
+    for (let y = 0; y < state.height; y++) {
+      for (let x = 0; x < state.width; x++) {
+        drawTile(x, y, tileAt(x, y), time);
       }
+    }
+    drawTargetOutline();
+    state.mobs.forEach(mob => drawMob(mob, time));
+    drawPlayer(time);
+  }
 
-      joystick.style.left = `${x}px`;
-      joystick.style.top = `${y}px`;
+  function drawTile(x, y, tile, time) {
+    const s = state.tileSize;
+    const px = state.offsetX + x * s;
+    const py = state.offsetY + y * s;
+    drawBlockBase(px, py, s, colors.grass, colors.grassDark);
+
+    if (tile === TILE.EMPTY) {
+      drawGrassDetail(px, py, s, x, y);
+      return;
+    }
+    if (tile === TILE.DIRT) drawSolidBlock(px, py, s, colors.dirt, colors.dirtDark, "dirt");
+    if (tile === TILE.STONE) drawSolidBlock(px, py, s, colors.stone, colors.stoneDark, "stone");
+    if (tile === TILE.ORE) drawSolidBlock(px, py, s, colors.ore, colors.stoneDark, "ore", time);
+    if (tile === TILE.WATER) drawLiquid(px, py, s, colors.water, colors.waterDark, time, x + y);
+    if (tile === TILE.LAVA) drawLiquid(px, py, s, colors.lava, colors.lavaDark, time, x * 2 + y);
+    if (tile === TILE.BRIDGE) drawBridge(px, py, s);
+    if (tile === TILE.BEDROCK) drawSolidBlock(px, py, s, colors.bedrock, "#111a20", "bedrock");
+    if (tile === TILE.PORTAL) drawPortal(px, py, s, time);
+    if (tile === TILE.WOOD) drawSolidBlock(px, py, s, colors.wood, colors.woodDark, "wood");
+  }
+
+  function drawBlockBase(px, py, s, top, side) {
+    ctx.fillStyle = colors.shadow;
+    ctx.fillRect(px + 4, py + 6, s - 4, s - 4);
+    ctx.fillStyle = side;
+    ctx.fillRect(px + 2, py + 8, s - 4, s - 4);
+    ctx.fillStyle = top;
+    ctx.fillRect(px + 2, py + 2, s - 4, s - 8);
+    ctx.strokeStyle = colors.line;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(px + 2, py + 2, s - 4, s - 4);
+  }
+
+  function drawSolidBlock(px, py, s, top, side, type, time = 0) {
+    ctx.fillStyle = colors.shadow;
+    ctx.fillRect(px + 5, py + 7, s - 6, s - 5);
+    ctx.fillStyle = side;
+    ctx.fillRect(px + 4, py + 12, s - 8, s - 9);
+    ctx.fillStyle = top;
+    ctx.fillRect(px + 4, py + 4, s - 8, s - 12);
+    ctx.strokeStyle = colors.line;
+    ctx.lineWidth = 1.7;
+    ctx.strokeRect(px + 4, py + 4, s - 8, s - 8);
+
+    if (type === "dirt") {
+      dot(px + s * 0.28, py + s * 0.33, s * 0.11, "#68402d");
+      dot(px + s * 0.62, py + s * 0.48, s * 0.08, "#b77a4f");
+    }
+    if (type === "stone" || type === "bedrock") {
+      ctx.fillStyle = "rgba(255,255,255,0.25)";
+      ctx.fillRect(px + s * 0.22, py + s * 0.22, s * 0.22, 3);
+      ctx.fillRect(px + s * 0.55, py + s * 0.46, s * 0.2, 3);
+    }
+    if (type === "ore") {
+      const glow = 0.5 + Math.sin(time * 0.006) * 0.22;
+      ctx.fillStyle = colors.oreGlow;
+      ctx.globalAlpha = glow;
+      ctx.fillRect(px + s * 0.22, py + s * 0.28, s * 0.16, s * 0.16);
+      ctx.fillRect(px + s * 0.56, py + s * 0.44, s * 0.14, s * 0.14);
+      ctx.globalAlpha = 1;
+    }
+    if (type === "wood") {
+      ctx.strokeStyle = "rgba(64,34,18,0.45)";
+      ctx.beginPath();
+      ctx.moveTo(px + s * 0.22, py + s * 0.22);
+      ctx.lineTo(px + s * 0.78, py + s * 0.22);
+      ctx.moveTo(px + s * 0.28, py + s * 0.44);
+      ctx.lineTo(px + s * 0.74, py + s * 0.44);
+      ctx.stroke();
+    }
+  }
+
+  function drawGrassDetail(px, py, s, x, y) {
+    ctx.save();
+    ctx.globalAlpha = 0.22;
+    ctx.strokeStyle = "#d8ffd5";
+    ctx.beginPath();
+    ctx.moveTo(px + 8, py + 8 + (x % 2) * 2);
+    ctx.lineTo(px + s - 12, py + 8 + (y % 3) * 2);
+    ctx.moveTo(px + 12, py + s - 15);
+    ctx.lineTo(px + s - 12, py + s - 17);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawLiquid(px, py, s, top, side, time, phase) {
+    drawBlockBase(px, py, s, side, side);
+    ctx.save();
+    ctx.fillStyle = top;
+    ctx.globalAlpha = 0.86;
+    ctx.fillRect(px + 4, py + 4, s - 8, s - 12);
+    ctx.globalAlpha = 0.45 + Math.sin(time * 0.006 + phase) * 0.14;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(px + s * 0.2, py + s * 0.38);
+    ctx.quadraticCurveTo(px + s * 0.5, py + s * 0.25, px + s * 0.8, py + s * 0.38);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawBridge(px, py, s) {
+    drawBlockBase(px, py, s, colors.bridge, colors.bridgeDark);
+    ctx.strokeStyle = "rgba(71,42,24,0.55)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(px + s * 0.25, py + 7);
+    ctx.lineTo(px + s * 0.25, py + s - 9);
+    ctx.moveTo(px + s * 0.5, py + 7);
+    ctx.lineTo(px + s * 0.5, py + s - 9);
+    ctx.moveTo(px + s * 0.75, py + 7);
+    ctx.lineTo(px + s * 0.75, py + s - 9);
+    ctx.stroke();
+  }
+
+  function drawPortal(px, py, s, time) {
+    drawBlockBase(px, py, s, state.ore >= targetOre ? colors.portal : "#697077", state.ore >= targetOre ? colors.portalDark : "#3e474e");
+    const active = state.ore >= targetOre;
+    ctx.save();
+    ctx.globalAlpha = active ? 0.72 + Math.sin(time * 0.007) * 0.14 : 0.28;
+    ctx.fillStyle = active ? "#8ff0ff" : "#b7c1c5";
+    ctx.fillRect(px + s * 0.27, py + s * 0.12, s * 0.46, s * 0.54);
+    ctx.strokeStyle = active ? "#e8fbff" : "#d2d8da";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(px + s * 0.27, py + s * 0.12, s * 0.46, s * 0.54);
+    ctx.restore();
+  }
+
+  function drawTargetOutline() {
+    const t = targetCell();
+    if (t.x < 0 || t.y < 0 || t.x >= state.width || t.y >= state.height) return;
+    const s = state.tileSize;
+    const px = state.offsetX + t.x * s;
+    const py = state.offsetY + t.y * s;
+    ctx.save();
+    ctx.strokeStyle = "#fff1a0";
+    ctx.lineWidth = 3;
+    ctx.setLineDash([6, 4]);
+    ctx.strokeRect(px + 5, py + 5, s - 10, s - 10);
+    ctx.restore();
+  }
+
+  function drawPlayer(time) {
+    const p = state.player;
+    p.drawX += (p.x - p.drawX) * 0.28;
+    p.drawY += (p.y - p.drawY) * 0.28;
+    p.step *= 0.86;
+    const s = state.tileSize;
+    const x = state.offsetX + p.drawX * s;
+    const y = state.offsetY + p.drawY * s;
+    const flash = time < p.hurtUntil && Math.floor(time / 80) % 2 === 0;
+    ctx.save();
+    ctx.globalAlpha = flash ? 0.48 : 1;
+    const bob = Math.sin(time * 0.014) * 2 + p.step * 4;
+    drawCharacter(x + s * 0.22, y + s * 0.1 - bob, s * 0.56, colors.player, colors.playerDark);
+    drawPickaxe(x, y, s);
+    ctx.restore();
+  }
+
+  function drawMob(mob, time) {
+    mob.drawX += (mob.x - mob.drawX) * 0.2;
+    mob.drawY += (mob.y - mob.drawY) * 0.2;
+    const s = state.tileSize;
+    const x = state.offsetX + mob.drawX * s + s * 0.2;
+    const y = state.offsetY + mob.drawY * s + s * 0.16 + Math.sin(time * 0.008 + mob.mood) * 2;
+    drawCharacter(x, y, s * 0.58, colors.mob, colors.mobDark);
+    ctx.fillStyle = "#102a18";
+    ctx.fillRect(x + s * 0.16, y + s * 0.18, s * 0.09, s * 0.08);
+    ctx.fillRect(x + s * 0.34, y + s * 0.18, s * 0.09, s * 0.08);
+  }
+
+  function drawCharacter(x, y, size, top, side) {
+    ctx.fillStyle = colors.shadow;
+    ctx.fillRect(x + size * 0.06, y + size * 0.86, size * 0.92, size * 0.2);
+    ctx.fillStyle = side;
+    ctx.fillRect(x + size * 0.14, y + size * 0.24, size * 0.78, size * 0.66);
+    ctx.fillStyle = top;
+    ctx.fillRect(x + size * 0.08, y + size * 0.08, size * 0.78, size * 0.68);
+    ctx.strokeStyle = colors.line;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(x + size * 0.08, y + size * 0.08, size * 0.78, size * 0.68);
+    ctx.fillStyle = "#f7fbff";
+    ctx.fillRect(x + size * 0.24, y + size * 0.26, size * 0.1, size * 0.1);
+    ctx.fillRect(x + size * 0.52, y + size * 0.26, size * 0.1, size * 0.1);
+  }
+
+  function drawPickaxe(x, y, s) {
+    const cx = x + s * 0.5 + state.player.dx * s * 0.24;
+    const cy = y + s * 0.45 + state.player.dy * s * 0.24;
+    ctx.save();
+    ctx.translate(cx, cy);
+    const angle = Math.atan2(state.player.dy, state.player.dx);
+    ctx.rotate(angle + Math.PI / 4);
+    ctx.strokeStyle = "#6b4027";
+    ctx.lineWidth = Math.max(2, s * 0.08);
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.16, s * 0.2);
+    ctx.lineTo(s * 0.18, -s * 0.18);
+    ctx.stroke();
+    ctx.strokeStyle = "#d7e1e6";
+    ctx.lineWidth = Math.max(2, s * 0.07);
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.18, -s * 0.18);
+    ctx.lineTo(s * 0.18, -s * 0.18);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function dot(x, y, r, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, r, r);
+  }
+
+  function burst(x, y, color, count) {
+    const center = cellCenter(x, y);
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1 + Math.random() * 2.2;
+      state.particles.push({
+        x: center.x,
+        y: center.y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 0.8,
+        born: performance.now(),
+        life: 480 + Math.random() * 280,
+        color
+      });
+    }
+  }
+
+  function drawParticles(time) {
+    state.particles = state.particles.filter(p => time - p.born < p.life);
+    state.particles.forEach(p => {
+      const age = (time - p.born) / p.life;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.08;
+      ctx.save();
+      ctx.globalAlpha = 1 - age;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x, p.y, 5, 5);
+      ctx.restore();
     });
+  }
 
-    document.addEventListener('mouseup', () => {
-      isDragging = false;
-      joystick.style.left = '0px';
-      joystick.style.top = '0px';
+  function floatText(x, y, text, color) {
+    const center = cellCenter(x, y);
+    state.floatTexts.push({ x: center.x, y: center.y, text, color, born: performance.now(), life: 820 });
+  }
+
+  function drawFloatTexts() {
+    const now = performance.now();
+    state.floatTexts = state.floatTexts.filter(item => now - item.born < item.life);
+    state.floatTexts.forEach(item => {
+      const age = (now - item.born) / item.life;
+      ctx.save();
+      ctx.globalAlpha = 1 - age;
+      ctx.font = "900 18px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.strokeStyle = "rgba(255,255,255,0.9)";
+      ctx.lineWidth = 4;
+      ctx.strokeText(item.text, item.x, item.y - age * 32);
+      ctx.fillStyle = item.color;
+      ctx.fillText(item.text, item.x, item.y - age * 32);
+      ctx.restore();
     });
+  }
 
-    // 初期化
-    console.log("ゲーム初期化完了");
-  </script>
+  function ensureAudio() {
+    if (state.muted) return null;
+    if (!state.audio) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return null;
+      state.audio = new AudioContext();
+    }
+    if (state.audio.state === "suspended") state.audio.resume();
+    return state.audio;
+  }
+
+  function playTone(freq, duration, type = "sine", delay = 0) {
+    const audio = ensureAudio();
+    if (!audio) return;
+    const start = audio.currentTime + delay;
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.12, start + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    osc.connect(gain);
+    gain.connect(audio.destination);
+    osc.start(start);
+    osc.stop(start + duration + 0.03);
+  }
+
+  function handleKey(event) {
+    const key = event.key.toLowerCase();
+    const moves = {
+      arrowup: [0, -1],
+      w: [0, -1],
+      arrowdown: [0, 1],
+      s: [0, 1],
+      arrowleft: [-1, 0],
+      a: [-1, 0],
+      arrowright: [1, 0],
+      d: [1, 0]
+    };
+    if (moves[key]) {
+      event.preventDefault();
+      move(moves[key][0], moves[key][1]);
+    } else if (key === " " || key === "e") {
+      event.preventDefault();
+      mineBlock();
+    } else if (key === "q" || key === "shift") {
+      event.preventDefault();
+      placeBlock();
+    } else if (key === "enter") {
+      event.preventDefault();
+      togglePause();
+    } else if (key === "escape" && state.running) {
+      event.preventDefault();
+      togglePause();
+    }
+  }
+
+  document.querySelectorAll("[data-move]").forEach(button => {
+    button.addEventListener("click", () => {
+      const [dx, dy] = button.dataset.move.split(",").map(Number);
+      move(dx, dy);
+    });
+  });
+
+  el.start.addEventListener("click", togglePause);
+  el.mine.addEventListener("click", mineBlock);
+  el.place.addEventListener("click", placeBlock);
+  el.mute.addEventListener("click", () => {
+    state.muted = !state.muted;
+    el.mute.textContent = state.muted ? "×" : "♪";
+    el.mute.setAttribute("aria-label", state.muted ? "音を出す" : "音を消す");
+  });
+  document.addEventListener("keydown", handleKey, { passive: false });
+  window.addEventListener("resize", resizeCanvas);
+
+  showModal("ブロッククラフト・ラッシュ", "掘ったブロックを素材にして、水や溶岩に足場を置けます。鉱石を3つ集めて、紫のゲートへ。", [
+    { label: "あそぶ", className: "play", action: startGame }
+  ]);
+
+  loadLevel(0);
+  resizeCanvas();
+  requestAnimationFrame(draw);
+})();
+</script>
 </body>
 </html>
