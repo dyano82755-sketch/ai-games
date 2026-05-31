@@ -1,438 +1,1450 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ロードランナー</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            touch-action: manipulation;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ロードランナー</title>
+<style>
+  :root {
+    --ink: #f6e8b4;
+    --muted: #b7a878;
+    --bg: #050910;
+    --panel: #111827;
+    --panel-2: #1d2b3a;
+    --line: #f0d878;
+    --gold: #f6c945;
+    --red: #df5142;
+    --blue: #45a4e8;
+    --green: #5cc66e;
+    --shadow: rgba(0, 0, 0, 0.42);
+  }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(to bottom, #1a2980, #26d0ce);
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-        }
+  * {
+    box-sizing: border-box;
+  }
 
-        #gameContainer {
-            width: 100%;
-            max-width: 500px;
-            height: 80vh;
-            position: relative;
-            overflow: hidden;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+  }
 
-        .screen {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            transition: opacity 0.3s;
-        }
+  body {
+    min-height: 100dvh;
+    overflow: hidden;
+    color: var(--ink);
+    background:
+      linear-gradient(180deg, #071224 0 62%, #100d18 62%),
+      var(--bg);
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Hiragino Sans", "Yu Gothic", monospace;
+  }
 
-        #startScreen {
-            z-index: 10;
-        }
+  button {
+    font: inherit;
+    touch-action: manipulation;
+  }
 
-        #gameOverScreen {
-            z-index: 20;
-            display: none;
-        }
+  .app {
+    width: min(1180px, 100%);
+    height: 100dvh;
+    min-height: 100dvh;
+    margin: 0 auto;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 8px;
+    padding: 8px;
+  }
 
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-        }
+  .hud,
+  .screen,
+  .controls,
+  .modal-card {
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    box-shadow: 0 10px 28px var(--shadow);
+  }
 
-        h2 {
-            font-size: 2rem;
-            margin-bottom: 20px;
-        }
+  .hud {
+    min-height: 70px;
+    display: grid;
+    grid-template-columns: minmax(250px, 1fr) repeat(6, auto);
+    gap: 8px;
+    align-items: center;
+    padding: 8px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
+      var(--panel);
+  }
 
-        p {
-            font-size: 1.2rem;
-            margin-bottom: 15px;
-            line-height: 1.6;
-        }
+  .brand {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
-        .btn {
-            background: linear-gradient(to bottom, #ff8c00, #ff4500);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            border-radius: 50px;
-            cursor: pointer;
-            margin: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            transition: all 0.2s;
-        }
+  .sprite-mark {
+    width: 50px;
+    height: 50px;
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 2px;
+    padding: 4px;
+    border: 2px solid var(--line);
+    background: #050910;
+  }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-        }
+  .sprite-mark span {
+    background: var(--gold);
+  }
 
-        .btn:active {
-            transform: translateY(1px);
-        }
+  .sprite-mark span:nth-child(1),
+  .sprite-mark span:nth-child(2),
+  .sprite-mark span:nth-child(3),
+  .sprite-mark span:nth-child(6),
+  .sprite-mark span:nth-child(8),
+  .sprite-mark span:nth-child(11),
+  .sprite-mark span:nth-child(12),
+  .sprite-mark span:nth-child(13),
+  .sprite-mark span:nth-child(17),
+  .sprite-mark span:nth-child(22),
+  .sprite-mark span:nth-child(23),
+  .sprite-mark span:nth-child(24) {
+    background: var(--blue);
+  }
 
-        #gameArea {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            overflow: hidden;
-        }
+  .brand-title {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+  }
 
-        #road {
-            position: absolute;
-            width: 100%;
-            height: 80%;
-            bottom: 0;
-            background: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+  .brand-title strong {
+    font-size: 1.16rem;
+    line-height: 1.08;
+  }
 
-        #road::before {
-            content: "";
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: repeating-linear-gradient(
-                90deg,
-                #333,
-                #333 20px,
-                #555 20px,
-                #555 40px
-            );
-            animation: roadMove 0.5s linear infinite;
-        }
+  .brand-title span {
+    max-width: 100%;
+    color: var(--muted);
+    font-size: 0.82rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
-        @keyframes roadMove {
-            0% { background-position: 0 0; }
-            100% { background-position: 40px 0; }
-        }
+  .stat {
+    min-width: 78px;
+    min-height: 46px;
+    display: grid;
+    align-content: center;
+    gap: 2px;
+    padding: 5px 8px;
+    text-align: center;
+    border: 1px solid rgba(240, 216, 120, 0.34);
+    border-radius: 8px;
+    background: rgba(5, 9, 16, 0.55);
+  }
 
-        #player {
-            position: absolute;
-            bottom: 10%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 40px;
-            height: 60px;
-            z-index: 5;
-        }
+  .stat span {
+    color: var(--muted);
+    font-size: 0.64rem;
+    line-height: 1;
+  }
 
-        #player::before {
-            content: "🚶";
-            font-size: 60px;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
+  .stat b {
+    font-size: 1rem;
+    line-height: 1.1;
+  }
 
-        .obstacle {
-            position: absolute;
-            bottom: 10%;
-            width: 40px;
-            height: 60px;
-            z-index: 4;
-        }
+  .btn,
+  .pad-btn,
+  .dig-btn {
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    background: linear-gradient(180deg, #2c3e52, #162334);
+    cursor: pointer;
+    font-weight: 900;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.52);
+  }
 
-        .obstacle::before {
-            content: "🚗";
-            font-size: 60px;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
+  .btn {
+    min-height: 44px;
+    padding: 0 14px;
+  }
 
-        #score {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            font-size: 1.5rem;
-            z-index: 3;
-        }
+  .btn.icon {
+    width: 46px;
+    padding: 0;
+  }
 
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            z-index: 6;
-        }
+  .btn.play {
+    color: #05100a;
+    background: linear-gradient(180deg, #86e18d, #42a953);
+  }
 
-        .control-btn {
-            width: 70px;
-            height: 70px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 2rem;
-            cursor: pointer;
-            user-select: none;
-            backdrop-filter: blur(5px);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
+  .btn:active,
+  .pad-btn:active,
+  .dig-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.52);
+  }
 
-        .control-btn:active {
-            background: rgba(255, 255, 255, 0.4);
-        }
+  .screen {
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 50% 30%, rgba(60, 89, 126, 0.28), transparent 48%),
+      #050910;
+  }
 
-        #instructions {
-            background: rgba(0, 0, 0, 0.5);
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
+  #gameCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 340px;
+    image-rendering: pixelated;
+  }
 
-        @media (max-width: 500px) {
-            h1 {
-                font-size: 2rem;
-            }
-            
-            h2 {
-                font-size: 1.5rem;
-            }
-            
-            .btn {
-                padding: 12px 25px;
-                font-size: 1rem;
-            }
-            
-            .control-btn {
-                width: 60px;
-                height: 60px;
-                font-size: 1.5rem;
-            }
-        }
-    </style>
+  .message {
+    position: absolute;
+    left: 50%;
+    bottom: 10px;
+    width: min(720px, calc(100% - 24px));
+    min-height: 40px;
+    transform: translateX(-50%);
+    display: grid;
+    place-items: center;
+    padding: 7px 12px;
+    border: 2px solid rgba(240, 216, 120, 0.82);
+    border-radius: 8px;
+    background: rgba(5, 9, 16, 0.86);
+    text-align: center;
+    font-weight: 900;
+  }
+
+  .controls {
+    min-height: 118px;
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) auto auto minmax(180px, 1fr);
+    gap: 10px;
+    align-items: center;
+    padding: 8px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
+      var(--panel-2);
+  }
+
+  .mini-panel {
+    min-width: 0;
+    display: grid;
+    gap: 5px;
+    font-weight: 800;
+    line-height: 1.28;
+  }
+
+  .mini-panel small {
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+
+  .dpad {
+    width: 174px;
+    height: 96px;
+    display: grid;
+    grid-template-columns: repeat(3, 54px);
+    grid-template-rows: repeat(2, 44px);
+    gap: 6px;
+  }
+
+  .pad-btn {
+    min-width: 0;
+    min-height: 0;
+    font-size: 1.18rem;
+  }
+
+  .pad-btn.up {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .pad-btn.left {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .pad-btn.down {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .pad-btn.right {
+    grid-column: 3;
+    grid-row: 2;
+  }
+
+  .dig-tools {
+    display: grid;
+    grid-template-columns: repeat(2, 86px);
+    gap: 8px;
+  }
+
+  .dig-btn {
+    min-height: 48px;
+    padding: 0 6px;
+    color: #04100a;
+    background: linear-gradient(180deg, #ffd875, #cf8a22);
+  }
+
+  .bar-wrap {
+    justify-self: end;
+    width: min(260px, 100%);
+    display: grid;
+    gap: 6px;
+  }
+
+  .bar {
+    width: 100%;
+    height: 16px;
+    overflow: hidden;
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    background: rgba(5, 9, 16, 0.66);
+  }
+
+  .bar span {
+    display: block;
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), #fff2a6);
+    transition: width 140ms linear;
+  }
+
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: none;
+    place-items: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.62);
+  }
+
+  .modal.show {
+    display: grid;
+  }
+
+  .modal-card {
+    width: min(580px, 100%);
+    padding: 18px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
+      var(--panel);
+    text-align: center;
+  }
+
+  .modal-card h1 {
+    margin: 0;
+    font-size: 1.85rem;
+    line-height: 1.1;
+  }
+
+  .modal-card p {
+    margin: 10px auto 0;
+    max-width: 500px;
+    color: #d8c889;
+    line-height: 1.55;
+    font-weight: 720;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  @media (max-width: 940px) {
+    body {
+      overflow: auto;
+    }
+
+    .app {
+      height: auto;
+      min-height: 100dvh;
+      grid-template-rows: auto minmax(420px, 1fr) auto;
+    }
+
+    .hud {
+      grid-template-columns: minmax(210px, 1fr) repeat(4, auto);
+    }
+
+    .hud .stat:nth-of-type(n+4) {
+      display: none;
+    }
+
+    .controls {
+      grid-template-columns: 1fr auto auto;
+    }
+
+    .bar-wrap {
+      grid-column: 1 / -1;
+      width: 100%;
+      justify-self: stretch;
+    }
+  }
+
+  @media (max-width: 590px) {
+    .app {
+      gap: 7px;
+      padding: 7px;
+      grid-template-rows: auto minmax(390px, 1fr) auto;
+    }
+
+    .hud {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      min-height: 0;
+    }
+
+    .brand {
+      grid-column: 1 / -1;
+    }
+
+    .sprite-mark {
+      width: 42px;
+      height: 42px;
+    }
+
+    .brand-title strong {
+      font-size: 1.02rem;
+    }
+
+    .brand-title span {
+      font-size: 0.74rem;
+    }
+
+    .stat {
+      min-width: 0;
+      min-height: 38px;
+      padding: 4px 3px;
+    }
+
+    .stat span {
+      font-size: 0.58rem;
+    }
+
+    .stat b {
+      font-size: 0.82rem;
+    }
+
+    .btn {
+      min-height: 38px;
+      padding: 0 8px;
+      font-size: 0.84rem;
+    }
+
+    .btn.icon {
+      width: 40px;
+    }
+
+    .controls {
+      grid-template-columns: 1fr;
+      min-height: 0;
+      gap: 8px;
+    }
+
+    .mini-panel {
+      display: none;
+    }
+
+    .dpad {
+      justify-self: center;
+      width: 168px;
+      height: 92px;
+      grid-template-columns: repeat(3, 52px);
+      grid-template-rows: repeat(2, 42px);
+    }
+
+    .dig-tools {
+      justify-self: center;
+      grid-template-columns: repeat(2, 84px);
+    }
+
+    .dig-btn {
+      min-height: 44px;
+      font-size: 0.9rem;
+    }
+
+    .message {
+      bottom: 8px;
+      min-height: 36px;
+      padding: 6px 8px;
+      font-size: 0.82rem;
+    }
+
+    .modal-card h1 {
+      font-size: 1.44rem;
+    }
+  }
+</style>
 </head>
 <body>
-    <div id="gameContainer">
-        <div id="startScreen" class="screen">
-            <h1>🏃‍♂️ ロードランナー 🏃‍♀️</h1>
-            <p>スイッチを押して走り続けよう！</p>
-            <p>障害物を避けながらスコアを稼ごう！</p>
-            <div id="instructions">
-                <p>📱 タッチ操作で左右移動</p>
-                <p>🖱️ マウスでも操作可能</p>
-            </div>
-            <button id="startBtn" class="btn">スタート</button>
-        </div>
-
-        <div id="gameOverScreen" class="screen">
-            <h2>ゲームオーバー</h2>
-            <p id="finalScore">スコア: 0</p>
-            <button id="restartBtn" class="btn">リスタート</button>
-        </div>
-
-        <div id="gameArea">
-            <div id="score">0</div>
-            <div id="road"></div>
-            <div id="player"></div>
-            <div id="controls">
-                <div class="control-btn" id="leftBtn">⬅️</div>
-                <div class="control-btn" id="rightBtn">➡️</div>
-            </div>
-        </div>
+<div class="app">
+  <header class="hud">
+    <div class="brand">
+      <div class="sprite-mark" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="brand-title">
+        <strong>レトロ・ゴールドランナー</strong>
+        <span id="statusText">金塊を集め、穴を掘って逃げろ</span>
+      </div>
     </div>
+    <div class="stat"><span>LEVEL</span><b id="levelText">1</b></div>
+    <div class="stat"><span>GOLD</span><b id="goldText">0/0</b></div>
+    <div class="stat"><span>LIFE</span><b id="lifeText">3</b></div>
+    <div class="stat"><span>SCORE</span><b id="scoreText">0</b></div>
+    <button class="btn icon" id="muteBtn" type="button" aria-label="音を切り替え">♪</button>
+    <button class="btn play" id="startBtn" type="button">START</button>
+  </header>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // ゲーム状態
-            let gameState = 'start'; // 'start', 'playing', 'gameover'
-            let score = 0;
-            let playerX = 50;
-            let obstacles = [];
-            let gameSpeed = 2;
-            let gameLoop;
-            let obstacleInterval;
-            
-            // 要素取得
-            const startScreen = document.getElementById('startScreen');
-            const gameOverScreen = document.getElementById('gameOverScreen');
-            const startBtn = document.getElementById('startBtn');
-            const restartBtn = document.getElementById('restartBtn');
-            const gameArea = document.getElementById('gameArea');
-            const player = document.getElementById('player');
-            const scoreElement = document.getElementById('score');
-            const leftBtn = document.getElementById('leftBtn');
-            const rightBtn = document.getElementById('rightBtn');
-            const road = document.getElementById('road');
-            
-            // ゲーム開始
-            startBtn.addEventListener('click', startGame);
-            restartBtn.addEventListener('click', startGame);
-            
-            // ボタン操作
-            leftBtn.addEventListener('click', () => movePlayer(-1));
-            rightBtn.addEventListener('click', () => movePlayer(1));
-            
-            // タッチ操作
-            let touchStartX = 0;
-            gameArea.addEventListener('touchstart', (e) => {
-                touchStartX = e.touches[0].clientX;
-                e.preventDefault();
-            });
-            
-            gameArea.addEventListener('touchmove', (e) => {
-                if (gameState !== 'playing') return;
-                const touchX = e.touches[0].clientX;
-                const diff = touchX - touchStartX;
-                
-                if (Math.abs(diff) > 20) {
-                    if (diff > 0) {
-                        movePlayer(1);
-                    } else {
-                        movePlayer(-1);
-                    }
-                    touchStartX = touchX;
-                }
-                e.preventDefault();
-            });
-            
-            // マウス操作
-            gameArea.addEventListener('mousedown', (e) => {
-                if (gameState !== 'playing') return;
-                const rect = gameArea.getBoundingClientRect();
-                const mouseX = e.clientX - rect.left;
-                const centerX = rect.width / 2;
-                
-                if (mouseX < centerX) {
-                    movePlayer(-1);
-                } else {
-                    movePlayer(1);
-                }
-            });
-            
-            function startGame() {
-                gameState = 'playing';
-                score = 0;
-                playerX = 50;
-                obstacles = [];
-                gameSpeed = 2;
-                
-                startScreen.style.display = 'none';
-                gameOverScreen.style.display = 'none';
-                scoreElement.textContent = score;
-                player.style.left = '50%';
-                
-                // 障害物を削除
-                document.querySelectorAll('.obstacle').forEach(obs => obs.remove());
-                
-                // ゲームループ開始
-                if (gameLoop) clearInterval(gameLoop);
-                if (obstacleInterval) clearInterval(obstacleInterval);
-                
-                gameLoop = setInterval(updateGame, 20);
-                obstacleInterval = setInterval(createObstacle, 1000);
-            }
-            
-            function movePlayer(direction) {
-                if (gameState !== 'playing') return;
-                
-                playerX += direction * 5;
-                playerX = Math.max(5, Math.min(95, playerX));
-                player.style.left = playerX + '%';
-            }
-            
-            function createObstacle() {
-                if (gameState !== 'playing') return;
-                
-                const obstacle = document.createElement('div');
-                obstacle.className = 'obstacle';
-                obstacle.style.left = Math.random() * 90 + 5 + '%';
-                gameArea.appendChild(obstacle);
-                obstacles.push({
-                    element: obstacle,
-                    x: parseFloat(obstacle.style.left),
-                    y: 0
-                });
-            }
-            
-            function updateGame() {
-                if (gameState !== 'playing') return;
-                
-                // スコア更新
-                score += 1;
-                scoreElement.textContent = score;
-                
-                // 障害物移動
-                obstacles.forEach((obs, index) => {
-                    const currentY = obs.y + gameSpeed;
-                    obs.y = currentY;
-                    obs.element.style.bottom = currentY + '%';
-                    
-                    // 画面外に出たら削除
-                    if (currentY > 100) {
-                        obs.element.remove();
-                        obstacles.splice(index, 1);
-                    }
-                });
-                
-                // 衝突判定
-                checkCollision();
-                
-                // スピードアップ
-                if (score % 500 === 0) {
-                    gameSpeed += 0.1;
-                }
-            }
-            
-            function checkCollision() {
-                const playerRect = player.getBoundingClientRect();
-                const playerLeft = playerX;
-                const playerRight = playerX + 5;
-                
-                for (let obs of obstacles) {
-                    const obsRect = obs.element.getBoundingClientRect();
-                    const obsLeft = parseFloat(obs.element.style.left) / 100 * 500;
-                    const obsRight = obsLeft + 40;
-                    
-                    if (playerLeft < obsRight && playerRight > obsLeft) {
-                        if (playerRect.bottom > obsRect.top && playerRect.top < obsRect.bottom) {
-                            gameOver();
-                            return;
-                        }
-                    }
-                }
-            }
-            
-            function gameOver() {
-                gameState = 'gameover';
-                clearInterval(gameLoop);
-                clearInterval(obstacleInterval);
-                
-                document.getElementById('finalScore').textContent = 'スコア: ' + score;
-                gameOverScreen.style.display = 'flex';
-            }
-        });
-    </script>
+  <main class="screen" aria-label="レトロなランナーゲーム画面">
+    <canvas id="gameCanvas"></canvas>
+    <div class="message" id="messageText">STARTを押して開始</div>
+  </main>
+
+  <footer class="controls">
+    <div class="mini-panel">
+      <b>ミッション</b>
+      <small id="missionText">金塊を全部集めると脱出はしごが出ます。</small>
+    </div>
+    <div class="dpad" aria-label="移動ボタン">
+      <button class="pad-btn up" type="button" data-move="up" aria-label="上へ">▲</button>
+      <button class="pad-btn left" type="button" data-move="left" aria-label="左へ">◀</button>
+      <button class="pad-btn down" type="button" data-move="down" aria-label="下へ">▼</button>
+      <button class="pad-btn right" type="button" data-move="right" aria-label="右へ">▶</button>
+    </div>
+    <div class="dig-tools" aria-label="穴掘りボタン">
+      <button class="dig-btn" id="digLeftBtn" type="button">左を掘る</button>
+      <button class="dig-btn" id="digRightBtn" type="button">右を掘る</button>
+    </div>
+    <div class="bar-wrap">
+      <div class="mini-panel">
+        <b id="toolText">Z/X: 穴掘り</b>
+        <small id="bestText">BEST 0</small>
+      </div>
+      <div class="bar" aria-label="金塊回収率"><span id="progressBar"></span></div>
+    </div>
+  </footer>
+</div>
+
+<div class="modal show" id="modal">
+  <div class="modal-card">
+    <h1 id="modalTitle">レトロ・ゴールドランナー</h1>
+    <p id="modalText">金塊を全部集めると脱出はしごが現れます。敵をかわし、左右の足元に穴を掘って道を作りましょう。</p>
+    <div class="modal-actions" id="modalActions"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const TILE = {
+    EMPTY: 0,
+    BRICK: 1,
+    SOLID: 2,
+    LADDER: 3,
+    ROPE: 4,
+    ESCAPE: 5
+  };
+
+  const DIR = {
+    left: [-1, 0],
+    right: [1, 0],
+    up: [0, -1],
+    down: [0, 1]
+  };
+
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+  const el = {
+    level: document.getElementById("levelText"),
+    gold: document.getElementById("goldText"),
+    life: document.getElementById("lifeText"),
+    score: document.getElementById("scoreText"),
+    best: document.getElementById("bestText"),
+    progress: document.getElementById("progressBar"),
+    status: document.getElementById("statusText"),
+    message: document.getElementById("messageText"),
+    mission: document.getElementById("missionText"),
+    tool: document.getElementById("toolText"),
+    start: document.getElementById("startBtn"),
+    mute: document.getElementById("muteBtn"),
+    digLeft: document.getElementById("digLeftBtn"),
+    digRight: document.getElementById("digRightBtn"),
+    modal: document.getElementById("modal"),
+    modalTitle: document.getElementById("modalTitle"),
+    modalText: document.getElementById("modalText"),
+    modalActions: document.getElementById("modalActions")
+  };
+
+  const levels = [
+    [
+      "########################",
+      "#P    G     H      G E#",
+      "# BBBBBBB  H  BBBBBBB #",
+      "#      H   H     H    #",
+      "#--BB  H--BBB--  H--  #",
+      "#  H      G      H    #",
+      "#  H BBBBBBBBBB  H BB #",
+      "#  H      H      H    #",
+      "#  BBBB   H   BBBB    #",
+      "#     H   H      G    #",
+      "#--   H--BBBB--  H--  #",
+      "#   A H     A    H    #",
+      "# BBBBBBBBBBBBBBBBBB  #",
+      "#        G     H      #",
+      "#BBBBBBBBBBBBBBHBBBBBB#",
+      "########################"
+    ],
+    [
+      "########################",
+      "#P   H       G      E #",
+      "#BBB H BBBBBBBBBBBBB  #",
+      "#    H       H        #",
+      "# --BBBB--   H --BBB--#",
+      "#   H     G  H      A #",
+      "#   H BBBBBBBBBBBB    #",
+      "#   H        H     G  #",
+      "# BBBBBB  -- H --BBBB #",
+      "#      H     H        #",
+      "#  G   H BBBBBBBB H   #",
+      "#BBBB  H        A H   #",
+      "#      H--BBBB--  H   #",
+      "#   G       H      H  #",
+      "#BBBBBBBBBBBBBBBBBBBBB#",
+      "########################"
+    ],
+    [
+      "########################",
+      "#P G      H       G E #",
+      "#BBBBB BB H BBBBBBBBB #",
+      "#      H  H      H    #",
+      "# --BB H--BBBB-- H--  #",
+      "#   H  H     G   H A  #",
+      "#   H BBBBBBBBBBBH    #",
+      "#   H       H     G   #",
+      "# BBBBBB -- H --BBBBB #",
+      "#      H    H        #",
+      "# G    H BBBBBBBB H  #",
+      "#BBBB  H      A   H  #",
+      "#      H--BBBB--  H  #",
+      "#   G        H     H #",
+      "#BBBBBBBBBBBBHBBBBBBB#",
+      "########################"
+    ]
+  ];
+
+  const state = {
+    running: false,
+    paused: false,
+    muted: false,
+    levelIndex: 0,
+    grid: [],
+    width: 24,
+    height: 16,
+    gold: new Map(),
+    totalGold: 0,
+    holes: [],
+    player: makeEntity(1, 1, "player"),
+    guards: [],
+    lives: 3,
+    score: 0,
+    best: Number(localStorage.getItem("retroGoldRunnerBest") || 0),
+    keys: new Set(),
+    lastPlayerStep: 0,
+    lastGuardStep: 0,
+    tileSize: 28,
+    offsetX: 0,
+    offsetY: 0,
+    particles: [],
+    floatTexts: [],
+    audio: null
+  };
+
+  function makeEntity(x, y, kind) {
+    return {
+      x,
+      y,
+      drawX: x,
+      drawY: y,
+      spawnX: x,
+      spawnY: y,
+      dir: 1,
+      kind,
+      trappedUntil: 0,
+      blinkUntil: 0,
+      stepPulse: 0
+    };
+  }
+
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+    canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const tileByW = (rect.width - 24) / state.width;
+    const tileByH = (rect.height - 62) / state.height;
+    state.tileSize = Math.max(18, Math.min(34, Math.floor(Math.min(tileByW, tileByH))));
+    state.offsetX = Math.floor((rect.width - state.width * state.tileSize) / 2);
+    state.offsetY = Math.max(12, Math.floor((rect.height - state.height * state.tileSize) / 2) - 8);
+  }
+
+  function normalizeRows(rows) {
+    const width = Math.max(...rows.map(row => row.length));
+    return rows.map(row => row.padEnd(width, "#"));
+  }
+
+  function loadLevel(index) {
+    const rows = normalizeRows(levels[index % levels.length]);
+    state.width = rows[0].length;
+    state.height = rows.length;
+    state.grid = [];
+    state.gold = new Map();
+    state.holes = [];
+    state.guards = [];
+    state.totalGold = 0;
+    state.lastPlayerStep = 0;
+    state.lastGuardStep = 0;
+    state.particles = [];
+    state.floatTexts = [];
+
+    rows.forEach((row, y) => {
+      const line = [];
+      for (let x = 0; x < row.length; x++) {
+        const char = row[x];
+        if (char === "P") {
+          state.player = makeEntity(x, y, "player");
+          line.push(TILE.EMPTY);
+        } else if (char === "A") {
+          state.guards.push(makeEntity(x, y, "guard"));
+          line.push(TILE.EMPTY);
+        } else if (char === "G") {
+          state.gold.set(keyOf(x, y), { x, y });
+          state.totalGold++;
+          line.push(TILE.EMPTY);
+        } else {
+          line.push(tileFromChar(char));
+        }
+      }
+      state.grid.push(line);
+    });
+
+    resizeCanvas();
+    updateHud();
+    setMessage("金塊を全部集めよう。Z/Xで左右を掘れます。");
+  }
+
+  function tileFromChar(char) {
+    if (char === "#") return TILE.SOLID;
+    if (char === "B") return TILE.BRICK;
+    if (char === "H") return TILE.LADDER;
+    if (char === "-") return TILE.ROPE;
+    if (char === "E") return TILE.ESCAPE;
+    return TILE.EMPTY;
+  }
+
+  function keyOf(x, y) {
+    return `${x},${y}`;
+  }
+
+  function inBounds(x, y) {
+    return x >= 0 && y >= 0 && x < state.width && y < state.height;
+  }
+
+  function tileAt(x, y) {
+    if (!inBounds(x, y)) return TILE.SOLID;
+    return state.grid[y][x];
+  }
+
+  function setTile(x, y, tile) {
+    if (inBounds(x, y)) state.grid[y][x] = tile;
+  }
+
+  function escapeActive() {
+    return state.gold.size === 0;
+  }
+
+  function isSolid(tile) {
+    return tile === TILE.BRICK || tile === TILE.SOLID;
+  }
+
+  function canOccupy(x, y) {
+    const tile = tileAt(x, y);
+    if (tile === TILE.SOLID || tile === TILE.BRICK) return false;
+    if (tile === TILE.ESCAPE && !escapeActive()) return false;
+    return true;
+  }
+
+  function canUseLadder(x, y) {
+    const tile = tileAt(x, y);
+    return tile === TILE.LADDER || (tile === TILE.ESCAPE && escapeActive());
+  }
+
+  function hasSupport(entity) {
+    if (canUseLadder(entity.x, entity.y) || tileAt(entity.x, entity.y) === TILE.ROPE) return true;
+    const below = tileAt(entity.x, entity.y + 1);
+    return below === TILE.BRICK || below === TILE.SOLID || below === TILE.LADDER || (below === TILE.ESCAPE && escapeActive());
+  }
+
+  function canFall(entity) {
+    if (canUseLadder(entity.x, entity.y) || tileAt(entity.x, entity.y) === TILE.ROPE) return false;
+    return canOccupy(entity.x, entity.y + 1);
+  }
+
+  function holeAt(x, y) {
+    return state.holes.find(hole => hole.x === x && hole.y === y);
+  }
+
+  function startGame() {
+    state.running = true;
+    state.paused = false;
+    state.levelIndex = 0;
+    state.score = 0;
+    state.lives = 3;
+    hideModal();
+    loadLevel(state.levelIndex);
+    playTone(520, 0.08, "square");
+    playTone(780, 0.12, "square", 0.06);
+  }
+
+  function togglePause() {
+    if (!state.running) {
+      startGame();
+      return;
+    }
+    state.paused = !state.paused;
+    setMessage(state.paused ? "PAUSE" : "GO!");
+    updateHud();
+  }
+
+  function stepGame(time) {
+    if (!state.running || state.paused) return;
+    updateHoles(time);
+    if (time - state.lastPlayerStep > 92) {
+      state.lastPlayerStep = time;
+      stepPlayer(time);
+      collectGold();
+      checkExit();
+    }
+    if (time - state.lastGuardStep > 150) {
+      state.lastGuardStep = time;
+      state.guards.forEach(guard => stepGuard(guard, time));
+    }
+    checkGuardHits(time);
+    updateHud();
+  }
+
+  function stepPlayer(time) {
+    const player = state.player;
+    if (canFall(player)) {
+      moveEntity(player, 0, 1);
+      return;
+    }
+
+    if ((state.keys.has("up") || state.keys.has("down")) && canUseLadder(player.x, player.y + (state.keys.has("up") ? -1 : 1))) {
+      moveEntity(player, 0, state.keys.has("up") ? -1 : 1);
+      return;
+    }
+
+    if (state.keys.has("up") && canUseLadder(player.x, player.y)) {
+      moveEntity(player, 0, -1);
+      return;
+    }
+
+    if (state.keys.has("down") && (canUseLadder(player.x, player.y) || canUseLadder(player.x, player.y + 1))) {
+      moveEntity(player, 0, 1);
+      return;
+    }
+
+    const horizontal = state.keys.has("left") ? -1 : state.keys.has("right") ? 1 : 0;
+    if (horizontal) {
+      player.dir = horizontal;
+      if (canOccupy(player.x + horizontal, player.y)) {
+        moveEntity(player, horizontal, 0);
+      }
+    }
+  }
+
+  function moveEntity(entity, dx, dy) {
+    if (!canOccupy(entity.x + dx, entity.y + dy)) return false;
+    entity.x += dx;
+    entity.y += dy;
+    if (dx) entity.dir = dx;
+    entity.stepPulse = 1;
+    return true;
+  }
+
+  function collectGold() {
+    const key = keyOf(state.player.x, state.player.y);
+    if (!state.gold.has(key)) return;
+    state.gold.delete(key);
+    state.score += 250;
+    burst(state.player.x, state.player.y, "#f6c945", 18);
+    floatText(state.player.x, state.player.y, "+250", "#fff2a6");
+    setMessage(state.gold.size ? `金塊あと${state.gold.size}個。` : "脱出はしごが出現！");
+    playTone(720, 0.08, "triangle");
+    if (state.gold.size === 0) playTone(960, 0.16, "triangle", 0.08);
+  }
+
+  function checkExit() {
+    if (tileAt(state.player.x, state.player.y) !== TILE.ESCAPE || !escapeActive()) return;
+    state.score += 1000 + state.lives * 300;
+    saveBest();
+    if (state.levelIndex < levels.length - 1) {
+      showModal("STAGE CLEAR", `スコア ${state.score}。次の面へ進みます。`, [
+        { label: "NEXT", className: "play", action: () => {
+          state.levelIndex++;
+          hideModal();
+          loadLevel(state.levelIndex);
+          playTone(660, 0.1, "square");
+        } }
+      ]);
+      return;
+    }
+    state.running = false;
+    showModal("ALL CLEAR", `スコア ${state.score}。BEST ${state.best}。`, [
+      { label: "もう一度", className: "play", action: startGame }
+    ]);
+  }
+
+  function dig(side) {
+    if (!state.running) {
+      startGame();
+      return;
+    }
+    if (state.paused) return;
+    const dir = side === "left" ? -1 : 1;
+    state.player.dir = dir;
+    const tx = state.player.x + dir;
+    const ty = state.player.y + 1;
+    if (tileAt(tx, ty) !== TILE.BRICK || tileAt(tx, ty - 1) === TILE.SOLID) {
+      setMessage("そこは掘れない。足元の左右のレンガを狙おう。");
+      playTone(140, 0.06, "square");
+      return;
+    }
+    setTile(tx, ty, TILE.EMPTY);
+    state.holes.push({ x: tx, y: ty, born: performance.now(), refillAt: performance.now() + 4400, warningAt: performance.now() + 3100 });
+    state.score += 15;
+    burst(tx, ty, "#a15f39", 12);
+    setMessage(side === "left" ? "左を掘った！" : "右を掘った！");
+    playTone(260, 0.07, "square");
+  }
+
+  function updateHoles(time) {
+    state.holes = state.holes.filter(hole => {
+      if (time < hole.refillAt) return true;
+      if (state.player.x === hole.x && state.player.y === hole.y) {
+        loseLife("穴が戻ってつぶされた！");
+      }
+      state.guards.forEach(guard => {
+        if (guard.x === hole.x && guard.y === hole.y) {
+          resetGuard(guard, true);
+        }
+      });
+      setTile(hole.x, hole.y, TILE.BRICK);
+      burst(hole.x, hole.y, "#a15f39", 10);
+      return false;
+    });
+  }
+
+  function stepGuard(guard, time) {
+    if (time < guard.trappedUntil) return;
+    const hole = holeAt(guard.x, guard.y);
+    if (hole) {
+      guard.trappedUntil = time + 1500;
+      state.score += 75;
+      floatText(guard.x, guard.y, "+75", "#b8ffbc");
+      return;
+    }
+
+    if (canFall(guard)) {
+      moveEntity(guard, 0, 1);
+      return;
+    }
+
+    const options = guardOptions(guard);
+    if (!options.length) return;
+    options.sort((a, b) => scoreGuardMove(guard, a) - scoreGuardMove(guard, b));
+    const best = options[0];
+    moveEntity(guard, best[0], best[1]);
+  }
+
+  function guardOptions(guard) {
+    const moves = [];
+    const px = state.player.x;
+    const py = state.player.y;
+    if (canUseLadder(guard.x, guard.y) || canUseLadder(guard.x, guard.y - 1)) {
+      if (py < guard.y && canOccupy(guard.x, guard.y - 1)) moves.push([0, -1]);
+    }
+    if (canUseLadder(guard.x, guard.y) || canUseLadder(guard.x, guard.y + 1)) {
+      if (py > guard.y && canOccupy(guard.x, guard.y + 1)) moves.push([0, 1]);
+    }
+    [-1, 1].forEach(dx => {
+      if (canOccupy(guard.x + dx, guard.y)) moves.push([dx, 0]);
+    });
+    if (!moves.length && px === guard.x && canUseLadder(guard.x, guard.y)) {
+      moves.push(py < guard.y ? [0, -1] : [0, 1]);
+    }
+    return moves;
+  }
+
+  function scoreGuardMove(guard, move) {
+    const nx = guard.x + move[0];
+    const ny = guard.y + move[1];
+    const distance = Math.abs(nx - state.player.x) + Math.abs(ny - state.player.y);
+    const ropePenalty = tileAt(nx, ny) === TILE.ROPE ? 0.4 : 0;
+    return distance + ropePenalty + Math.random() * 0.35;
+  }
+
+  function checkGuardHits(time) {
+    const hit = state.guards.some(guard => time >= guard.trappedUntil && guard.x === state.player.x && guard.y === state.player.y);
+    if (hit) loseLife("つかまった！");
+  }
+
+  function loseLife(message) {
+    if (!state.running) return;
+    state.lives--;
+    state.player.blinkUntil = performance.now() + 1200;
+    burst(state.player.x, state.player.y, "#df5142", 22);
+    playTone(120, 0.16, "sawtooth");
+    if (state.lives <= 0) {
+      state.running = false;
+      saveBest();
+      showModal("GAME OVER", `スコア ${state.score}。BEST ${state.best}。`, [
+        { label: "RETRY", className: "play", action: startGame }
+      ]);
+      setMessage("GAME OVER");
+      return;
+    }
+    state.player.x = state.player.spawnX;
+    state.player.y = state.player.spawnY;
+    state.player.drawX = state.player.x;
+    state.player.drawY = state.player.y;
+    state.guards.forEach(guard => resetGuard(guard, false));
+    setMessage(message);
+    updateHud();
+  }
+
+  function resetGuard(guard, score) {
+    if (score) {
+      state.score += 150;
+      floatText(guard.x, guard.y, "+150", "#b8ffbc");
+    }
+    guard.x = guard.spawnX;
+    guard.y = guard.spawnY;
+    guard.drawX = guard.x;
+    guard.drawY = guard.y;
+    guard.trappedUntil = performance.now() + 500;
+  }
+
+  function updateHud() {
+    el.level.textContent = state.levelIndex + 1;
+    el.gold.textContent = `${state.totalGold - state.gold.size}/${state.totalGold}`;
+    el.life.textContent = "♥".repeat(Math.max(0, state.lives)) || "0";
+    el.score.textContent = state.score;
+    el.best.textContent = `BEST ${state.best}`;
+    el.progress.style.width = state.totalGold ? `${((state.totalGold - state.gold.size) / state.totalGold) * 100}%` : "0%";
+    el.start.textContent = state.running ? (state.paused ? "RESUME" : "PAUSE") : "START";
+    el.status.textContent = escapeActive() ? "脱出はしごへ向かえ" : "金塊を集め、穴を掘って逃げろ";
+    el.mission.textContent = escapeActive() ? "光った脱出はしごへ。" : "金塊を全部集めると脱出はしごが出ます。";
+  }
+
+  function setMessage(text) {
+    el.message.textContent = text;
+  }
+
+  function saveBest() {
+    if (state.score <= state.best) return;
+    state.best = state.score;
+    localStorage.setItem("retroGoldRunnerBest", String(state.best));
+  }
+
+  function render(time) {
+    stepGame(time);
+    drawBackground();
+    drawTiles(time);
+    drawGold(time);
+    drawHoles(time);
+    drawEntities(time);
+    drawParticles(time);
+    drawFloatTexts();
+    requestAnimationFrame(render);
+  }
+
+  function drawBackground() {
+    const w = canvas.clientWidth || 800;
+    const h = canvas.clientHeight || 500;
+    ctx.fillStyle = "#050910";
+    ctx.fillRect(0, 0, w, h);
+    ctx.save();
+    ctx.globalAlpha = 0.24;
+    ctx.fillStyle = "#162742";
+    for (let i = 0; i < 18; i++) {
+      const x = (i * 97) % Math.max(1, w);
+      const y = 16 + (i * 43) % Math.max(1, h - 40);
+      ctx.fillRect(x, y, 46, 3);
+    }
+    ctx.restore();
+  }
+
+  function drawTiles(time) {
+    for (let y = 0; y < state.height; y++) {
+      for (let x = 0; x < state.width; x++) {
+        const tile = tileAt(x, y);
+        if (tile === TILE.EMPTY) continue;
+        if (tile === TILE.BRICK) drawBrick(x, y);
+        if (tile === TILE.SOLID) drawSolid(x, y);
+        if (tile === TILE.LADDER) drawLadder(x, y, "#d89b42");
+        if (tile === TILE.ROPE) drawRope(x, y);
+        if (tile === TILE.ESCAPE) drawLadder(x, y, escapeActive() ? "#93f6ff" : "rgba(87, 99, 114, 0.5)", time);
+      }
+    }
+  }
+
+  function tileRect(x, y) {
+    const s = state.tileSize;
+    return {
+      x: state.offsetX + x * s,
+      y: state.offsetY + y * s,
+      s
+    };
+  }
+
+  function drawBrick(x, y) {
+    const r = tileRect(x, y);
+    ctx.fillStyle = "#8d4f32";
+    ctx.fillRect(r.x, r.y, r.s, r.s);
+    ctx.fillStyle = "#b96f42";
+    ctx.fillRect(r.x + 2, r.y + 2, r.s - 4, Math.max(3, r.s * 0.18));
+    ctx.strokeStyle = "#4a2b22";
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 4; i++) {
+      const yy = r.y + Math.floor((r.s / 4) * i);
+      ctx.beginPath();
+      ctx.moveTo(r.x, yy);
+      ctx.lineTo(r.x + r.s, yy);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(r.x + r.s * 0.5, r.y);
+    ctx.lineTo(r.x + r.s * 0.5, r.y + r.s * 0.5);
+    ctx.moveTo(r.x + r.s * 0.25, r.y + r.s * 0.5);
+    ctx.lineTo(r.x + r.s * 0.25, r.y + r.s);
+    ctx.moveTo(r.x + r.s * 0.75, r.y + r.s * 0.5);
+    ctx.lineTo(r.x + r.s * 0.75, r.y + r.s);
+    ctx.stroke();
+  }
+
+  function drawSolid(x, y) {
+    const r = tileRect(x, y);
+    ctx.fillStyle = "#293448";
+    ctx.fillRect(r.x, r.y, r.s, r.s);
+    ctx.fillStyle = "#53667d";
+    ctx.fillRect(r.x + 3, r.y + 3, r.s - 6, r.s - 6);
+    ctx.fillStyle = "#1b2433";
+    ctx.fillRect(r.x + 7, r.y + 7, r.s - 14, r.s - 14);
+  }
+
+  function drawLadder(x, y, color) {
+    const r = tileRect(x, y);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(2, r.s * 0.1);
+    const left = r.x + r.s * 0.28;
+    const right = r.x + r.s * 0.72;
+    ctx.beginPath();
+    ctx.moveTo(left, r.y);
+    ctx.lineTo(left, r.y + r.s);
+    ctx.moveTo(right, r.y);
+    ctx.lineTo(right, r.y + r.s);
+    ctx.stroke();
+    ctx.lineWidth = Math.max(2, r.s * 0.08);
+    for (let i = 0; i < 3; i++) {
+      const yy = r.y + r.s * (0.22 + i * 0.28);
+      ctx.beginPath();
+      ctx.moveTo(left, yy);
+      ctx.lineTo(right, yy);
+      ctx.stroke();
+    }
+  }
+
+  function drawRope(x, y) {
+    const r = tileRect(x, y);
+    ctx.strokeStyle = "#e5bd69";
+    ctx.lineWidth = Math.max(2, r.s * 0.1);
+    ctx.beginPath();
+    ctx.moveTo(r.x, r.y + r.s * 0.42);
+    ctx.lineTo(r.x + r.s, r.y + r.s * 0.42);
+    ctx.stroke();
+    ctx.fillStyle = "#f3d98d";
+    for (let i = 0; i < 3; i++) {
+      ctx.fillRect(r.x + r.s * (0.18 + i * 0.28), r.y + r.s * 0.3, 3, r.s * 0.24);
+    }
+  }
+
+  function drawGold(time) {
+    state.gold.forEach(gold => {
+      const r = tileRect(gold.x, gold.y);
+      const pulse = Math.sin(time * 0.007 + gold.x) * 0.08 + 1;
+      const w = r.s * 0.48 * pulse;
+      const h = r.s * 0.34 * pulse;
+      ctx.fillStyle = "#6d4715";
+      ctx.fillRect(r.x + r.s * 0.28, r.y + r.s * 0.58, r.s * 0.5, r.s * 0.12);
+      ctx.fillStyle = "#f6c945";
+      ctx.fillRect(r.x + r.s * 0.5 - w / 2, r.y + r.s * 0.34 - h / 2, w, h);
+      ctx.fillStyle = "#fff2a6";
+      ctx.fillRect(r.x + r.s * 0.4, r.y + r.s * 0.24, Math.max(2, r.s * 0.12), Math.max(2, r.s * 0.08));
+    });
+  }
+
+  function drawHoles(time) {
+    state.holes.forEach(hole => {
+      const r = tileRect(hole.x, hole.y);
+      const left = Math.max(0, hole.refillAt - time);
+      ctx.fillStyle = "#160f0c";
+      ctx.fillRect(r.x, r.y + r.s * 0.42, r.s, r.s * 0.58);
+      ctx.fillStyle = left < 1200 ? "#d7a35d" : "#4a2b22";
+      ctx.fillRect(r.x + r.s * 0.12, r.y + r.s * 0.75, r.s * 0.76, Math.max(3, r.s * 0.14));
+    });
+  }
+
+  function drawEntities(time) {
+    state.guards.forEach(guard => drawRunner(guard, time, "#df5142", "#7e2f28"));
+    drawRunner(state.player, time, "#45a4e8", "#214d77");
+  }
+
+  function drawRunner(entity, time, color, dark) {
+    entity.drawX += (entity.x - entity.drawX) * 0.34;
+    entity.drawY += (entity.y - entity.drawY) * 0.34;
+    entity.stepPulse *= 0.8;
+    const r = tileRect(entity.drawX, entity.drawY);
+    const s = r.s;
+    const blink = time < entity.blinkUntil && Math.floor(time / 90) % 2 === 0;
+    ctx.save();
+    ctx.globalAlpha = blink ? 0.45 : 1;
+    const bob = Math.sin(time * 0.013 + entity.x) * 1.5 + entity.stepPulse * 3;
+    const x = r.x + s * 0.24;
+    const y = r.y + s * 0.12 - bob;
+    ctx.fillStyle = "rgba(0,0,0,0.32)";
+    ctx.fillRect(r.x + s * 0.22, r.y + s * 0.82, s * 0.58, s * 0.12);
+    ctx.fillStyle = color;
+    ctx.fillRect(x + s * 0.1, y, s * 0.32, s * 0.24);
+    ctx.fillStyle = dark;
+    ctx.fillRect(x + s * 0.02, y + s * 0.25, s * 0.48, s * 0.3);
+    ctx.fillStyle = "#f7d8a8";
+    ctx.fillRect(x + s * 0.1, y + s * 0.08, s * 0.24, s * 0.12);
+    ctx.fillStyle = color;
+    ctx.fillRect(x - s * 0.02, y + s * 0.58, s * 0.18, s * 0.22);
+    ctx.fillRect(x + s * 0.34, y + s * 0.58, s * 0.18, s * 0.22);
+    ctx.fillStyle = "#f1c17b";
+    ctx.fillRect(x - s * 0.1 * entity.dir, y + s * 0.34, s * 0.16, s * 0.12);
+    if (time < entity.trappedUntil) {
+      ctx.fillStyle = "#fff2a6";
+      ctx.fillRect(r.x + s * 0.36, r.y - s * 0.08, s * 0.28, s * 0.08);
+    }
+    ctx.restore();
+  }
+
+  function burst(x, y, color, count) {
+    const r = tileRect(x, y);
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1 + Math.random() * 2.2;
+      state.particles.push({
+        x: r.x + r.s / 2,
+        y: r.y + r.s / 2,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 0.6,
+        born: performance.now(),
+        life: 460 + Math.random() * 260,
+        color
+      });
+    }
+  }
+
+  function drawParticles(time) {
+    state.particles = state.particles.filter(p => time - p.born < p.life);
+    state.particles.forEach(p => {
+      const age = (time - p.born) / p.life;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.08;
+      ctx.save();
+      ctx.globalAlpha = 1 - age;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x, p.y, 4, 4);
+      ctx.restore();
+    });
+  }
+
+  function floatText(x, y, text, color) {
+    const r = tileRect(x, y);
+    state.floatTexts.push({ x: r.x + r.s / 2, y: r.y + r.s / 2, text, color, born: performance.now(), life: 760 });
+  }
+
+  function drawFloatTexts() {
+    const now = performance.now();
+    state.floatTexts = state.floatTexts.filter(item => now - item.born < item.life);
+    state.floatTexts.forEach(item => {
+      const age = (now - item.born) / item.life;
+      ctx.save();
+      ctx.globalAlpha = 1 - age;
+      ctx.font = "900 16px ui-monospace, monospace";
+      ctx.textAlign = "center";
+      ctx.strokeStyle = "#050910";
+      ctx.lineWidth = 4;
+      ctx.strokeText(item.text, item.x, item.y - age * 28);
+      ctx.fillStyle = item.color;
+      ctx.fillText(item.text, item.x, item.y - age * 28);
+      ctx.restore();
+    });
+  }
+
+  function showModal(title, text, actions) {
+    el.modalTitle.textContent = title;
+    el.modalText.textContent = text;
+    el.modalActions.innerHTML = "";
+    actions.forEach(action => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `btn ${action.className || ""}`;
+      button.textContent = action.label;
+      button.addEventListener("click", action.action);
+      el.modalActions.appendChild(button);
+    });
+    el.modal.classList.add("show");
+  }
+
+  function hideModal() {
+    el.modal.classList.remove("show");
+  }
+
+  function ensureAudio() {
+    if (state.muted) return null;
+    if (!state.audio) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return null;
+      state.audio = new AudioContext();
+    }
+    if (state.audio.state === "suspended") state.audio.resume();
+    return state.audio;
+  }
+
+  function playTone(freq, duration, type = "square", delay = 0) {
+    const audio = ensureAudio();
+    if (!audio) return;
+    const start = audio.currentTime + delay;
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.09, start + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    osc.connect(gain);
+    gain.connect(audio.destination);
+    osc.start(start);
+    osc.stop(start + duration + 0.03);
+  }
+
+  function keyToMove(key) {
+    if (key === "arrowleft" || key === "a") return "left";
+    if (key === "arrowright" || key === "d") return "right";
+    if (key === "arrowup" || key === "w") return "up";
+    if (key === "arrowdown" || key === "s") return "down";
+    return "";
+  }
+
+  document.addEventListener("keydown", event => {
+    const key = event.key.toLowerCase();
+    const move = keyToMove(key);
+    if (move) {
+      event.preventDefault();
+      state.keys.add(move);
+      return;
+    }
+    if (key === "z") {
+      event.preventDefault();
+      dig("left");
+      return;
+    }
+    if (key === "x") {
+      event.preventDefault();
+      dig("right");
+      return;
+    }
+    if (key === "r") {
+      event.preventDefault();
+      loadLevel(state.levelIndex);
+      return;
+    }
+    if (key === "enter" || key === " ") {
+      event.preventDefault();
+      togglePause();
+      return;
+    }
+    if (key === "escape" && state.running) {
+      event.preventDefault();
+      togglePause();
+    }
+  }, { passive: false });
+
+  document.addEventListener("keyup", event => {
+    const move = keyToMove(event.key.toLowerCase());
+    if (move) state.keys.delete(move);
+  });
+
+  document.querySelectorAll("[data-move]").forEach(button => {
+    const move = button.dataset.move;
+    button.addEventListener("pointerdown", event => {
+      event.preventDefault();
+      state.keys.add(move);
+    });
+    button.addEventListener("pointerup", () => state.keys.delete(move));
+    button.addEventListener("pointercancel", () => state.keys.delete(move));
+    button.addEventListener("click", () => {
+      state.keys.add(move);
+      setTimeout(() => state.keys.delete(move), 130);
+    });
+  });
+
+  el.digLeft.addEventListener("click", () => dig("left"));
+  el.digRight.addEventListener("click", () => dig("right"));
+  el.start.addEventListener("click", togglePause);
+  el.mute.addEventListener("click", () => {
+    state.muted = !state.muted;
+    el.mute.textContent = state.muted ? "×" : "♪";
+    el.mute.setAttribute("aria-label", state.muted ? "音を出す" : "音を消す");
+  });
+  window.addEventListener("resize", resizeCanvas);
+
+  showModal("レトロ・ゴールドランナー", "金塊を全部集めると脱出はしごが現れます。敵をかわし、Z/Xまたはボタンで左右の足元に穴を掘って進みましょう。", [
+    { label: "START", className: "play", action: startGame }
+  ]);
+
+  loadLevel(0);
+  resizeCanvas();
+  requestAnimationFrame(render);
+})();
+</script>
 </body>
 </html>
