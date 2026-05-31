@@ -1,595 +1,825 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>スレイ・ザ・スパイア</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            touch-action: manipulation;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Slay the Spire</title>
+<style>
+  :root {
+    --ink: #f7e7a8;
+    --muted: #b7a878;
+    --bg: #07101d;
+    --panel: #101827;
+    --panel-2: #172336;
+    --line: #f0d878;
+    --gold: #f3c745;
+    --red: #d95745;
+    --blue: #4aa6e8;
+    --green: #58c66d;
+    --shadow: rgba(0, 0, 0, 0.42);
+  }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-        }
+  * { box-sizing: border-box; }
+  
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    overflow: hidden;
+    user-select: none;
+  }
 
-        #game-container {
-            position: relative;
-            width: 100%;
-            max-width: 500px;
-            height: 90vh;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 20px;
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
-            overflow: hidden;
-        }
+  .app {
+    width: min(800px, 100%);
+    height: 100dvh;
+    margin: 0 auto;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 8px;
+    padding: 8px;
+  }
 
-        /* スタート画面 */
-        #start-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 10;
-            text-align: center;
-            padding: 20px;
-        }
+  /* --- ヘッダー（ステータス） --- */
+  .hud {
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 10px var(--shadow);
+  }
 
-        #start-screen h1 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            color: #ff0000;
-            text-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
-        }
+  .stats-group {
+    display: flex;
+    gap: 15px;
+  }
 
-        #start-screen p {
-            font-size: 1.1rem;
-            margin-bottom: 30px;
-            line-height: 1.6;
-        }
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: bold;
+    font-size: 1.2rem;
+  }
+  .stat .icon { font-size: 1.4rem; }
+  .stat.hp { color: var(--red); }
+  .stat.energy { color: var(--blue); }
+  .stat.floor { color: var(--gold); }
 
-        #start-button {
-            padding: 15px 40px;
-            font-size: 1.3rem;
-            background: linear-gradient(to bottom, #ff0000, #8b0000);
-            border: none;
-            border-radius: 50px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.4);
-        }
+  /* --- 戦闘エリア --- */
+  .battlefield {
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    background: linear-gradient(180deg, var(--panel-2) 0%, var(--bg) 100%);
+    position: relative;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 20px;
+    overflow: hidden;
+  }
 
-        #start-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
-        }
+  .entity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    width: 120px;
+  }
 
-        /* ゲーム画面 */
-        #game-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none;
-            flex-direction: column;
-        }
+  .sprite {
+    font-size: 4rem;
+    filter: drop-shadow(0 4px 4px var(--shadow));
+    transition: transform 0.1s;
+  }
 
-        #game-header {
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+  .intent {
+    position: absolute;
+    top: -40px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid var(--line);
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .intent.show { opacity: 1; }
 
-        #score, #lives {
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
+  .hp-bar-container {
+    width: 100%;
+    background: #000;
+    border: 2px solid var(--muted);
+    border-radius: 4px;
+    height: 16px;
+    margin-top: 10px;
+    position: relative;
+    overflow: hidden;
+  }
 
-        #game-board {
-            flex: 1;
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            grid-template-rows: repeat(10, 1fr);
-            gap: 2px;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.3);
-        }
+  .hp-bar {
+    height: 100%;
+    background: var(--red);
+    width: 100%;
+    transition: width 0.3s ease-out;
+  }
 
-        .cell {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.5rem;
-            transition: all 0.2s;
-        }
+  .hp-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 1px 1px 0 #000;
+  }
 
-        .player {
-            background: rgba(0, 255, 0, 0.3);
-            font-size: 2rem;
-            animation: pulse 1s infinite;
-        }
+  .block-badge {
+    position: absolute;
+    bottom: -10px;
+    right: -10px;
+    background: var(--blue);
+    color: white;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s;
+  }
+  .block-badge.show {
+    opacity: 1;
+    transform: scale(1);
+  }
 
-        .enemy {
-            background: rgba(255, 0, 0, 0.3);
-            font-size: 2rem;
-        }
+  /* --- 手札・デッキエリア --- */
+  .hand-area {
+    height: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
 
-        .bullet {
-            background: rgba(255, 255, 0, 0.5);
-            font-size: 1.2rem;
-        }
+  .deck-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+  }
 
-        .power-up {
-            background: rgba(255, 165, 0, 0.3);
-            font-size: 1.5rem;
-        }
+  .pile {
+    font-size: 0.9rem;
+    color: var(--muted);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 4px 12px;
+    border-radius: 12px;
+  }
 
-        /* ゲームオーバー画面 */
-        #game-over-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 10;
-            text-align: center;
-        }
+  .btn {
+    background: linear-gradient(180deg, var(--green), #3a8a47);
+    color: #000;
+    border: 2px solid var(--line);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.5);
+    font-family: inherit;
+  }
+  .btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 rgba(0,0,0,0);
+  }
+  .btn:disabled {
+    background: var(--muted);
+    cursor: not-allowed;
+    transform: translateY(4px);
+    box-shadow: none;
+  }
 
-        #game-over-screen h2 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            color: #ff0000;
-        }
+  .cards-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: -20px;
+    position: relative;
+    padding-bottom: 10px;
+  }
 
-        #final-score {
-            font-size: 1.5rem;
-            margin-bottom: 30px;
-        }
+  .card {
+    width: 110px;
+    height: 150px;
+    background: var(--panel);
+    border: 2px solid var(--muted);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, margin 0.2s, border-color 0.2s;
+    box-shadow: -2px 4px 8px var(--shadow);
+    margin-left: -20px;
+    background-image: linear-gradient(180deg, #1a273a 0%, var(--panel) 100%);
+  }
+  .card:first-child { margin-left: 0; }
+  .card:hover {
+    transform: translateY(-20px) scale(1.05);
+    border-color: var(--line);
+    z-index: 10;
+    margin-right: 20px;
+  }
+  .card.unplayable {
+    opacity: 0.5;
+    filter: grayscale(100%);
+  }
+  .card.unplayable:hover {
+    transform: none;
+    margin-right: 0;
+    border-color: var(--muted);
+  }
 
-        #restart-button {
-            padding: 15px 40px;
-            font-size: 1.3rem;
-            background: linear-gradient(to bottom, #0066cc, #003366);
-            border: none;
-            border-radius: 50px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 5px 15px rgba(0, 102, 204, 0.4);
-        }
+  .card-cost {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    background: var(--blue);
+    color: white;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
 
-        #restart-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(0, 102, 204, 0.7);
-        }
+  .card-type {
+    font-size: 0.6rem;
+    text-align: center;
+    margin-top: 4px;
+    color: var(--muted);
+  }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
+  .card-name {
+    font-weight: bold;
+    font-size: 0.85rem;
+    text-align: center;
+    margin: 4px 0;
+    color: var(--ink);
+  }
 
-        /* タッチ操作用のコントロール */
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            width: 100%;
-            display: flex;
-            justify-content: space-around;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.5);
-        }
+  .card-desc {
+    flex: 1;
+    font-size: 0.75rem;
+    padding: 6px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.3);
+    border-top: 1px solid var(--muted);
+  }
 
-        .control-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.5rem;
-            cursor: pointer;
-            user-select: none;
-        }
+  /* --- モーダル・浮動文字 --- */
+  .modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+  }
+  .modal.show { display: flex; }
 
-        .control-btn:active {
-            background: rgba(255, 255, 255, 0.4);
-        }
+  .modal-content {
+    background: var(--panel);
+    border: 2px solid var(--line);
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    max-width: 90%;
+    width: 400px;
+  }
 
-        /* レスポンシブ対応 */
-        @media (max-width: 500px) {
-            #game-container {
-                height: 95vh;
-                border-radius: 10px;
-            }
-            
-            #start-screen h1 {
-                font-size: 2rem;
-            }
-            
-            .cell {
-                font-size: 1.2rem;
-            }
-            
-            .player {
-                font-size: 1.5rem;
-            }
-            
-            .enemy {
-                font-size: 1.5rem;
-            }
-        }
-    </style>
+  .modal-title {
+    font-size: 1.5rem;
+    color: var(--gold);
+    margin: 0 0 15px 0;
+  }
+
+  .reward-cards {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+  }
+  .reward-cards .card {
+    margin-left: 0;
+  }
+
+  .floating-text {
+    position: absolute;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 0 #000;
+    pointer-events: none;
+    animation: floatUp 1s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+    z-index: 50;
+  }
+
+  @keyframes floatUp {
+    0% { transform: translateY(0) scale(0.5); opacity: 1; }
+    50% { transform: translateY(-30px) scale(1.2); opacity: 1; }
+    100% { transform: translateY(-50px) scale(1); opacity: 0; }
+  }
+
+  .anim-attack {
+    animation: attackBump 0.2s ease-in-out 2 alternate;
+  }
+  @keyframes attackBump {
+    to { transform: translateX(20px); }
+  }
+  
+  .anim-enemy-attack {
+    animation: enemyAttackBump 0.2s ease-in-out 2 alternate;
+  }
+  @keyframes enemyAttackBump {
+    to { transform: translateX(-20px); }
+  }
+
+  .anim-shake {
+    animation: shake 0.3s ease-in-out;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px) rotate(-5deg); }
+    75% { transform: translateX(5px) rotate(5deg); }
+  }
+
+  /* スマホ向け微調整 */
+  @media (max-width: 400px) {
+    .card { width: 90px; height: 130px; margin-left: -30px; }
+    .card-name { font-size: 0.75rem; }
+    .card-desc { font-size: 0.65rem; }
+    .sprite { font-size: 3.5rem; }
+    .reward-cards .card { width: 85px; height: 120px; }
+  }
+</style>
 </head>
 <body>
-    <div id="game-container">
-        <!-- スタート画面 -->
-        <div id="start-screen">
-            <h1>スレイ・ザ・スパイア</h1>
-            <p>スレイ・ザ・スパイアは、敵を倒してスコアを稼ぐアクションゲームです。</p>
-            <p>操作方法：<br>矢印キーまたはボタンで移動<br>スペースキーまたはタップで射撃</p>
-            <button id="start-button">スタート</button>
-        </div>
 
-        <!-- ゲーム画面 -->
-        <div id="game-screen">
-            <div id="game-header">
-                <div id="score">スコア: 0</div>
-                <div id="lives">ライフ: ❤️❤️❤️</div>
-            </div>
-            <div id="game-board"></div>
-            <div id="controls">
-                <div class="control-btn" id="left-btn">⬅️</div>
-                <div class="control-btn" id="shoot-btn">🔫</div>
-                <div class="control-btn" id="right-btn">➡️</div>
-            </div>
-        </div>
+<div class="app">
+  <header class="hud">
+    <div class="stats-group">
+      <div class="stat hp"><span class="icon">❤️</span> <span id="ui-hp">50/50</span></div>
+      <div class="stat energy"><span class="icon">⚡</span> <span id="ui-energy">3/3</span></div>
+    </div>
+    <div class="stat floor"><span class="icon">🚩</span> Floor <span id="ui-floor">1</span></div>
+  </header>
 
-        <!-- ゲームオーバー画面 -->
-        <div id="game-over-screen">
-            <h2>ゲームオーバー</h2>
-            <div id="final-score">最終スコア: 0</div>
-            <button id="restart-button">リスタート</button>
-        </div>
+  <main class="battlefield" id="battlefield">
+    <div class="entity" id="player-entity">
+      <div class="sprite" id="player-sprite">🧙‍♂️</div>
+      <div class="hp-bar-container">
+        <div class="hp-bar" id="player-hp-bar"></div>
+        <div class="hp-text" id="player-hp-text">50/50</div>
+      </div>
+      <div class="block-badge" id="player-block">0</div>
     </div>
 
-    <script>
-        // ゲーム状態管理
-        const gameState = {
-            score: 0,
-            lives: 3,
-            level: 1,
-            player: { x: 5, y: 9 },
-            bullets: [],
-            enemies: [],
-            powerUps: [],
-            gameRunning: false,
-            lastTime: 0,
-            enemySpawnTimer: 0,
-            powerUpSpawnTimer: 0
-        };
+    <div class="entity" id="enemy-entity">
+      <div class="intent" id="enemy-intent">⚔️ 5</div>
+      <div class="sprite" id="enemy-sprite">👾</div>
+      <div class="hp-bar-container">
+        <div class="hp-bar" id="enemy-hp-bar"></div>
+        <div class="hp-text" id="enemy-hp-text">20/20</div>
+      </div>
+      <div class="block-badge" id="enemy-block">0</div>
+    </div>
+  </main>
 
-        // DOM要素
-        const startScreen = document.getElementById('start-screen');
-        const gameScreen = document.getElementById('game-screen');
-        const gameOverScreen = document.getElementById('game-over-screen');
-        const startButton = document.getElementById('start-button');
-        const restartButton = document.getElementById('restart-button');
-        const scoreElement = document.getElementById('score');
-        const livesElement = document.getElementById('lives');
-        const finalScoreElement = document.getElementById('final-score');
-        const gameBoard = document.getElementById('game-board');
-        const leftBtn = document.getElementById('left-btn');
-        const rightBtn = document.getElementById('right-btn');
-        const shootBtn = document.getElementById('shoot-btn');
+  <footer class="hand-area">
+    <div class="deck-controls">
+      <div class="pile">山札: <span id="ui-draw">0</span></div>
+      <button class="btn" id="btn-end-turn" onclick="endTurn()">ターン終了</button>
+      <div class="pile">捨札: <span id="ui-discard">0</span></div>
+    </div>
+    <div class="cards-container" id="hand-container">
+      </div>
+  </footer>
+</div>
 
-        // ゲーム初期化
-        function initGame() {
-            gameBoard.innerHTML = '';
-            gameState.score = 0;
-            gameState.lives = 3;
-            gameState.level = 1;
-            gameState.player = { x: 5, y: 9 };
-            gameState.bullets = [];
-            gameState.enemies = [];
-            gameState.powerUps = [];
-            gameState.gameRunning = true;
-            gameState.enemySpawnTimer = 0;
-            gameState.powerUpSpawnTimer = 0;
-            
-            updateScore();
-            updateLives();
-            
-            // ゲームボード作成
-            for (let i = 0; i < 100; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                cell.id = `cell-${i}`;
-                gameBoard.appendChild(cell);
-            }
-            
-            // プレイヤーを配置
-            updatePlayerPosition();
-            
-            // ゲームループ開始
-            requestAnimationFrame(gameLoop);
-        }
+<div class="modal" id="sys-modal">
+  <div class="modal-content">
+    <h2 class="modal-title" id="modal-title">TITLE</h2>
+    <p id="modal-desc" style="color: var(--muted); margin-bottom: 20px;">description</p>
+    
+    <div class="reward-cards" id="reward-container" style="display:none;"></div>
+    
+    <button class="btn" id="modal-btn" onclick="closeModal()">OK</button>
+  </div>
+</div>
 
-        // プレイヤー位置更新
-        function updatePlayerPosition() {
-            const cells = document.querySelectorAll('.cell');
-            cells.forEach(cell => cell.classList.remove('player'));
-            cells[gameState.player.y * 10 + gameState.player.x].classList.add('player');
-        }
+<script>
+// --- カードデータベース ---
+const CARD_DB = {
+  strike: { id: 'strike', name: "ストライク", type: "Attack", cost: 1, desc: "敵に 6 ダメージ。",
+    play: (t) => dealDamage(t, 6) },
+  defend: { id: 'defend', name: "防御", type: "Skill", cost: 1, desc: "ブロックを 5 得る。",
+    play: () => gainBlock(state.player, 5) },
+  heavy: { id: 'heavy', name: "大ぶり", type: "Attack", cost: 2, desc: "敵に 14 ダメージ。",
+    play: (t) => dealDamage(t, 14) },
+  shield: { id: 'shield', name: "鉄壁", type: "Skill", cost: 2, desc: "ブロックを 12 得る。",
+    play: () => gainBlock(state.player, 12) },
+  insight: { id: 'insight', name: "ひらめき", type: "Skill", cost: 0, desc: "カードを 2枚 引く。",
+    play: () => drawCards(2) },
+  quick: { id: 'quick', name: "クイック", type: "Attack", cost: 0, desc: "敵に 3 ダメージ。",
+    play: (t) => dealDamage(t, 3) }
+};
 
-        // 敵の生成
-        function spawnEnemy() {
-            const x = Math.floor(Math.random() * 10);
-            const enemy = { x, y: 0, type: 'normal' };
-            gameState.enemies.push(enemy);
-        }
+// --- エネミーデータベース ---
+const ENEMIES = [
+  { name: "スライム", sprite: "👾", hp: 20, intents: [{type:'attack', val:5}] },
+  { name: "ゴブリン", sprite: "👹", hp: 35, intents: [{type:'attack', val:8}, {type:'defend', val:6}] },
+  { name: "コウモリ", sprite: "🦇", hp: 28, intents: [{type:'attack', val:6}, {type:'attack', val:6}, {type:'defend', val:4}] },
+  { name: "ガーゴイル", sprite: "🦅", hp: 45, intents: [{type:'attack', val:10}, {type:'defend', val:8}] },
+  { name: "ドラゴン (BOSS)", sprite: "🐉", hp: 90, intents: [{type:'attack', val:15}, {type:'attack', val:10}, {type:'defend', val:15}] }
+];
 
-        // パワーアップの生成
-        function spawnPowerUp() {
-            const x = Math.floor(Math.random() * 10);
-            const powerUp = { x, y: 0, type: 'health' };
-            gameState.powerUps.push(powerUp);
-        }
+// --- ゲームステート ---
+let state = {
+  floor: 1,
+  isPlayerTurn: false,
+  deck: [],
+  drawPile: [],
+  hand: [],
+  discardPile: [],
+  player: { hp: 50, maxHp: 50, energy: 3, maxEnergy: 3, block: 0 },
+  enemy: null
+};
 
-        // プレイヤーの移動
-        function movePlayer(dx, dy) {
-            if (!gameState.gameRunning) return;
-            
-            const newX = Math.max(0, Math.min(9, gameState.player.x + dx));
-            const newY = Math.max(0, Math.min(9, gameState.player.y + dy));
-            
-            gameState.player.x = newX;
-            gameState.player.y = newY;
-            updatePlayerPosition();
-        }
+// --- 初期化 ---
+function initGame() {
+  state.floor = 1;
+  state.player.hp = 50;
+  state.player.maxHp = 50;
+  
+  // 初期デッキ作成 (ストライクx4, 防御x4)
+  state.deck = [];
+  for(let i=0; i<4; i++) state.deck.push({...CARD_DB.strike});
+  for(let i=0; i<4; i++) state.deck.push({...CARD_DB.defend});
+  
+  startEncounter();
+}
 
-        // 弾の発射
-        function shoot() {
-            if (!gameState.gameRunning) return;
-            
-            const bullet = { 
-                x: gameState.player.x, 
-                y: gameState.player.y - 1,
-                type: 'player'
-            };
-            gameState.bullets.push(bullet);
-        }
+function startEncounter() {
+  // 敵の選出（5階層ごとにボス、それ以外はランダムで徐々に強くなる）
+  let template;
+  if(state.floor % 5 === 0) {
+    template = ENEMIES[4]; // ドラゴン
+  } else {
+    // 階層に応じて選出プールを調整
+    let pool = [0, 1];
+    if(state.floor > 2) pool.push(2);
+    if(state.floor > 3) pool.push(3);
+    template = ENEMIES[pool[Math.floor(Math.random() * pool.length)]];
+  }
 
-        // ゲームループ
-        function gameLoop(timestamp) {
-            if (!gameState.gameRunning) return;
-            
-            const deltaTime = timestamp - gameState.lastTime;
-            gameState.lastTime = timestamp;
-            
-            // 敵の生成
-            gameState.enemySpawnTimer += deltaTime;
-            if (gameState.enemySpawnTimer > 1000 - (gameState.level * 50)) {
-                spawnEnemy();
-                gameState.enemySpawnTimer = 0;
-            }
-            
-            // パワーアップの生成
-            gameState.powerUpSpawnTimer += deltaTime;
-            if (gameState.powerUpSpawnTimer > 5000) {
-                spawnPowerUp();
-                gameState.powerUpSpawnTimer = 0;
-            }
-            
-            // 敵の移動と削除
-            gameState.enemies = gameState.enemies.filter(enemy => {
-                enemy.y += 0.5;
-                return enemy.y < 10;
-            });
-            
-            // パワーアップの移動と削除
-            gameState.powerUps = gameState.powerUps.filter(powerUp => {
-                powerUp.y += 0.3;
-                return powerUp.y < 10;
-            });
-            
-            // 弾の移動と削除
-            gameState.bullets = gameState.bullets.filter(bullet => {
-                bullet.y -= 1;
-                return bullet.y >= 0;
-            });
-            
-            // 衝突判定
-            checkCollisions();
-            
-            // ゲーム画面更新
-            updateGameBoard();
-            
-            // レベルアップ判定
-            if (gameState.score >= gameState.level * 100) {
-                gameState.level++;
-            }
-            
-            requestAnimationFrame(gameLoop);
-        }
+  // 階層バフ（敵のHPが少し上がる）
+  let hpBuff = Math.floor(state.floor * 1.5);
 
-        // 衝突判定
-        function checkCollisions() {
-            // 弾と敵の衝突
-            for (let i = gameState.bullets.length - 1; i >= 0; i--) {
-                const bullet = gameState.bullets[i];
-                if (bullet.type !== 'player') continue;
-                
-                for (let j = gameState.enemies.length - 1; j >= 0; j--) {
-                    const enemy = gameState.enemies[j];
-                    if (bullet.x === enemy.x && bullet.y === enemy.y) {
-                        gameState.enemies.splice(j, 1);
-                        gameState.bullets.splice(i, 1);
-                        gameState.score += 10;
-                        updateScore();
-                        break;
-                    }
-                }
-            }
-            
-            // プレイヤーと敵の衝突
-            for (let i = gameState.enemies.length - 1; i >= 0; i--) {
-                const enemy = gameState.enemies[i];
-                if (gameState.player.x === enemy.x && gameState.player.y === enemy.y) {
-                    gameState.enemies.splice(i, 1);
-                    gameState.lives--;
-                    updateLives();
-                    if (gameState.lives <= 0) {
-                        gameOver();
-                    }
-                    break;
-                }
-            }
-            
-            // プレイヤーとパワーアップの衝突
-            for (let i = gameState.powerUps.length - 1; i >= 0; i--) {
-                const powerUp = gameState.powerUps[i];
-                if (gameState.player.x === powerUp.x && gameState.player.y === powerUp.y) {
-                    gameState.powerUps.splice(i, 1);
-                    gameState.lives = Math.min(5, gameState.lives + 1);
-                    updateLives();
-                    break;
-                }
-            }
-        }
+  state.enemy = {
+    name: template.name,
+    sprite: template.sprite,
+    hp: template.hp + hpBuff,
+    maxHp: template.hp + hpBuff,
+    block: 0,
+    intents: template.intents,
+    nextIntent: null
+  };
 
-        // ゲーム画面更新
-        function updateGameBoard() {
-            const cells = document.querySelectorAll('.cell');
-            cells.forEach(cell => {
-                cell.className = 'cell';
-            });
-            
-            // プレイヤー
-            cells[gameState.player.y * 10 + gameState.player.x].classList.add('player');
-            
-            // 敵
-            gameState.enemies.forEach(enemy => {
-                if (enemy.y >= 0 && enemy.y < 10) {
-                    const index = Math.floor(enemy.y) * 10 + enemy.x;
-                    if (index >= 0 && index < 100) {
-                        cells[index].classList.add('enemy');
-                    }
-                }
-            });
-            
-            // パワーアップ
-            gameState.powerUps.forEach(powerUp => {
-                if (powerUp.y >= 0 && powerUp.y < 10) {
-                    const index = Math.floor(powerUp.y) * 10 + powerUp.x;
-                    if (index >= 0 && index < 100) {
-                        cells[index].classList.add('powerUp');
-                    }
-                }
-            });
-            
-            // 弾
-            gameState.bullets.forEach(bullet => {
-                if (bullet.y >= 0 && bullet.y < 10) {
-                    const index = Math.floor(bullet.y) * 10 + bullet.x;
-                    if (index >= 0 && index < 100) {
-                        cells[index].classList.add('bullet');
-                    }
-                }
-            });
-        }
+  // デッキシャッフル
+  state.drawPile = [...state.deck];
+  shuffle(state.drawPile);
+  state.hand = [];
+  state.discardPile = [];
+  
+  updateUI();
+  startTurn();
+}
 
-        // スコア更新
-        function updateScore() {
-            scoreElement.textContent = `スコア: ${gameState.score}`;
-        }
+function startTurn() {
+  state.isPlayerTurn = true;
+  state.player.energy = state.player.maxEnergy;
+  state.player.block = 0; // ブロック消滅
+  state.enemy.block = 0;
+  
+  setEnemyIntent();
+  drawCards(5);
+  updateUI();
+}
 
-        // ライフ更新
-        function updateLives() {
-            let hearts = '';
-            for (let i = 0; i < gameState.lives; i++) {
-                hearts += '❤️';
-            }
-            livesElement.textContent = `ライフ: ${hearts}`;
-        }
+// --- カード操作 ---
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
 
-        // ゲームオーバー
-        function gameOver() {
-            gameState.gameRunning = false;
-            finalScoreElement.textContent = `最終スコア: ${gameState.score}`;
-            gameOverScreen.style.display = 'block';
-        }
+function drawCards(count) {
+  for(let i=0; i<count; i++) {
+    if(state.drawPile.length === 0) {
+      if(state.discardPile.length === 0) break; // 両方空なら引けない
+      state.drawPile = [...state.discardPile];
+      state.discardPile = [];
+      shuffle(state.drawPile);
+    }
+    state.hand.push(state.drawPile.pop());
+  }
+}
 
-        // イベントリスナー
-        startButton.addEventListener('click', () => {
-            startScreen.style.display = 'none';
-            gameScreen.style.display = 'block';
-            initGame();
-        });
+function playCard(index) {
+  if(!state.isPlayerTurn) return;
+  const card = state.hand[index];
+  
+  if(state.player.energy < card.cost) {
+    createFloatingText("マナ不足！", document.getElementById("player-entity"), "var(--ink)");
+    return;
+  }
 
-        restartButton.addEventListener('click', () => {
-            gameOverScreen.style.display = 'none';
-            initGame();
-        });
+  // コスト支払いと発動
+  state.player.energy -= card.cost;
+  card.play(state.enemy); // ターゲットは現状敵のみ
+  
+  // アニメーション
+  const pSprite = document.getElementById("player-sprite");
+  pSprite.classList.remove("anim-attack");
+  void pSprite.offsetWidth; // リフロー
+  pSprite.classList.add("anim-attack");
 
-        // キーボード操作
-        document.addEventListener('keydown', (e) => {
-            switch (e.key) {
-                case 'ArrowLeft':
-                case 'a':
-                    movePlayer(-1, 0);
-                    break;
-                case 'ArrowRight':
-                case 'd':
-                    movePlayer(1, 0);
-                    break;
-                case 'ArrowUp':
-                case 'w':
-                    movePlayer(0, -1);
-                    break;
-                case 'ArrowDown':
-                case 's':
-                    movePlayer(0, 1);
-                    break;
-                case ' ':
-                    shoot();
-                    break;
-            }
-        });
+  // 手札から捨て札へ
+  state.discardPile.push(state.hand.splice(index, 1)[0]);
+  updateUI();
+  checkWin();
+}
 
-        // ボタン操作
-        leftBtn.addEventListener('click', () => movePlayer(-1, 0));
-        rightBtn.addEventListener('click', () => movePlayer(1, 0));
-        shootBtn.addEventListener('click', shoot);
-    </script>
+async function endTurn() {
+  if(!state.isPlayerTurn) return;
+  state.isPlayerTurn = false;
+  document.getElementById("btn-end-turn").disabled = true;
+
+  // 手札をすべて捨てる
+  while(state.hand.length > 0) {
+    state.discardPile.push(state.hand.pop());
+  }
+  updateUI();
+
+  // 敵のターン処理
+  await sleep(600);
+  await executeEnemyIntent();
+  
+  if(state.player.hp <= 0) {
+    showGameOver();
+  } else {
+    startTurn();
+  }
+}
+
+// --- 戦闘処理 ---
+function dealDamage(target, amount) {
+  let dmg = amount;
+  if(target.block > 0) {
+    if(target.block >= dmg) {
+      target.block -= dmg;
+      createFloatingText("ブロック!", document.getElementById(target === state.enemy ? "enemy-entity" : "player-entity"), "var(--blue)");
+      dmg = 0;
+    } else {
+      dmg -= target.block;
+      target.block = 0;
+    }
+  }
+  
+  if(dmg > 0) {
+    target.hp -= dmg;
+    if(target.hp < 0) target.hp = 0;
+    createFloatingText(`-${dmg}`, document.getElementById(target === state.enemy ? "enemy-entity" : "player-entity"), "var(--red)");
+    
+    const sprite = document.getElementById(target === state.enemy ? "enemy-sprite" : "player-sprite");
+    sprite.classList.remove("anim-shake");
+    void sprite.offsetWidth;
+    sprite.classList.add("anim-shake");
+  }
+}
+
+function gainBlock(target, amount) {
+  target.block += amount;
+  createFloatingText(`+${amount} 盾`, document.getElementById(target === state.enemy ? "enemy-entity" : "player-entity"), "var(--blue)");
+}
+
+function setEnemyIntent() {
+  const intents = state.enemy.intents;
+  state.enemy.nextIntent = intents[Math.floor(Math.random() * intents.length)];
+}
+
+async function executeEnemyIntent() {
+  const intent = state.enemy.nextIntent;
+  const eSprite = document.getElementById("enemy-sprite");
+  
+  if(intent.type === 'attack') {
+    eSprite.classList.remove("anim-enemy-attack");
+    void eSprite.offsetWidth;
+    eSprite.classList.add("anim-enemy-attack");
+    await sleep(200);
+    dealDamage(state.player, intent.val);
+  } else if(intent.type === 'defend') {
+    gainBlock(state.enemy, intent.val);
+  }
+  updateUI();
+  await sleep(500);
+}
+
+function checkWin() {
+  if(state.enemy.hp <= 0) {
+    state.isPlayerTurn = false;
+    setTimeout(() => {
+      showVictory();
+    }, 500);
+  }
+}
+
+// --- UI描画 ---
+function updateUI() {
+  // Stats
+  document.getElementById("ui-hp").innerText = `${state.player.hp}/${state.player.maxHp}`;
+  document.getElementById("ui-energy").innerText = `${state.player.energy}/${state.player.maxEnergy}`;
+  document.getElementById("ui-floor").innerText = state.floor;
+
+  // Player HUD
+  updateBar("player-hp-bar", state.player.hp, state.player.maxHp);
+  document.getElementById("player-hp-text").innerText = `${state.player.hp}/${state.player.maxHp}`;
+  const pBlock = document.getElementById("player-block");
+  pBlock.innerText = state.player.block;
+  pBlock.className = state.player.block > 0 ? "block-badge show" : "block-badge";
+
+  // Enemy HUD
+  if(state.enemy) {
+    document.getElementById("enemy-sprite").innerText = state.enemy.sprite;
+    updateBar("enemy-hp-bar", state.enemy.hp, state.enemy.maxHp);
+    document.getElementById("enemy-hp-text").innerText = `${state.enemy.hp}/${state.enemy.maxHp}`;
+    const eBlock = document.getElementById("enemy-block");
+    eBlock.innerText = state.enemy.block;
+    eBlock.className = state.enemy.block > 0 ? "block-badge show" : "block-badge";
+    
+    const intentUI = document.getElementById("enemy-intent");
+    if(state.enemy.nextIntent) {
+      let icon = state.enemy.nextIntent.type === 'attack' ? '⚔️' : '🛡️';
+      intentUI.innerText = `${icon} ${state.enemy.nextIntent.val}`;
+      intentUI.classList.add("show");
+    } else {
+      intentUI.classList.remove("show");
+    }
+  }
+
+  // Hand & Piles
+  document.getElementById("ui-draw").innerText = state.drawPile.length;
+  document.getElementById("ui-discard").innerText = state.discardPile.length;
+  document.getElementById("btn-end-turn").disabled = !state.isPlayerTurn;
+
+  const handContainer = document.getElementById("hand-container");
+  handContainer.innerHTML = "";
+  
+  state.hand.forEach((card, index) => {
+    const el = document.createElement("div");
+    const canPlay = state.isPlayerTurn && state.player.energy >= card.cost;
+    el.className = canPlay ? "card" : "card unplayable";
+    el.innerHTML = `
+      <div class="card-cost">${card.cost}</div>
+      <div class="card-type">${card.type}</div>
+      <div class="card-name">${card.name}</div>
+      <div class="card-desc">${card.desc}</div>
+    `;
+    if(canPlay) {
+      el.onclick = () => playCard(index);
+    }
+    handContainer.appendChild(el);
+  });
+}
+
+function updateBar(id, current, max) {
+  const bar = document.getElementById(id);
+  const percent = Math.max(0, Math.min(100, (current / max) * 100));
+  bar.style.width = `${percent}%`;
+}
+
+function createFloatingText(text, parent, color) {
+  const el = document.createElement("div");
+  el.className = "floating-text";
+  el.innerText = text;
+  el.style.color = color;
+  // ランダムな位置に散らす
+  const offsetX = (Math.random() - 0.5) * 40;
+  el.style.left = `calc(50% + ${offsetX}px)`;
+  el.style.top = "20%";
+  parent.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+// --- モーダル・進行 ---
+function showVictory() {
+  document.getElementById("modal-title").innerText = "VICTORY!";
+  document.getElementById("modal-title").style.color = "var(--gold)";
+  document.getElementById("modal-desc").innerText = "新たなカードをデッキに追加できます。";
+  
+  // ランダムな報酬カードを3枚生成
+  const pool = Object.values(CARD_DB);
+  const rewards = [];
+  while(rewards.length < 3) {
+    const r = pool[Math.floor(Math.random() * pool.length)];
+    if(!rewards.includes(r)) rewards.push(r);
+  }
+
+  const rContainer = document.getElementById("reward-container");
+  rContainer.innerHTML = "";
+  rContainer.style.display = "flex";
+  
+  rewards.forEach(card => {
+    const el = document.createElement("div");
+    el.className = "card";
+    el.style.marginLeft = "0";
+    el.innerHTML = `
+      <div class="card-cost">${card.cost}</div>
+      <div class="card-type">${card.type}</div>
+      <div class="card-name">${card.name}</div>
+      <div class="card-desc">${card.desc}</div>
+    `;
+    el.onclick = () => {
+      state.deck.push({...card});
+      nextFloor();
+    };
+    rContainer.appendChild(el);
+  });
+
+  document.getElementById("modal-btn").innerText = "スキップ";
+  document.getElementById("modal-btn").onclick = nextFloor;
+  
+  document.getElementById("sys-modal").classList.add("show");
+}
+
+function nextFloor() {
+  document.getElementById("sys-modal").classList.remove("show");
+  state.floor++;
+  startEncounter();
+}
+
+function showGameOver() {
+  document.getElementById("modal-title").innerText = "GAME OVER";
+  document.getElementById("modal-title").style.color = "var(--red)";
+  document.getElementById("modal-desc").innerText = `到達階層: ${state.floor}\n敵に敗北しました...`;
+  document.getElementById("reward-container").style.display = "none";
+  
+  document.getElementById("modal-btn").innerText = "最初からやり直す";
+  document.getElementById("modal-btn").onclick = () => {
+    document.getElementById("sys-modal").classList.remove("show");
+    initGame();
+  };
+  
+  document.getElementById("sys-modal").classList.add("show");
+}
+
+function closeModal() {
+  document.getElementById("sys-modal").classList.remove("show");
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ゲームスタート
+initGame();
+
+</script>
 </body>
 </html>
