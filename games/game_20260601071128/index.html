@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>ドラえもん ひみつ道具クイズRPG</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: manipulation;
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+    }
+
+    #game-container {
+      width: 100%;
+      max-width: 500px;
+      height: 100vh;
+      max-height: 800px;
+      position: relative;
+      overflow: hidden;
+      background: rgba(0,0,0,0.7);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .screen {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      text-align: center;
+      transition: opacity 0.5s ease;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .character {
+      font-size: 5rem;
+      margin: 20px 0;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .btn {
+      background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+      border: none;
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      border-radius: 50px;
+      margin: 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+      color: white;
+      font-weight: bold;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .question {
+      font-size: 1.5rem;
+      margin: 20px 0;
+      padding: 20px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 15px;
+      backdrop-filter: blur(10px);
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+      margin: 20px 0;
+    }
+
+    .option {
+      padding: 15px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 1rem;
+    }
+
+    .option:hover {
+      background: rgba(255,255,255,0.2);
+      transform: scale(1.05);
+    }
+
+    .health-bar {
+      width: 100%;
+      height: 20px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+
+    .health-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff6b6b, #ee5a24);
+      border-radius: 10px;
+      transition: width 0.5s ease;
+    }
+
+    .enemy {
+      font-size: 4rem;
+      margin: 20px 0;
+    }
+
+    .game-over {
+      background: rgba(0,0,0,0.8);
+    }
+
+    .collection {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0;
+    }
+
+    .tool {
+      font-size: 2rem;
+      padding: 10px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+    }
+
+    .damage {
+      position: absolute;
+      color: #ff6b6b;
+      font-size: 2rem;
+      animation: damage 1s ease-out;
+      pointer-events: none;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes damage {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-50px); opacity: 0; }
+    }
+
+    @media (max-width: 500px) {
+      h1 { font-size: 2rem; }
+      .character { font-size: 4rem; }
+      .question { font-size: 1.2rem; }
+      .btn { padding: 12px 24px; font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <!-- スタート画面 -->
+    <div id="start-screen" class="screen">
+      <h1>ドラえもん ひみつ道具クイズRPG</h1>
+      <div class="character">🤖</div>
+      <p>ドラえもんのひみつ道具をもっと知ろう！</p>
+      <button id="start-btn" class="btn">ゲーム開始</button>
+    </div>
+
+    <!-- プレイ画面 -->
+    <div id="game-screen" class="screen hidden">
+      <div class="character">🎯</div>
+      <div class="question" id="question">問題が表示されます</div>
+      <div class="options" id="options"></div>
+      <div class="enemy">👾</div>
+      <div class="health-bar">
+        <div class="health-fill" id="enemy-health" style="width: 100%"></div>
+      </div>
+      <div class="collection" id="collection"></div>
+    </div>
+
+    <!-- ゲームオーバー画面 -->
+    <div id="game-over-screen" class="screen hidden game-over">
+      <h1>ゲームオーバー</h1>
+      <div class="character">😢</div>
+      <p>ひみつ道具をすべて集めた！</p>
+      <div class="collection" id="final-collection"></div>
+      <button id="restart-btn" class="btn">もう一度遊ぶ</button>
+    </div>
+  </div>
+
+  <script>
+    // ゲーム状態管理
+    const gameState = {
+      currentScreen: 'start',
+      playerHealth: 100,
+      enemyHealth: 100,
+      collectedTools: [],
+      currentQuestion: 0,
+      questions: [
+        {
+          question: "どこでもドアの効果は？",
+          options: ["空を飛ぶ", "どこでも行ける", "物を増やす", "時間停止"],
+          correct: 1
+        },
+        {
+          question: "スパイシーな味の玉の効果は？",
+          options: ["火がつく", "熱い", "味が変わる", "毒になる"],
+          correct: 0
+        },
+        {
+          question: "ミステリーの効果は？",
+          options: ["魔法が使える", "人を変身させる", "謎を解く", "時間停止"],
+          correct: 2
+        },
+        {
+          question: "タイムマシンの効果は？",
+          options: ["未来を見せる", "過去に戻る", "未来に飛ぶ", "時間の流れを止める"],
+          correct: 1
+        },
+        {
+          question: "万能の効果は？",
+          options: ["すべての物に使える", "すべての問題を解決する", "すべての人に使える", "すべての場所に使える"],
+          correct: 0
+        }
+      ]
+    };
+
+    // DOM要素
+    const startScreen = document.getElementById('start-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const startBtn = document.getElementById('start-btn');
+    const restartBtn = document.getElementById('restart-btn');
+    const questionEl = document.getElementById('question');
+    const optionsEl = document.getElementById('options');
+    const enemyHealthEl = document.getElementById('enemy-health');
+    const collectionEl = document.getElementById('collection');
+    const finalCollectionEl = document.getElementById('final-collection');
+
+    // ゲーム開始
+    startBtn.addEventListener('click', () => {
+      gameState.currentScreen = 'game';
+      startScreen.classList.add('hidden');
+      gameScreen.classList.remove('hidden');
+      loadQuestion();
+    });
+
+    // ゲームリスタート
+    restartBtn.addEventListener('click', () => {
+      gameState.currentScreen = 'start';
+      gameOverScreen.classList.add('hidden');
+      startScreen.classList.remove('hidden');
+      resetGame();
+    });
+
+    // ゲームリセット
+    function resetGame() {
+      gameState.currentQuestion = 0;
+      gameState.collectedTools = [];
+      gameState.enemyHealth = 100;
+      updateHealthBar();
+      updateCollection();
+    }
+
+    // 問題読み込み
+    function loadQuestion() {
+      if (gameState.currentQuestion >= gameState.questions.length) {
+        endGame();
+        return;
+      }
+
+      const question = gameState.questions[gameState.currentQuestion];
+      questionEl.textContent = question.question;
+      optionsEl.innerHTML = '';
+
+      question.options.forEach((option, index) => {
+        const optionEl = document.createElement('div');
+        optionEl.className = 'option';
+        optionEl.textContent = option;
+        optionEl.addEventListener('click', () => checkAnswer(index));
+        optionsEl.appendChild(optionEl);
+      });
+    }
+
+    // 正解判定
+    function checkAnswer(selectedIndex) {
+      const question = gameState.questions[gameState.currentQuestion];
+      const isCorrect = selectedIndex === question.correct;
+
+      if (isCorrect) {
+        // 正解
+        gameState.enemyHealth -= 20;
+        updateHealthBar();
+        addDamageEffect();
+        gameState.collectedTools.push(question.question);
+        updateCollection();
+        
+        setTimeout(() => {
+          gameState.currentQuestion++;
+          loadQuestion();
+        }, 1000);
+      } else {
+        // 不正解
+        gameState.playerHealth -= 10;
+        updateHealthBar();
+        
+        if (gameState.playerHealth <= 0) {
+          endGame();
+        } else {
+          setTimeout(() => {
+            gameState.currentQuestion++;
+            loadQuestion();
+          }, 1000);
+        }
+      }
+    }
+
+    // ダメージエフェクト
+    function addDamageEffect() {
+      const damageEl = document.createElement('div');
+      damageEl.className = 'damage';
+      damageEl.textContent = '💥';
+      damageEl.style.left = '50%';
+      damageEl.style.top = '50%';
+      gameScreen.appendChild(damageEl);
+      
+      setTimeout(() => {
+        damageEl.remove();
+      }, 1000);
+    }
+
+    // ヘルスバー更新
+    function updateHealthBar() {
+      enemyHealthEl.style.width = `${gameState.enemyHealth}%`;
+    }
+
+    // 図鑑更新
+    function updateCollection() {
+      collectionEl.innerHTML = '';
+      finalCollectionEl.innerHTML = '';
+      
+      gameState.collectedTools.forEach(tool => {
+        const toolEl = document.createElement('div');
+        toolEl.className = 'tool';
+        toolEl.textContent = '🔑';
+        collectionEl.appendChild(toolEl);
+        
+        const finalToolEl = document.createElement('div');
+        finalToolEl.className = 'tool';
+        finalToolEl.textContent = '🔑';
+        finalCollectionEl.appendChild(finalToolEl);
+      });
+    }
+
+    // ゲーム終了
+    function endGame() {
+      gameScreen.classList.add('hidden');
+      gameOverScreen.classList.remove('hidden');
+    }
+
+    // 初期化
+    updateCollection();
+  </script>
+</body>
+</html>
