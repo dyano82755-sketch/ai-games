@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ロードランナー</title>
+<title>ロードランナー DX</title>
 <style>
   :root {
     --ink: #f6e8b4;
@@ -208,6 +208,7 @@
     height: 100%;
     min-height: 340px;
     image-rendering: pixelated;
+    touch-action: none; /* スワイプ操作用 */
   }
 
   .message {
@@ -225,6 +226,7 @@
     background: rgba(5, 9, 16, 0.86);
     text-align: center;
     font-weight: 900;
+    pointer-events: none;
   }
 
   .controls {
@@ -539,7 +541,7 @@
     </div>
     <div class="bar-wrap">
       <div class="mini-panel">
-        <b id="toolText">Z/X: 穴掘り</b>
+        <b id="toolText">スワイプ移動 / Z・X 穴掘り</b>
         <small id="bestText">BEST 0</small>
       </div>
       <div class="bar" aria-label="金塊回収率"><span id="progressBar"></span></div>
@@ -549,8 +551,8 @@
 
 <div class="modal show" id="modal">
   <div class="modal-card">
-    <h1 id="modalTitle">レトロ・ゴールドランナー</h1>
-    <p id="modalText">金塊を全部集めると脱出はしごが現れます。敵をかわし、左右の足元に穴を掘って道を作りましょう。</p>
+    <h1 id="modalTitle">レトロ・ゴールドランナー DX</h1>
+    <p id="modalText">敵は金塊を奪い、穴から這い上がってきます。金塊を全部集めると脱出はしごが現れます。敵をかわし、左右の足元に穴を掘って道を作りましょう。<br><br><small>※画面スワイプでの移動にも対応しています。</small></p>
     <div class="modal-actions" id="modalActions"></div>
   </div>
 </div>
@@ -664,7 +666,7 @@
     gold: new Map(),
     totalGold: 0,
     holes: [],
-    player: makeEntity(1, 1, "player"),
+    player: null,
     guards: [],
     lives: 3,
     score: 0,
@@ -692,7 +694,9 @@
       kind,
       trappedUntil: 0,
       blinkUntil: 0,
-      stepPulse: 0
+      stepPulse: 0,
+      carryingGold: false,
+      inHole: false
     };
   }
 
@@ -781,7 +785,8 @@
   }
 
   function escapeActive() {
-    return state.gold.size === 0;
+    const uncollected = state.gold.size + state.guards.filter(g => g.carryingGold).length;
+    return uncollected === 0;
   }
 
   function isSolid(tile) {
@@ -901,9 +906,11 @@
     state.score += 250;
     burst(state.player.x, state.player.y, "#f6c945", 18);
     floatText(state.player.x, state.player.y, "+250", "#fff2a6");
-    setMessage(state.gold.size ? `金塊あと${state.gold.size}個。` : "脱出はしごが出現！");
+    
+    const uncollected = state.gold.size + state.guards.filter(g => g.carryingGold).length;
+    setMessage(uncollected > 0 ? `金塊あと${uncollected}個。` : "脱出はしごが出現！");
     playTone(720, 0.08, "triangle");
-    if (state.gold.size === 0) playTone(960, 0.16, "triangle", 0.08);
+    if (uncollected === 0) playTone(960, 0.16, "triangle", 0.08);
   }
 
   function checkExit() {
@@ -967,19 +974,64 @@
     });
   }
 
+  function dropGuardGold(guard) {
+    if (!guard.carryingGold) return;
+    guard.carryingGold = false;
+    
+    // 金塊は空きスペースが見つかるまで浮上する（FC版特有のギミック）
+    let dropY = guard.y - 1;
+    while (dropY >= 0 && !canOccupy(guard.x, dropY)) {
+      dropY--;
+    }
+    
+    if (dropY >= 0 && !state.gold.has(keyOf(guard.x, dropY))) {
+      state.gold.set(keyOf(guard.x, dropY), { x: guard.x, y: dropY });
+    } else {
+      // 浮上先がない場合は初期位置に安全に配置
+      state.gold.set(keyOf(guard.spawnX, guard.spawnY), { x: guard.spawnX, y: guard.spawnY });
+    }
+  }
+
   function stepGuard(guard, time) {
-    if (time < guard.trappedUntil) return;
     const hole = holeAt(guard.x, guard.y);
+
+    // 穴に落ちた時の処理（這い上がり対応）
     if (hole) {
-      guard.trappedUntil = time + 1500;
-      state.score += 75;
-      floatText(guard.x, guard.y, "+75", "#b8ffbc");
-      return;
+      if (!guard.inHole) {
+        // 穴に落ちた瞬間
+        guard.inHole = true;
+        guard.trappedUntil = time + 2500; // 2.5秒間もがく
+        state.score += 75;
+        floatText(guard.x, guard.y, "+75", "#b8ffbc");
+        dropGuardGold(guard);
+        return;
+      } else {
+        if (time < guard.trappedUntil) {
+          return; // まだもがいている
+        } else {
+          // 時間が来たら這い上がる！
+          if (canOccupy(guard.x, guard.y - 1)) {
+            moveEntity(guard, 0, -1);
+            guard.inHole = false;
+          }
+          return;
+        }
+      }
+    } else {
+      guard.inHole = false;
     }
 
     if (canFall(guard)) {
       moveEntity(guard, 0, 1);
       return;
+    }
+
+    // 金塊泥棒ロジック（50%の確率で拾う）
+    if (!guard.carryingGold && state.gold.has(keyOf(guard.x, guard.y))) {
+       if (Math.random() < 0.5) {
+           state.gold.delete(keyOf(guard.x, guard.y));
+           guard.carryingGold = true;
+       }
     }
 
     const options = guardOptions(guard);
@@ -1017,7 +1069,7 @@
   }
 
   function checkGuardHits(time) {
-    const hit = state.guards.some(guard => time >= guard.trappedUntil && guard.x === state.player.x && guard.y === state.player.y);
+    const hit = state.guards.some(guard => !guard.inHole && guard.x === state.player.x && guard.y === state.player.y);
     if (hit) loseLife("つかまった！");
   }
 
@@ -1050,20 +1102,23 @@
       state.score += 150;
       floatText(guard.x, guard.y, "+150", "#b8ffbc");
     }
+    dropGuardGold(guard);
     guard.x = guard.spawnX;
     guard.y = guard.spawnY;
     guard.drawX = guard.x;
     guard.drawY = guard.y;
+    guard.inHole = false;
     guard.trappedUntil = performance.now() + 500;
   }
 
   function updateHud() {
+    const uncollected = state.gold.size + state.guards.filter(g => g.carryingGold).length;
     el.level.textContent = state.levelIndex + 1;
-    el.gold.textContent = `${state.totalGold - state.gold.size}/${state.totalGold}`;
+    el.gold.textContent = `${state.totalGold - uncollected}/${state.totalGold}`;
     el.life.textContent = "♥".repeat(Math.max(0, state.lives)) || "0";
     el.score.textContent = state.score;
     el.best.textContent = `BEST ${state.best}`;
-    el.progress.style.width = state.totalGold ? `${((state.totalGold - state.gold.size) / state.totalGold) * 100}%` : "0%";
+    el.progress.style.width = state.totalGold ? `${((state.totalGold - uncollected) / state.totalGold) * 100}%` : "0%";
     el.start.textContent = state.running ? (state.paused ? "RESUME" : "PAUSE") : "START";
     el.status.textContent = escapeActive() ? "脱出はしごへ向かえ" : "金塊を集め、穴を掘って逃げろ";
     el.mission.textContent = escapeActive() ? "光った脱出はしごへ。" : "金塊を全部集めると脱出はしごが出ます。";
@@ -1244,6 +1299,7 @@
     const bob = Math.sin(time * 0.013 + entity.x) * 1.5 + entity.stepPulse * 3;
     const x = r.x + s * 0.24;
     const y = r.y + s * 0.12 - bob;
+    
     ctx.fillStyle = "rgba(0,0,0,0.32)";
     ctx.fillRect(r.x + s * 0.22, r.y + s * 0.82, s * 0.58, s * 0.12);
     ctx.fillStyle = color;
@@ -1257,10 +1313,20 @@
     ctx.fillRect(x + s * 0.34, y + s * 0.58, s * 0.18, s * 0.22);
     ctx.fillStyle = "#f1c17b";
     ctx.fillRect(x - s * 0.1 * entity.dir, y + s * 0.34, s * 0.16, s * 0.12);
-    if (time < entity.trappedUntil) {
+    
+    if (entity.inHole) {
       ctx.fillStyle = "#fff2a6";
       ctx.fillRect(r.x + s * 0.36, r.y - s * 0.08, s * 0.28, s * 0.08);
     }
+
+    // 敵が金塊を背負っている視覚エフェクト
+    if (entity.carryingGold) {
+      ctx.fillStyle = "#f6c945";
+      ctx.fillRect(x + s * 0.1, y + s * 0.1, s * 0.25, s * 0.2);
+      ctx.fillStyle = "#fff2a6";
+      ctx.fillRect(x + s * 0.15, y + s * 0.15, s * 0.1, s * 0.05);
+    }
+
     ctx.restore();
   }
 
@@ -1321,7 +1387,7 @@
 
   function showModal(title, text, actions) {
     el.modalTitle.textContent = title;
-    el.modalText.textContent = text;
+    el.modalText.innerHTML = text;
     el.modalActions.innerHTML = "";
     actions.forEach(action => {
       const button = document.createElement("button");
@@ -1427,6 +1493,51 @@
     });
   });
 
+  // スワイプ操作の実装
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let currentSwipeDir = "";
+
+  canvas.addEventListener("touchstart", e => {
+    e.preventDefault();
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
+    currentSwipeDir = "";
+  }, { passive: false });
+
+  canvas.addEventListener("touchmove", e => {
+    e.preventDefault();
+    if (!state.running || state.paused) return;
+    const tx = e.changedTouches[0].screenX;
+    const ty = e.changedTouches[0].screenY;
+    const dx = tx - touchStartX;
+    const dy = ty - touchStartY;
+
+    if (Math.abs(dx) > 20 || Math.abs(dy) > 20) {
+      let newDir = "";
+      if (Math.abs(dx) > Math.abs(dy)) {
+        newDir = dx > 0 ? "right" : "left";
+      } else {
+        newDir = dy > 0 ? "down" : "up";
+      }
+      if (newDir !== currentSwipeDir) {
+        if (currentSwipeDir) state.keys.delete(currentSwipeDir);
+        state.keys.add(newDir);
+        currentSwipeDir = newDir;
+        touchStartX = tx; 
+        touchStartY = ty;
+      }
+    }
+  }, { passive: false });
+
+  canvas.addEventListener("touchend", e => {
+    e.preventDefault();
+    if (currentSwipeDir) {
+      state.keys.delete(currentSwipeDir);
+      currentSwipeDir = "";
+    }
+  }, { passive: false });
+
   el.digLeft.addEventListener("click", () => dig("left"));
   el.digRight.addEventListener("click", () => dig("right"));
   el.start.addEventListener("click", togglePause);
@@ -1437,7 +1548,7 @@
   });
   window.addEventListener("resize", resizeCanvas);
 
-  showModal("レトロ・ゴールドランナー", "金塊を全部集めると脱出はしごが現れます。敵をかわし、Z/Xまたはボタンで左右の足元に穴を掘って進みましょう。", [
+  showModal("レトロ・ゴールドランナー DX", "敵は金塊を奪い、穴から這い上がってきます。金塊を全部集めると脱出はしごが現れます。敵をかわし、左右の足元に穴を掘って道を作りましょう。<br><br><small>※画面スワイプでの移動にも対応しています。</small>", [
     { label: "START", className: "play", action: startGame }
   ]);
 
