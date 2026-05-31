@@ -56,6 +56,15 @@
   .turn-p3 { color: var(--p3-color); box-shadow: 0 0 10px var(--p3-color); }
   .turn-p4 { color: var(--p4-color); box-shadow: 0 0 10px var(--p4-color); }
 
+  .status-message {
+    min-height: 28px; text-align: center; font-weight: 800;
+    color: var(--text-main); background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.12); border-radius: 10px;
+    padding: 6px 10px;
+  }
+  .status-message.warn { color: var(--accent); border-color: rgba(246, 201, 69, 0.55); }
+  .status-message.good { color: #ffffff; border-color: rgba(92, 198, 110, 0.65); }
+
   /* --- CPU情報エリア (上部) --- */
   .cpu-area {
     display: flex; justify-content: space-between; gap: 10px; width: 100%;
@@ -96,6 +105,15 @@
     display: flex; justify-content: center; align-items: center;
   }
   .cell:hover { background: rgba(255, 255, 255, 0.1); }
+  .cell.available {
+    background: rgba(246, 201, 69, 0.18);
+    box-shadow: inset 0 0 0 3px rgba(246, 201, 69, 0.75);
+  }
+  .cell.blocked { cursor: not-allowed; opacity: 0.5; }
+  .cell.win-cell {
+    background: rgba(92, 198, 110, 0.24);
+    box-shadow: inset 0 0 0 4px #5cc66e, 0 0 18px rgba(92, 198, 110, 0.65);
+  }
 
   /* --- プレイヤー持ち駒 (下部) --- */
   .player-inventory {
@@ -167,6 +185,7 @@
     .player-inventory { padding: 10px; gap: 15px; }
     .piece-stack { width: 50px; height: 50px; }
     .turn-indicator { font-size: 1rem; padding: 4px 10px; }
+    .status-message { font-size: 0.85rem; }
   }
 </style>
 </head>
@@ -198,6 +217,8 @@
     <div class="board" id="board">
       </div>
   </main>
+
+  <div class="status-message" id="status-message">下の持ち駒から置きたい輪を選んでください。</div>
 
   <div class="player-inventory" id="inv-p1">
     <div class="piece-stack" id="p1-0" onclick="selectPiece(0)">
@@ -234,7 +255,7 @@
         <li><b>昇順・降順:</b> 「大・中・小」または「小・中・大」の順で、タテ・ヨコ・ナナメに3つ並べる。</li>
       </ul>
       <p style="color: var(--accent); font-weight: bold;">操作方法:</p>
-      <p>下の持ち駒から置きたいサイズを選び、盤面の空いている場所をクリックしてください。</p>
+      <p>下の持ち駒から置きたいサイズを選び、盤面の光っているマスをクリックしてください。</p>
     </div>
     <button class="btn" onclick="closeRules()" style="width: 100%;">閉じる</button>
   </div>
@@ -247,6 +268,7 @@ let currentPlayer = 1;
 let selectedSize = -1; // 0: L, 1: M, 2: S
 let gameOver = false;
 let isProcessing = false;
+let winningCells = [];
 
 // 持ち駒 [L, M, S]
 let inventory = {
@@ -259,6 +281,25 @@ let inventory = {
 // ボード [row][col][size] = player (0:空, 1~4:プレイヤー)
 let board = [];
 
+const SIZE_LABELS = ['大', '中', '小'];
+const LINES = [
+  [[0, 0], [0, 1], [0, 2]],
+  [[1, 0], [1, 1], [1, 2]],
+  [[2, 0], [2, 1], [2, 2]],
+  [[0, 0], [1, 0], [2, 0]],
+  [[0, 1], [1, 1], [2, 1]],
+  [[0, 2], [1, 2], [2, 2]],
+  [[0, 0], [1, 1], [2, 2]],
+  [[0, 2], [1, 1], [2, 0]]
+];
+
+function setStatus(message, tone = '') {
+  const status = document.getElementById('status-message');
+  if (!status) return;
+  status.textContent = message;
+  status.className = `status-message ${tone}`.trim();
+}
+
 function initGame() {
   document.getElementById('result-modal').classList.remove('show');
   
@@ -266,6 +307,7 @@ function initGame() {
   selectedSize = -1;
   gameOver = false;
   isProcessing = false;
+  winningCells = [];
   inventory = { 1: [3, 3, 3], 2: [3, 3, 3], 3: [3, 3, 3], 4: [3, 3, 3] };
   
   // 3x3マス、それぞれに大・中・小の3スロット
@@ -273,6 +315,7 @@ function initGame() {
 
   createBoardUI();
   updateUI();
+  setStatus('下の持ち駒から置きたい輪を選んでください。');
 }
 
 function createBoardUI() {
@@ -300,7 +343,7 @@ const PLAYER_NAMES = {
 function updateUI() {
   // ターン表示
   const turnDisplay = document.getElementById('turn-display');
-  turnDisplay.textContent = `${PLAYER_NAMES[currentPlayer]}の番`;
+  turnDisplay.textContent = gameOver ? 'ゲーム終了' : `${PLAYER_NAMES[currentPlayer]}の番`;
   turnDisplay.className = `turn-indicator turn-p${currentPlayer}`;
 
   // プレイヤー(P1)のインベントリ更新
@@ -330,6 +373,14 @@ function updateUI() {
   for (let r = 0; r < 3; r++) {
     for (let c = 0; c < 3; c++) {
       const cell = document.getElementById(`cell-${r}-${c}`);
+      const isWinningCell = winningCells.some(([wr, wc]) => wr === r && wc === c);
+      let cellClass = 'cell';
+      if (isWinningCell) {
+        cellClass += ' win-cell';
+      } else if (!gameOver && !isProcessing && currentPlayer === 1 && selectedSize !== -1) {
+        cellClass += board[r][c][selectedSize] === 0 ? ' available' : ' blocked';
+      }
+      cell.className = cellClass;
       cell.innerHTML = ''; 
       
       for (let s = 0; s < 3; s++) {
@@ -347,44 +398,69 @@ function updateUI() {
 function selectPiece(size) {
   if (gameOver || isProcessing || currentPlayer !== 1 || inventory[1][size] === 0) return;
   
-  if (selectedSize === size) selectedSize = -1;
-  else selectedSize = size;
+  if (selectedSize === size) {
+    selectedSize = -1;
+    setStatus('下の持ち駒から置きたい輪を選んでください。');
+  } else {
+    selectedSize = size;
+    setStatus(`${SIZE_LABELS[size]}の輪を選択中。光っているマスに置けます。`);
+  }
   
   updateUI();
 }
 
 function placePiece(r, c) {
-  if (gameOver || isProcessing || currentPlayer !== 1 || selectedSize === -1) return;
+  if (gameOver || isProcessing || currentPlayer !== 1) return;
+  if (selectedSize === -1) {
+    setStatus('先に下の持ち駒から置きたい輪を選んでください。', 'warn');
+    return;
+  }
   
   // 既に置かれていたらキャンセル
-  if (board[r][c][selectedSize] !== 0) return;
+  if (board[r][c][selectedSize] !== 0) {
+    setStatus(`このマスの${SIZE_LABELS[selectedSize]}サイズはすでに埋まっています。`, 'warn');
+    return;
+  }
   
   executeMove(r, c, selectedSize);
 }
 
 function executeMove(r, c, s) {
+  if (gameOver || board[r][c][s] !== 0 || inventory[currentPlayer][s] <= 0) return;
+  const player = currentPlayer;
   board[r][c][s] = currentPlayer;
   inventory[currentPlayer][s]--;
   
-  if (checkWin(currentPlayer)) {
+  const winInfo = getWinInfo(player);
+  if (winInfo) {
     gameOver = true;
+    winningCells = winInfo.cells;
+    setStatus(`${PLAYER_NAMES[player]}が${winInfo.label}で勝利！`, 'good');
     updateUI();
-    setTimeout(() => showVictory(currentPlayer), 300);
+    setTimeout(() => showVictory(player, winInfo), 300);
   } else {
+    setStatus(`${PLAYER_NAMES[player]}が${SIZE_LABELS[s]}の輪を置きました。`);
     nextTurn();
   }
 }
 
 // ターン進行（置ける駒がないプレイヤーはスキップ）
-function hasValidMoves(player) {
+function getValidMoves(player) {
+  const moves = [];
   for (let r = 0; r < 3; r++) {
     for (let c = 0; c < 3; c++) {
       for (let s = 0; s < 3; s++) {
-        if (board[r][c][s] === 0 && inventory[player][s] > 0) return true;
+        if (board[r][c][s] === 0 && inventory[player][s] > 0) {
+          moves.push({ r, c, s });
+        }
       }
     }
   }
-  return false;
+  return moves;
+}
+
+function hasValidMoves(player) {
+  return getValidMoves(player).length > 0;
 }
 
 function nextTurn() {
@@ -401,6 +477,7 @@ function nextTurn() {
   // 誰も置けない場合は引き分け
   if (!found) {
     gameOver = true;
+    setStatus('置ける場所がなくなりました。引き分けです。', 'warn');
     updateUI();
     setTimeout(showDraw, 300);
     return;
@@ -410,130 +487,158 @@ function nextTurn() {
   
   if (currentPlayer !== 1) {
     isProcessing = true;
+    setStatus(`${PLAYER_NAMES[currentPlayer]}が考えています...`);
     updateUI();
     setTimeout(cpuPlay, 800); // CPUの思考時間演出
   } else {
     isProcessing = false;
+    setStatus('あなたの番です。下の持ち駒から置きたい輪を選んでください。');
     updateUI();
   }
 }
 
 // --- 勝利判定ロジック ---
-function checkWin(p) {
+function getWinInfo(p) {
   // 1. 同心円 (同じマスに大中小)
   for (let r = 0; r < 3; r++) {
     for (let c = 0; c < 3; c++) {
-      if (board[r][c][0] === p && board[r][c][1] === p && board[r][c][2] === p) return true;
+      if (board[r][c][0] === p && board[r][c][1] === p && board[r][c][2] === p) {
+        return { label: '同心円', cells: [[r, c]] };
+      }
     }
   }
 
   // 2. 同じサイズの3目並べ
   for (let s = 0; s < 3; s++) {
-    for (let i = 0; i < 3; i++) {
-      if (board[i][0][s] === p && board[i][1][s] === p && board[i][2][s] === p) return true; // ヨコ
-      if (board[0][i][s] === p && board[1][i][s] === p && board[2][i][s] === p) return true; // タテ
-    }
-    if (board[0][0][s] === p && board[1][1][s] === p && board[2][2][s] === p) return true; // ナナメ \
-    if (board[0][2][s] === p && board[1][1][s] === p && board[2][0][s] === p) return true; // ナナメ /
-  }
-
-  // 3. 昇順・降順 (大中小 or 小中大)
-  for (let i = 0; i < 3; i++) {
-    // ヨコ
-    if (board[i][0][0] === p && board[i][1][1] === p && board[i][2][2] === p) return true;
-    if (board[i][0][2] === p && board[i][1][1] === p && board[i][2][0] === p) return true;
-    // タテ
-    if (board[0][i][0] === p && board[1][i][1] === p && board[2][i][2] === p) return true;
-    if (board[0][i][2] === p && board[1][i][1] === p && board[2][i][0] === p) return true;
-  }
-  // ナナメ \
-  if (board[0][0][0] === p && board[1][1][1] === p && board[2][2][2] === p) return true;
-  if (board[0][0][2] === p && board[1][1][1] === p && board[2][2][0] === p) return true;
-  // ナナメ /
-  if (board[0][2][0] === p && board[1][1][1] === p && board[2][0][2] === p) return true;
-  if (board[0][2][2] === p && board[1][1][1] === p && board[2][0][0] === p) return true;
-
-  return false;
-}
-
-// --- CPU AI ロジック ---
-function cpuPlay() {
-  if (gameOver) return;
-
-  // 可能な手をすべてリストアップ
-  let validMoves = [];
-  for (let r = 0; r < 3; r++) {
-    for (let c = 0; c < 3; c++) {
-      for (let s = 0; s < 3; s++) {
-        if (board[r][c][s] === 0 && inventory[currentPlayer][s] > 0) {
-          validMoves.push({ r, c, s });
-        }
+    for (let line of LINES) {
+      if (line.every(([r, c]) => board[r][c][s] === p)) {
+        return { label: `${SIZE_LABELS[s]}サイズ3つ並び`, cells: line };
       }
     }
   }
+
+  // 3. 昇順・降順 (大中小 or 小中大)
+  const sizePatterns = [
+    { sizes: [0, 1, 2], label: '大・中・小ライン' },
+    { sizes: [2, 1, 0], label: '小・中・大ライン' }
+  ];
+  for (let line of LINES) {
+    for (let pattern of sizePatterns) {
+      if (line.every(([r, c], index) => board[r][c][pattern.sizes[index]] === p)) {
+        return { label: pattern.label, cells: line };
+      }
+    }
+  }
+
+  return null;
+}
+
+function checkWin(p) {
+  return Boolean(getWinInfo(p));
+}
+
+// --- CPU AI ロジック ---
+function withTemporaryMove(player, move, callback) {
+  board[move.r][move.c][move.s] = player;
+  inventory[player][move.s]--;
+  const result = callback();
+  inventory[player][move.s]++;
+  board[move.r][move.c][move.s] = 0;
+  return result;
+}
+
+function getWinningMoves(player) {
+  return getValidMoves(player).filter(move => {
+    return withTemporaryMove(player, move, () => checkWin(player));
+  });
+}
+
+function isSameMove(a, b) {
+  return a.r === b.r && a.c === b.c && a.s === b.s;
+}
+
+function scoreMove(player, move) {
+  let score = 0;
+  if (move.r === 1 && move.c === 1) score += 18;
+  if ((move.r === 0 || move.r === 2) && (move.c === 0 || move.c === 2)) score += 8;
+
+  return withTemporaryMove(player, move, () => {
+    const sameCellCount = board[move.r][move.c].filter(owner => owner === player).length;
+    score += sameCellCount * 12;
+    score += getWinningMoves(player).length * 45;
+
+    for (let opp = 1; opp <= 4; opp++) {
+      if (opp !== player) score -= getWinningMoves(opp).length * 20;
+    }
+    return score;
+  });
+}
+
+function chooseBestMove(player, moves) {
+  return moves
+    .slice()
+    .sort((a, b) => {
+      const diff = scoreMove(player, b) - scoreMove(player, a);
+      if (diff !== 0) return diff;
+      if (a.r !== b.r) return a.r - b.r;
+      if (a.c !== b.c) return a.c - b.c;
+      return a.s - b.s;
+    })[0];
+}
+
+function cpuPlay() {
+  if (gameOver) return;
+
+  const validMoves = getValidMoves(currentPlayer);
 
   if (validMoves.length === 0) {
     nextTurn(); return;
   }
 
   // 1. 自分が勝てる手があるかチェック（最優先）
-  for (let move of validMoves) {
-    board[move.r][move.c][move.s] = currentPlayer;
-    let win = checkWin(currentPlayer);
-    board[move.r][move.c][move.s] = 0;
-    if (win) {
-      executeMove(move.r, move.c, move.s); return;
-    }
+  const winningMove = getWinningMoves(currentPlayer)[0];
+  if (winningMove) {
+    executeMove(winningMove.r, winningMove.c, winningMove.s);
+    return;
   }
 
   // 2. 相手が次に勝つリーチ状態ならブロックする
-  for (let opp = 1; opp <= 4; opp++) {
-    if (opp === currentPlayer) continue;
-    
-    // 相手が置ける場所をチェック
-    let oppMoves = [];
-    for (let r = 0; r < 3; r++) {
-      for (let c = 0; c < 3; c++) {
-        for (let s = 0; s < 3; s++) {
-          if (board[r][c][s] === 0 && inventory[opp][s] > 0) {
-            oppMoves.push({ r, c, s });
-          }
-        }
+  const blockMoves = [];
+  for (let move of validMoves) {
+    let blocksThreat = false;
+    for (let opp = 1; opp <= 4; opp++) {
+      if (opp === currentPlayer) continue;
+      if (getWinningMoves(opp).some(threat => isSameMove(threat, move))) {
+        blocksThreat = true;
+        break;
       }
     }
-    
-    // 相手が勝てる手を見つけたら、自分がそのサイズを持っているか確認してブロック
-    for (let move of oppMoves) {
-      board[move.r][move.c][move.s] = opp;
-      let win = checkWin(opp);
-      board[move.r][move.c][move.s] = 0;
-      if (win) {
-        // 同じ場所・同じサイズを自分が持っていればブロック！
-        if (inventory[currentPlayer][move.s] > 0) {
-          executeMove(move.r, move.c, move.s); return;
-        }
-      }
-    }
+    if (blocksThreat) blockMoves.push(move);
+  }
+  if (blockMoves.length > 0) {
+    const move = chooseBestMove(currentPlayer, blockMoves);
+    executeMove(move.r, move.c, move.s);
+    return;
   }
 
-  // 3. 特に危険がなければランダムに置く
-  let randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
-  executeMove(randomMove.r, randomMove.c, randomMove.s);
+  // 3. 自分のリーチを作りやすい手、相手のリーチを増やしにくい手を選ぶ
+  const smartMove = chooseBestMove(currentPlayer, validMoves);
+  executeMove(smartMove.r, smartMove.c, smartMove.s);
 }
 
 // --- モーダル表示 ---
-function showVictory(player) {
+function showVictory(player, winInfo) {
   const title = document.getElementById('modal-title');
   const desc = document.getElementById('modal-result-desc');
   
   if (player === 1) {
     title.textContent = "You Win! 🎉";
     title.style.color = "var(--p1-color)";
-    desc.textContent = "見事な勝利です！";
+    desc.textContent = `見事な勝利です！ (${winInfo?.label || '勝利'})`;
   } else {
     title.textContent = "You Lose... 💀";
     title.style.color = `var(--p${player}-color)`;
-    desc.textContent = `${PLAYER_NAMES[player]} の勝利です。`;
+    desc.textContent = `${PLAYER_NAMES[player]} の勝利です。(${winInfo?.label || '勝利'})`;
   }
   document.getElementById('result-modal').classList.add('show');
 }
