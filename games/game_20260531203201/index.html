@@ -1,520 +1,648 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>ネタバレがはげしいRPG</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      touch-action: manipulation;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ポーカー・役作りチャレンジ</title>
+<style>
+  :root {
+    --bg-color: #0b2b1a;
+    --panel-bg: #114227;
+    --text-main: #f0f4f8;
+    --text-muted: #a3c4b1;
+    --accent: #f6c945;
+    --card-bg: #ffffff;
+    --red-suit: #df5142;
+    --black-suit: #1a1a24;
+    --btn-primary: #45a4e8;
+    --btn-danger: #df5142;
+    --btn-success: #5cc66e;
+    --shadow: rgba(0, 0, 0, 0.4);
+  }
 
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #1a1a2e, #16213e);
-      color: #fff;
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+  * { box-sizing: border-box; }
+  
+  body {
+    margin: 0;
+    padding: 0;
+    background: radial-gradient(circle at 50% 30%, #155230, var(--bg-color));
+    color: var(--text-main);
+    font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN", "Yu Rounded Gothic", "Meiryo", sans-serif;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+    user-select: none;
+  }
 
-    #game-container {
-      width: 100%;
-      max-width: 500px;
-      height: 100vh;
-      max-height: 700px;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    }
+  .app-container {
+    width: min(900px, 100%);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 16px;
+  }
 
-    .screen {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      text-align: center;
-      background: rgba(10, 10, 20, 0.9);
-      transition: opacity 0.5s ease;
-    }
+  /* --- ヘッダー・スコアボード --- */
+  .hud {
+    background: var(--panel-bg);
+    border: 3px solid #1f6b3e;
+    border-radius: 12px;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 6px 16px var(--shadow);
+  }
 
-    .hidden {
-      display: none !important;
-    }
+  .hud-stats {
+    display: flex;
+    gap: 20px;
+  }
 
-    h1 {
-      font-size: 2.5rem;
-      margin-bottom: 20px;
-      color: #ff6b6b;
-      text-shadow: 0 0 10px rgba(255, 107, 107, 0.7);
-    }
+  .stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 
-    h2 {
-      font-size: 1.8rem;
-      margin-bottom: 15px;
-      color: #4ecdc4;
-    }
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: bold;
+  }
 
-    p {
-      font-size: 1.1rem;
-      margin-bottom: 15px;
-      line-height: 1.6;
-    }
+  .stat-value {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--accent);
+  }
 
-    .character {
-      font-size: 3rem;
-      margin: 20px 0;
-      animation: float 3s ease-in-out infinite;
-    }
+  .round-box {
+    text-align: right;
+  }
 
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
+  /* --- メインエリア（カード表示） --- */
+  .play-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    position: relative;
+  }
 
-    .btn {
-      background: linear-gradient(45deg, #ff6b6b, #ff8e53);
-      border: none;
-      border-radius: 50px;
-      color: white;
-      padding: 15px 30px;
-      font-size: 1.2rem;
-      margin: 10px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
-    }
+  .info-text {
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-align: center;
+    min-height: 1.5em;
+    color: #fff;
+    text-shadow: 1px 1px 2px #000;
+  }
 
-    .btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(255, 107, 107, 0.6);
-    }
+  .cards-container {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    perspective: 1000px;
+    width: 100%;
+  }
 
-    .btn:active {
-      transform: translateY(1px);
-    }
+  .card-slot {
+    flex: 1;
+    max-width: 140px;
+    aspect-ratio: 2.5 / 3.5;
+    position: relative;
+  }
 
-    #game-screen {
-      background: linear-gradient(135deg, #0f3460, #1a1a2e);
-    }
+  .card {
+    width: 100%;
+    height: 100%;
+    background: var(--card-bg);
+    border-radius: 10px;
+    border: 2px solid #ccc;
+    box-shadow: 0 8px 16px var(--shadow);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 10px;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s, filter 0.2s;
+    position: absolute;
+    top: 0;
+    left: 0;
+    backface-visibility: hidden;
+  }
 
-    #game-board {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      grid-template-rows: repeat(5, 1fr);
-      gap: 5px;
-      width: 90%;
-      height: 60%;
-      margin: 20px auto;
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 10px;
-      padding: 10px;
-    }
+  /* 選択時（交換予定）のアニメーション */
+  .card.selected {
+    transform: translateY(-20px);
+    border-color: var(--btn-danger);
+    box-shadow: 0 15px 20px rgba(223, 81, 66, 0.4);
+    filter: brightness(0.85);
+  }
 
-    .cell {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 5px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 1.5rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
+  .card.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: rotateY(180deg);
+  }
 
-    .cell:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: scale(1.05);
-    }
+  .card-top {
+    font-size: 1.4rem;
+    font-weight: 900;
+    line-height: 1;
+  }
 
-    .cell.revealed {
-      background: rgba(78, 205, 196, 0.3);
-      transform: scale(1);
-    }
+  .card-center {
+    font-size: 3rem;
+    text-align: center;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-    .cell.mine {
-      background: rgba(255, 107, 107, 0.5);
-    }
+  .card-bottom {
+    font-size: 1.4rem;
+    font-weight: 900;
+    line-height: 1;
+    transform: rotate(180deg);
+    text-align: left;
+  }
 
-    #stats {
-      display: flex;
-      justify-content: space-around;
-      width: 90%;
-      margin: 10px 0;
-      font-size: 1.2rem;
-      background: rgba(0, 0, 0, 0.3);
-      padding: 10px;
-      border-radius: 10px;
-    }
+  .suit-hearts, .suit-diams { color: var(--red-suit); }
+  .suit-spades, .suit-clubs { color: var(--black-suit); }
 
-    #game-over {
-      background: rgba(255, 107, 107, 0.9);
-    }
+  .exchange-badge {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-15deg);
+    background: var(--btn-danger);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-weight: 900;
+    font-size: 1.2rem;
+    border: 2px solid #fff;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+  }
 
-    #game-over h2 {
-      color: #fff;
-    }
+  .card.selected .exchange-badge {
+    opacity: 1;
+  }
 
-    #game-over p {
-      color: #fff;
-    }
+  /* --- コントロールエリア --- */
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    padding: 20px 0;
+  }
 
-    #character-name {
-      font-size: 2rem;
-      margin: 10px 0;
-      color: #ffd166;
-    }
+  .btn {
+    padding: 14px 28px;
+    font-size: 1.2rem;
+    font-weight: 900;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    color: #fff;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.4);
+    transition: transform 0.1s, box-shadow 0.1s;
+    font-family: inherit;
+  }
 
-    #character-info {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 15px;
-      border-radius: 10px;
-      margin: 15px 0;
-      width: 80%;
-    }
+  .btn:active {
+    transform: translateY(6px);
+    box-shadow: 0 0 0 transparent;
+  }
 
-    .character-emoji {
-      font-size: 4rem;
-      margin: 10px 0;
-    }
+  .btn:disabled {
+    background: #555;
+    color: #888;
+    box-shadow: 0 6px 0 #333;
+    cursor: not-allowed;
+    transform: none;
+  }
 
-    .difficulty {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin: 15px 0;
-    }
+  .btn-exchange { background: linear-gradient(180deg, var(--btn-primary), #2974a6); }
+  .btn-score { background: linear-gradient(180deg, var(--btn-success), #3a8a47); }
+  
+  /* --- モーダル --- */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+  }
 
-    .difficulty-btn {
-      padding: 10px 20px;
-      background: rgba(255, 255, 255, 0.1);
-    }
+  .modal-overlay.show { display: flex; }
 
-    .difficulty-btn.active {
-      background: linear-gradient(45deg, #4ecdc4, #1a936f);
-    }
-  </style>
+  .modal-box {
+    background: var(--panel-bg);
+    border: 4px solid var(--accent);
+    border-radius: 16px;
+    padding: 30px;
+    text-align: center;
+    max-width: 450px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+  }
+
+  .modal-title {
+    font-size: 2rem;
+    color: var(--accent);
+    margin: 0 0 10px 0;
+  }
+
+  .modal-score {
+    font-size: 3rem;
+    font-weight: 900;
+    color: #fff;
+    margin: 10px 0 20px 0;
+  }
+
+  /* スマホ対応 */
+  @media (max-width: 600px) {
+    .cards-container { gap: 6px; }
+    .card-slot { aspect-ratio: 2 / 3.2; }
+    .card { padding: 6px; border-radius: 6px; }
+    .card-top, .card-bottom { font-size: 1rem; }
+    .card-center { font-size: 2rem; }
+    .exchange-badge { font-size: 0.9rem; padding: 2px 6px; }
+    .btn { padding: 12px 20px; font-size: 1rem; }
+    .stat-value { font-size: 1.2rem; }
+  }
+</style>
 </head>
 <body>
-  <div id="game-container">
-    <!-- スタート画面 -->
-    <div id="start-screen" class="screen">
-      <h1>✨ ネタバレがはげしいRPG ✨</h1>
-      <div class="character">🧙‍♂️</div>
-      <p>あなたは今、謎の世界に迷い込んだ...</p>
-      <p>冒険の始まりです！</p>
-      <div id="character-info">
-        <div id="character-name">英雄 レオ</div>
-        <div class="character-emoji">⚔️</div>
-        <p>HP: 100 | MP: 50 | ATK: 25</p>
-      </div>
-      <div class="difficulty">
-        <button class="difficulty-btn active" data-difficulty="easy">簡単</button>
-        <button class="difficulty-btn" data-difficulty="medium">普通</button>
-        <button class="difficulty-btn" data-difficulty="hard">難しい</button>
-      </div>
-      <button id="start-btn" class="btn">冒険を始める</button>
-    </div>
 
-    <!-- ゲーム画面 -->
-    <div id="game-screen" class="screen hidden">
-      <h2>冒険中...</h2>
-      <div id="stats">
-        <div>残り: <span id="remaining">25</span></div>
-        <div>爆発: <span id="mines">5</span></div>
-        <div>時間: <span id="timer">0</span>s</div>
+<div class="app-container">
+  <header class="hud">
+    <div class="hud-stats">
+      <div class="stat-box">
+        <span class="stat-label">TOTAL SCORE</span>
+        <span class="stat-value" id="score-display">0</span>
       </div>
-      <div id="game-board"></div>
-      <button id="restart-btn" class="btn">もう一度</button>
+      <div class="stat-box">
+        <span class="stat-label">交換チャンス</span>
+        <span class="stat-value" id="exchanges-display">2 / 2</span>
+      </div>
     </div>
+    <div class="round-box">
+      <div class="stat-label">ROUND</div>
+      <div class="stat-value" id="round-display">1 / 5</div>
+    </div>
+  </header>
 
-    <!-- ゲームオーバー画面 -->
-    <div id="game-over" class="screen hidden">
-      <h2>💀 ゲームオーバー 💀</h2>
-      <div class="character">💀</div>
-      <p>あなたはこの世界で倒れてしまいました...</p>
-      <p>でも、また挑戦できますよ！</p>
-      <p>あなたの冒険はまだ終わっていません！</p>
-      <button id="retry-btn" class="btn">再挑戦</button>
-    </div>
+  <main class="play-area">
+    <div class="info-text" id="info-text">交換するカードを選んでください</div>
+    
+    <div class="cards-container" id="cards-container">
+      </div>
+  </main>
+
+  <footer class="controls">
+    <button class="btn btn-exchange" id="btn-exchange" onclick="exchangeCards()">交換する</button>
+    <button class="btn btn-score" id="btn-score" onclick="scoreHand()">勝負する！</button>
+  </footer>
+</div>
+
+<div class="modal-overlay" id="result-modal">
+  <div class="modal-box">
+    <h2 class="modal-title" id="modal-hand-name">役名</h2>
+    <div class="stat-label">獲得スコア</div>
+    <div class="modal-score" id="modal-score-value">+0</div>
+    <div id="modal-final-text" style="margin-bottom: 20px; color: var(--text-muted); display: none;"></div>
+    <button class="btn btn-score" id="btn-next-round" onclick="startRound()" style="width: 100%;">次のラウンドへ</button>
   </div>
+</div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // ゲーム状態
-      const gameState = {
-        difficulty: 'easy',
-        board: [],
-        revealed: 0,
-        mines: 0,
-        gameOver: false,
-        timer: 0,
-        timerInterval: null,
-        firstClick: true
-      };
+<script>
+// --- オーディオ設定 (レトロな効果音) ---
+let audioCtx;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function playSound(type) {
+  ensureAudio();
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  
+  if (type === 'deal') {
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+  } else if (type === 'select') {
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+  } else if (type === 'exchange') {
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+    osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+  } else if (type === 'score') {
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+    osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+    gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+  }
+}
 
-      // DOM要素
-      const startScreen = document.getElementById('start-screen');
-      const gameScreen = document.getElementById('game-screen');
-      const gameOverScreen = document.getElementById('game-over');
-      const startBtn = document.getElementById('start-btn');
-      const restartBtn = document.getElementById('restart-btn');
-      const retryBtn = document.getElementById('retry-btn');
-      const gameBoard = document.getElementById('game-board');
-      const remainingSpan = document.getElementById('remaining');
-      const minesSpan = document.getElementById('mines');
-      const timerSpan = document.getElementById('timer');
-      const difficultyBtns = document.querySelectorAll('.difficulty-btn');
+// --- ゲームロジック ---
+const SUITS = [
+  { id: 'hearts', symbol: '♥', colorClass: 'suit-hearts' },
+  { id: 'diams', symbol: '♦', colorClass: 'suit-diams' },
+  { id: 'spades', symbol: '♠', colorClass: 'suit-spades' },
+  { id: 'clubs', symbol: '♣', colorClass: 'suit-clubs' }
+];
+const RANKS = [
+  { label: '2', value: 2 }, { label: '3', value: 3 }, { label: '4', value: 4 },
+  { label: '5', value: 5 }, { label: '6', value: 6 }, { label: '7', value: 7 },
+  { label: '8', value: 8 }, { label: '9', value: 9 }, { label: '10', value: 10 },
+  { label: 'J', value: 11 }, { label: 'Q', value: 12 }, { label: 'K', value: 13 },
+  { label: 'A', value: 14 }
+];
 
-      // 難易度設定
-      difficultyBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-          difficultyBtns.forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          gameState.difficulty = btn.dataset.difficulty;
-        });
-      });
+let state = {
+  deck: [],
+  hand: [],
+  selectedForExchange: [false, false, false, false, false],
+  exchangesLeft: 2,
+  round: 1,
+  maxRounds: 5,
+  totalScore: 0,
+  gameState: 'playing' // 'playing', 'scored', 'gameover'
+};
 
-      // ゲーム初期化
-      function initGame() {
-        gameBoard.innerHTML = '';
-        gameState.board = [];
-        gameState.revealed = 0;
-        gameState.gameOver = false;
-        gameState.timer = 0;
-        gameState.firstClick = true;
-        timerSpan.textContent = '0';
-        clearInterval(gameState.timerInterval);
+function createDeck() {
+  let deck = [];
+  for (let suit of SUITS) {
+    for (let rank of RANKS) {
+      deck.push({ ...suit, ...rank });
+    }
+  }
+  // シャッフル (Fisher-Yates)
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
+}
 
-        let rows, cols, mineCount;
+function initGame() {
+  state.totalScore = 0;
+  state.round = 1;
+  document.getElementById('score-display').textContent = '0';
+  startRound();
+}
 
-        switch (gameState.difficulty) {
-          case 'easy':
-            rows = cols = 5;
-            mineCount = 5;
-            break;
-          case 'medium':
-            rows = cols = 7;
-            mineCount = 12;
-            break;
-          case 'hard':
-            rows = cols = 9;
-            mineCount = 20;
-            break;
-        }
+function startRound() {
+  document.getElementById('result-modal').classList.remove('show');
+  
+  if (state.round > state.maxRounds) {
+    // 全ラウンド終了
+    showFinalResult();
+    return;
+  }
 
-        gameState.rows = rows;
-        gameState.cols = cols;
-        gameState.mines = mineCount;
+  state.deck = createDeck();
+  state.hand = [];
+  for (let i = 0; i < 5; i++) {
+    state.hand.push(state.deck.pop());
+  }
+  
+  state.selectedForExchange = [false, false, false, false, false];
+  state.exchangesLeft = 2;
+  state.gameState = 'playing';
+  
+  updateUI();
+  renderCards(true);
+  
+  setTimeout(() => playSound('deal'), 100);
+}
 
-        // ボード作成
-        for (let i = 0; i < rows; i++) {
-          gameState.board[i] = [];
-          for (let j = 0; j < cols; j++) {
-            gameState.board[i][j] = {
-              isMine: false,
-              isRevealed: false,
-              isFlagged: false,
-              adjacentMines: 0
-            };
-          }
-        }
+function toggleCard(index) {
+  if (state.gameState !== 'playing' || state.exchangesLeft <= 0) return;
+  
+  state.selectedForExchange[index] = !state.selectedForExchange[index];
+  playSound('select');
+  renderCards(false);
+  updateButtons();
+}
 
-        // マイン配置（最初のクリック以外）
-        remainingSpan.textContent = rows * cols - mineCount;
-        minesSpan.textContent = mineCount;
+function exchangeCards() {
+  if (state.gameState !== 'playing' || state.exchangesLeft <= 0) return;
+  
+  const anySelected = state.selectedForExchange.some(v => v);
+  if (!anySelected) {
+    alert("交換するカードを選んでください（タップで選択）");
+    return;
+  }
 
-        // ボード描画
-        gameBoard.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-        gameBoard.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+  playSound('exchange');
+  
+  // 新しいカードを引く
+  for (let i = 0; i < 5; i++) {
+    if (state.selectedForExchange[i]) {
+      state.hand[i] = state.deck.pop();
+      state.selectedForExchange[i] = false; // 選択解除
+    }
+  }
+  
+  state.exchangesLeft--;
+  updateUI();
+  renderCards(true); // アニメーション付きで再描画
+}
 
-        for (let i = 0; i < rows; i++) {
-          for (let j = 0; j < cols; j++) {
-            const cell = document.createElement('div');
-            cell.className = 'cell';
-            cell.dataset.row = i;
-            cell.dataset.col = j;
-            cell.addEventListener('click', () => handleCellClick(i, j));
-            cell.addEventListener('contextmenu', (e) => {
-              e.preventDefault();
-              toggleFlag(i, j);
-            });
-            gameBoard.appendChild(cell);
-          }
-        }
+// 役判定ロジック
+function evaluateHand(hand) {
+  const values = hand.map(c => c.value).sort((a, b) => b - a);
+  const suits = hand.map(c => c.suit);
+  
+  const isFlush = new Set(suits).size === 1;
+  
+  let isStraight = false;
+  // 通常のストレート (例: 10, 9, 8, 7, 6)
+  if (values[0] - values[4] === 4 && new Set(values).size === 5) {
+    isStraight = true;
+  }
+  // A, 5, 4, 3, 2 の特別なストレート
+  if (values[0] === 14 && values[1] === 5 && values[2] === 4 && values[3] === 3 && values[4] === 2) {
+    isStraight = true;
+  }
 
-        gameScreen.classList.remove('hidden');
-        startScreen.classList.add('hidden');
-        gameOverScreen.classList.add('hidden');
+  // 同じ数字のカウント
+  const counts = {};
+  values.forEach(v => counts[v] = (counts[v] || 0) + 1);
+  const frequencies = Object.values(counts).sort((a, b) => b - a); // 多い順 (例: フォーカードなら [4, 1])
 
-        // タイマー開始
-        gameState.timerInterval = setInterval(() => {
-          gameState.timer++;
-          timerSpan.textContent = gameState.timer;
-        }, 1000);
-      }
+  if (isFlush && isStraight) {
+    if (values[0] === 14 && values[1] === 13) return { name: "ロイヤルストレートフラッシュ", score: 1000 };
+    return { name: "ストレートフラッシュ", score: 500 };
+  }
+  if (frequencies[0] === 4) return { name: "フォーカード", score: 250 };
+  if (frequencies[0] === 3 && frequencies[1] === 2) return { name: "フルハウス", score: 150 };
+  if (isFlush) return { name: "フラッシュ", score: 100 };
+  if (isStraight) return { name: "ストレート", score: 70 };
+  if (frequencies[0] === 3) return { name: "スリーカード", score: 40 };
+  if (frequencies[0] === 2 && frequencies[1] === 2) return { name: "ツーペア", score: 20 };
+  if (frequencies[0] === 2) return { name: "ワンペア", score: 10 };
+  
+  return { name: "ハイカード (役なし)", score: 0 };
+}
 
-      // マイン配置
-      function placeMines(firstRow, firstCol) {
-        let minesPlaced = 0;
-        while (minesPlaced < gameState.mines) {
-          const row = Math.floor(Math.random() * gameState.rows);
-          const col = Math.floor(Math.random() * gameState.cols);
-          
-          // 最初のクリック位置は除外
-          if (row === firstRow && col === firstCol) continue;
-          
-          if (!gameState.board[row][col].isMine) {
-            gameState.board[row][col].isMine = true;
-            minesPlaced++;
-          }
-        }
+function scoreHand() {
+  if (state.gameState !== 'playing') return;
+  state.gameState = 'scored';
+  
+  // 選択状態をリセットして見やすくする
+  state.selectedForExchange = [false, false, false, false, false];
+  renderCards(false);
+  playSound('score');
 
-        // 隣接するマスの数を計算
-        for (let i = 0; i < gameState.rows; i++) {
-          for (let j = 0; j < gameState.cols; j++) {
-            if (!gameState.board[i][j].isMine) {
-              let count = 0;
-              for (let di = -1; di <= 1; di++) {
-                for (let dj = -1; dj <= 1; dj++) {
-                  if (di === 0 && dj === 0) continue;
-                  const ni = i + di;
-                  const nj = j + dj;
-                  if (ni >= 0 && ni < gameState.rows && nj >= 0 && nj < gameState.cols) {
-                    if (gameState.board[ni][nj].isMine) count++;
-                  }
-                }
-              }
-              gameState.board[i][j].adjacentMines = count;
-            }
-          }
-        }
-      }
+  const result = evaluateHand(state.hand);
+  state.totalScore += result.score;
+  
+  // UI更新
+  document.getElementById('score-display').textContent = state.totalScore;
+  
+  // モーダル表示
+  setTimeout(() => {
+    document.getElementById('modal-hand-name').textContent = result.name;
+    document.getElementById('modal-score-value').textContent = `+${result.score}`;
+    
+    const nextBtn = document.getElementById('btn-next-round');
+    if (state.round >= state.maxRounds) {
+      nextBtn.textContent = "最終結果を見る";
+    } else {
+      nextBtn.textContent = "次のラウンドへ";
+    }
+    
+    document.getElementById('result-modal').classList.add('show');
+    state.round++;
+  }, 500);
+}
 
-      // セルクリック処理
-      function handleCellClick(row, col) {
-        if (gameState.gameOver || gameState.board[row][col].isRevealed || gameState.board[row][col].isFlagged) return;
+function showFinalResult() {
+  document.getElementById('modal-hand-name').textContent = "チャレンジ終了！";
+  document.getElementById('modal-hand-name').style.color = "#fff";
+  document.getElementById('modal-score-value').textContent = `合計: ${state.totalScore}点`;
+  document.getElementById('modal-score-value').style.color = "var(--accent)";
+  
+  const textEl = document.getElementById('modal-final-text');
+  textEl.style.display = "block";
+  if (state.totalScore >= 500) textEl.textContent = "神業！プロのポーカープレイヤーです！";
+  else if (state.totalScore >= 200) textEl.textContent = "素晴らしい！かなりの豪運の持ち主です。";
+  else if (state.totalScore >= 50) textEl.textContent = "ナイスプレイ！堅実に役を作りました。";
+  else textEl.textContent = "残念！次はもっと良いカードが来るはず。";
 
-        if (gameState.firstClick) {
-          gameState.firstClick = false;
-          placeMines(row, col);
-        }
+  const nextBtn = document.getElementById('btn-next-round');
+  nextBtn.textContent = "もう一度遊ぶ";
+  nextBtn.onclick = () => {
+    textEl.style.display = "none";
+    document.getElementById('modal-hand-name').style.color = "var(--accent)";
+    document.getElementById('modal-score-value').style.color = "#fff";
+    nextBtn.onclick = startRound; // クリックイベントを元に戻す
+    initGame();
+  };
+  
+  document.getElementById('result-modal').classList.add('show');
+}
 
-        const cell = gameState.board[row][col];
-        cell.isRevealed = true;
-        gameState.revealed++;
+// --- UI描画 ---
+function updateUI() {
+  document.getElementById('exchanges-display').textContent = `${state.exchangesLeft} / 2`;
+  document.getElementById('round-display').textContent = `${state.round} / ${state.maxRounds}`;
+  
+  const infoText = document.getElementById('info-text');
+  if (state.exchangesLeft > 0) {
+    infoText.textContent = `交換するカードを選んでください（あと ${state.exchangesLeft} 回）`;
+  } else {
+    infoText.textContent = "交換終了！「勝負する！」を押してください";
+  }
+  
+  updateButtons();
+}
 
-        const cellElement = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
-        cellElement.classList.add('revealed');
+function updateButtons() {
+  const btnExchange = document.getElementById('btn-exchange');
+  const btnScore = document.getElementById('btn-score');
+  
+  const anySelected = state.selectedForExchange.some(v => v);
+  
+  btnExchange.disabled = state.exchangesLeft <= 0 || !anySelected || state.gameState !== 'playing';
+  btnScore.disabled = state.gameState !== 'playing';
+}
 
-        if (cell.isMine) {
-          cellElement.textContent = '💣';
-          cellElement.classList.add('mine');
-          gameOver();
-          return;
-        }
+function renderCards(animate = false) {
+  const container = document.getElementById('cards-container');
+  container.innerHTML = '';
+  
+  state.hand.forEach((card, index) => {
+    const slot = document.createElement('div');
+    slot.className = 'card-slot';
+    
+    const cardEl = document.createElement('div');
+    cardEl.className = `card ${card.colorClass}`;
+    if (state.selectedForExchange[index]) cardEl.classList.add('selected');
+    
+    // アニメーション用
+    if (animate) {
+      cardEl.style.transform = 'translateY(-100px) rotateY(180deg)';
+      cardEl.style.opacity = '0';
+      setTimeout(() => {
+        cardEl.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        cardEl.style.transform = state.selectedForExchange[index] ? 'translateY(-20px)' : 'translateY(0) rotateY(0)';
+        cardEl.style.opacity = '1';
+      }, index * 100);
+    }
+    
+    cardEl.innerHTML = `
+      <div class="card-top">${card.label} ${card.symbol}</div>
+      <div class="card-center">${card.symbol}</div>
+      <div class="card-bottom">${card.label} ${card.symbol}</div>
+      <div class="exchange-badge">CHANGE</div>
+    `;
+    
+    cardEl.onclick = () => toggleCard(index);
+    
+    slot.appendChild(cardEl);
+    container.appendChild(slot);
+  });
+}
 
-        if (cell.adjacentMines > 0) {
-          cellElement.textContent = cell.adjacentMines;
-        } else {
-          // 周囲のセルを再帰的に開く
-          revealAdjacent(row, col);
-        }
+// アプリ起動
+window.onload = initGame;
 
-        remainingSpan.textContent = (gameState.rows * gameState.cols - gameState.mines) - gameState.revealed;
-        
-        // 勝利判定
-        if (gameState.revealed === (gameState.rows * gameState.cols - gameState.mines)) {
-          winGame();
-        }
-      }
-
-      // 周囲のセルを開く
-      function revealAdjacent(row, col) {
-        for (let di = -1; di <= 1; di++) {
-          for (let dj = -1; dj <= 1; dj++) {
-            if (di === 0 && dj === 0) continue;
-            const ni = row + di;
-            const nj = col + dj;
-            if (ni >= 0 && ni < gameState.rows && nj >= 0 && nj < gameState.cols) {
-              if (!gameState.board[ni][nj].isRevealed && !gameState.board[ni][nj].isFlagged) {
-                handleCellClick(ni, nj);
-              }
-            }
-          }
-        }
-      }
-
-      // フラグ切り替え
-      function toggleFlag(row, col) {
-        if (gameState.gameOver || gameState.board[row][col].isRevealed) return;
-
-        const cell = gameState.board[row][col];
-        cell.isFlagged = !cell.isFlagged;
-        const cellElement = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
-        
-        if (cell.isFlagged) {
-          cellElement.textContent = '🚩';
-        } else {
-          cellElement.textContent = '';
-        }
-      }
-
-      // ゲームオーバー
-      function gameOver() {
-        gameState.gameOver = true;
-        clearInterval(gameState.timerInterval);
-        gameOverScreen.classList.remove('hidden');
-        gameScreen.classList.add('hidden');
-
-        // 全てのマインを表示
-        for (let i = 0; i < gameState.rows; i++) {
-          for (let j = 0; j < gameState.cols; j++) {
-            if (gameState.board[i][j].isMine) {
-              const cellElement = document.querySelector(`.cell[data-row="${i}"][data-col="${j}"]`);
-              cellElement.textContent = '💣';
-              cellElement.classList.add('mine');
-            }
-          }
-        }
-      }
-
-      // 勝利
-      function winGame() {
-        gameState.gameOver = true;
-        clearInterval(gameState.timerInterval);
-        gameOverScreen.classList.remove('hidden');
-        gameOverScreen.querySelector('h2').textContent = '🏆 勝利！🏆';
-        gameOverScreen.querySelector('p').textContent = 'あなたはこの世界を攻略しました！';
-        gameScreen.classList.add('hidden');
-      }
-
-      // イベントリスナー
-      startBtn.addEventListener('click', initGame);
-      restartBtn.addEventListener('click', initGame);
-      retryBtn.addEventListener('click', initGame);
-
-      // タッチデバイス対応
-      document.addEventListener('touchstart', (e) => {
-        if (e.target.classList.contains('cell')) {
-          e.preventDefault();
-          const row = parseInt(e.target.dataset.row);
-          const col = parseInt(e.target.dataset.col);
-          handleCellClick(row, col);
-        }
-      });
-    });
-  </script>
+</script>
 </body>
 </html>
