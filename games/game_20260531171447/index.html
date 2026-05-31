@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ロードランナー DX</title>
+<title>レトロ・ゴールドランナー DX</title>
 <style>
   :root {
     --ink: #f6e8b4;
@@ -598,59 +598,60 @@
     modalActions: document.getElementById("modalActions")
   };
 
+  // ※ ここがバグの原因でした（インデントの余分なスペースを削除しマップ構造を修復）
   const levels = [
     [
       "########################",
-      "#P    G     H      G E#",
-      "# BBBBBBB  H  BBBBBBB #",
-      "#      H   H     H    #",
-      "#--BB  H--BBB--  H--  #",
-      "#  H      G      H    #",
-      "#  H BBBBBBBBBB  H BB #",
-      "#  H      H      H    #",
-      "#  BBBB   H   BBBB    #",
-      "#     H   H      G    #",
-      "#--   H--BBBB--  H--  #",
-      "#   A H     A    H    #",
-      "# BBBBBBBBBBBBBBBBBB  #",
-      "#        G     H      #",
-      "#BBBBBBBBBBBBBBHBBBBBB#",
+      "#P    G     H      G E #",
+      "#BBBBBBBB   H   BBBBBBB#",
+      "#       H   H   H      #",
+      "#---BB  H---BBB-H---   #",
+      "#   H     G     H      #",
+      "#   H  BBBBBBBBB   BB  #",
+      "#   H       H   H      #",
+      "#   BBBB    H   BBBB   #",
+      "#      H    H      G   #",
+      "#---   H---BBBB-H---   #",
+      "#    A H      A H      #",
+      "#BBBBBBBBBBBBBBBBBBB   #",
+      "#         G     H      #",
+      "#BBBBBBBBBBBBBBBHBBBBBB#",
       "########################"
     ],
     [
       "########################",
-      "#P   H       G      E #",
-      "#BBB H BBBBBBBBBBBBB  #",
-      "#    H       H        #",
-      "# --BBBB--   H --BBB--#",
-      "#   H     G  H      A #",
-      "#   H BBBBBBBBBBBB    #",
-      "#   H        H     G  #",
-      "# BBBBBB  -- H --BBBB #",
-      "#      H     H        #",
-      "#  G   H BBBBBBBB H   #",
-      "#BBBB  H        A H   #",
-      "#      H--BBBB--  H   #",
-      "#   G       H      H  #",
-      "#BBBBBBBBBBBBBBBBBBBBB#",
+      "#P   H       G      E  #",
+      "#BBBBHBBBBBBBBBBBBBBB  #",
+      "#    H       H         #",
+      "# ---BBBB--- H ---BBB--#",
+      "#   H     G  H       A #",
+      "#   H BBBBBBBBBBBB     #",
+      "#   H        H     G   #",
+      "# BBBBBB  ---H ---BBBB #",
+      "#      H     H         #",
+      "#  G   H BBBBBBBB H    #",
+      "#BBBB  H        A H    #",
+      "#      H---BBBB---H    #",
+      "#   G        H      H  #",
+      "#BBBBBBBBBBBBBBBBBBBBBB#",
       "########################"
     ],
     [
       "########################",
-      "#P G      H       G E #",
-      "#BBBBB BB H BBBBBBBBB #",
-      "#      H  H      H    #",
-      "# --BB H--BBBB-- H--  #",
-      "#   H  H     G   H A  #",
-      "#   H BBBBBBBBBBBH    #",
-      "#   H       H     G   #",
-      "# BBBBBB -- H --BBBBB #",
-      "#      H    H        #",
-      "# G    H BBBBBBBB H  #",
-      "#BBBB  H      A   H  #",
-      "#      H--BBBB--  H  #",
-      "#   G        H     H #",
-      "#BBBBBBBBBBBBHBBBBBBB#",
+      "#P G      H       G E  #",
+      "#BBBBBBBB H BBBBBBBBBB #",
+      "#       H H       H    #",
+      "# ---BB H---BBBB--H--- #",
+      "#   H   H      G  H A  #",
+      "#   H BBBBBBBBBBBBH    #",
+      "#   H        H      G  #",
+      "# BBBBBB --- H ---BBBBB#",
+      "#      H     H         #",
+      "# G    H BBBBBBBB H    #",
+      "#BBBB  H       A  H    #",
+      "#      H---BBBB---H    #",
+      "#   G        H      H  #",
+      "#BBBBBBBBBBBBHBBBBBBBBB#",
       "########################"
     ]
   ];
