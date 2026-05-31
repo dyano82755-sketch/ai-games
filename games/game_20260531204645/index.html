@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>スレイ・ザ・スパイア</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 90vh;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        /* スタート画面 */
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #start-screen h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #ff0000;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
+        }
+
+        #start-screen p {
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        #start-button {
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            background: linear-gradient(to bottom, #ff0000, #8b0000);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.4);
+        }
+
+        #start-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
+        }
+
+        /* ゲーム画面 */
+        #game-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+        }
+
+        #game-header {
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #score, #lives {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        #game-board {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            gap: 2px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .cell {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .player {
+            background: rgba(0, 255, 0, 0.3);
+            font-size: 2rem;
+            animation: pulse 1s infinite;
+        }
+
+        .enemy {
+            background: rgba(255, 0, 0, 0.3);
+            font-size: 2rem;
+        }
+
+        .bullet {
+            background: rgba(255, 255, 0, 0.5);
+            font-size: 1.2rem;
+        }
+
+        .power-up {
+            background: rgba(255, 165, 0, 0.3);
+            font-size: 1.5rem;
+        }
+
+        /* ゲームオーバー画面 */
+        #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10;
+            text-align: center;
+        }
+
+        #game-over-screen h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #ff0000;
+        }
+
+        #final-score {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+        }
+
+        #restart-button {
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            background: linear-gradient(to bottom, #0066cc, #003366);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 102, 204, 0.4);
+        }
+
+        #restart-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 102, 204, 0.7);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* タッチ操作用のコントロール */
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .control-btn:active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 500px) {
+            #game-container {
+                height: 95vh;
+                border-radius: 10px;
+            }
+            
+            #start-screen h1 {
+                font-size: 2rem;
+            }
+            
+            .cell {
+                font-size: 1.2rem;
+            }
+            
+            .player {
+                font-size: 1.5rem;
+            }
+            
+            .enemy {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- スタート画面 -->
+        <div id="start-screen">
+            <h1>スレイ・ザ・スパイア</h1>
+            <p>スレイ・ザ・スパイアは、敵を倒してスコアを稼ぐアクションゲームです。</p>
+            <p>操作方法：<br>矢印キーまたはボタンで移動<br>スペースキーまたはタップで射撃</p>
+            <button id="start-button">スタート</button>
+        </div>
+
+        <!-- ゲーム画面 -->
+        <div id="game-screen">
+            <div id="game-header">
+                <div id="score">スコア: 0</div>
+                <div id="lives">ライフ: ❤️❤️❤️</div>
+            </div>
+            <div id="game-board"></div>
+            <div id="controls">
+                <div class="control-btn" id="left-btn">⬅️</div>
+                <div class="control-btn" id="shoot-btn">🔫</div>
+                <div class="control-btn" id="right-btn">➡️</div>
+            </div>
+        </div>
+
+        <!-- ゲームオーバー画面 -->
+        <div id="game-over-screen">
+            <h2>ゲームオーバー</h2>
+            <div id="final-score">最終スコア: 0</div>
+            <button id="restart-button">リスタート</button>
+        </div>
+    </div>
+
+    <script>
+        // ゲーム状態管理
+        const gameState = {
+            score: 0,
+            lives: 3,
+            level: 1,
+            player: { x: 5, y: 9 },
+            bullets: [],
+            enemies: [],
+            powerUps: [],
+            gameRunning: false,
+            lastTime: 0,
+            enemySpawnTimer: 0,
+            powerUpSpawnTimer: 0
+        };
+
+        // DOM要素
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const startButton = document.getElementById('start-button');
+        const restartButton = document.getElementById('restart-button');
+        const scoreElement = document.getElementById('score');
+        const livesElement = document.getElementById('lives');
+        const finalScoreElement = document.getElementById('final-score');
+        const gameBoard = document.getElementById('game-board');
+        const leftBtn = document.getElementById('left-btn');
+        const rightBtn = document.getElementById('right-btn');
+        const shootBtn = document.getElementById('shoot-btn');
+
+        // ゲーム初期化
+        function initGame() {
+            gameBoard.innerHTML = '';
+            gameState.score = 0;
+            gameState.lives = 3;
+            gameState.level = 1;
+            gameState.player = { x: 5, y: 9 };
+            gameState.bullets = [];
+            gameState.enemies = [];
+            gameState.powerUps = [];
+            gameState.gameRunning = true;
+            gameState.enemySpawnTimer = 0;
+            gameState.powerUpSpawnTimer = 0;
+            
+            updateScore();
+            updateLives();
+            
+            // ゲームボード作成
+            for (let i = 0; i < 100; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.id = `cell-${i}`;
+                gameBoard.appendChild(cell);
+            }
+            
+            // プレイヤーを配置
+            updatePlayerPosition();
+            
+            // ゲームループ開始
+            requestAnimationFrame(gameLoop);
+        }
+
+        // プレイヤー位置更新
+        function updatePlayerPosition() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => cell.classList.remove('player'));
+            cells[gameState.player.y * 10 + gameState.player.x].classList.add('player');
+        }
+
+        // 敵の生成
+        function spawnEnemy() {
+            const x = Math.floor(Math.random() * 10);
+            const enemy = { x, y: 0, type: 'normal' };
+            gameState.enemies.push(enemy);
+        }
+
+        // パワーアップの生成
+        function spawnPowerUp() {
+            const x = Math.floor(Math.random() * 10);
+            const powerUp = { x, y: 0, type: 'health' };
+            gameState.powerUps.push(powerUp);
+        }
+
+        // プレイヤーの移動
+        function movePlayer(dx, dy) {
+            if (!gameState.gameRunning) return;
+            
+            const newX = Math.max(0, Math.min(9, gameState.player.x + dx));
+            const newY = Math.max(0, Math.min(9, gameState.player.y + dy));
+            
+            gameState.player.x = newX;
+            gameState.player.y = newY;
+            updatePlayerPosition();
+        }
+
+        // 弾の発射
+        function shoot() {
+            if (!gameState.gameRunning) return;
+            
+            const bullet = { 
+                x: gameState.player.x, 
+                y: gameState.player.y - 1,
+                type: 'player'
+            };
+            gameState.bullets.push(bullet);
+        }
+
+        // ゲームループ
+        function gameLoop(timestamp) {
+            if (!gameState.gameRunning) return;
+            
+            const deltaTime = timestamp - gameState.lastTime;
+            gameState.lastTime = timestamp;
+            
+            // 敵の生成
+            gameState.enemySpawnTimer += deltaTime;
+            if (gameState.enemySpawnTimer > 1000 - (gameState.level * 50)) {
+                spawnEnemy();
+                gameState.enemySpawnTimer = 0;
+            }
+            
+            // パワーアップの生成
+            gameState.powerUpSpawnTimer += deltaTime;
+            if (gameState.powerUpSpawnTimer > 5000) {
+                spawnPowerUp();
+                gameState.powerUpSpawnTimer = 0;
+            }
+            
+            // 敵の移動と削除
+            gameState.enemies = gameState.enemies.filter(enemy => {
+                enemy.y += 0.5;
+                return enemy.y < 10;
+            });
+            
+            // パワーアップの移動と削除
+            gameState.powerUps = gameState.powerUps.filter(powerUp => {
+                powerUp.y += 0.3;
+                return powerUp.y < 10;
+            });
+            
+            // 弾の移動と削除
+            gameState.bullets = gameState.bullets.filter(bullet => {
+                bullet.y -= 1;
+                return bullet.y >= 0;
+            });
+            
+            // 衝突判定
+            checkCollisions();
+            
+            // ゲーム画面更新
+            updateGameBoard();
+            
+            // レベルアップ判定
+            if (gameState.score >= gameState.level * 100) {
+                gameState.level++;
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 衝突判定
+        function checkCollisions() {
+            // 弾と敵の衝突
+            for (let i = gameState.bullets.length - 1; i >= 0; i--) {
+                const bullet = gameState.bullets[i];
+                if (bullet.type !== 'player') continue;
+                
+                for (let j = gameState.enemies.length - 1; j >= 0; j--) {
+                    const enemy = gameState.enemies[j];
+                    if (bullet.x === enemy.x && bullet.y === enemy.y) {
+                        gameState.enemies.splice(j, 1);
+                        gameState.bullets.splice(i, 1);
+                        gameState.score += 10;
+                        updateScore();
+                        break;
+                    }
+                }
+            }
+            
+            // プレイヤーと敵の衝突
+            for (let i = gameState.enemies.length - 1; i >= 0; i--) {
+                const enemy = gameState.enemies[i];
+                if (gameState.player.x === enemy.x && gameState.player.y === enemy.y) {
+                    gameState.enemies.splice(i, 1);
+                    gameState.lives--;
+                    updateLives();
+                    if (gameState.lives <= 0) {
+                        gameOver();
+                    }
+                    break;
+                }
+            }
+            
+            // プレイヤーとパワーアップの衝突
+            for (let i = gameState.powerUps.length - 1; i >= 0; i--) {
+                const powerUp = gameState.powerUps[i];
+                if (gameState.player.x === powerUp.x && gameState.player.y === powerUp.y) {
+                    gameState.powerUps.splice(i, 1);
+                    gameState.lives = Math.min(5, gameState.lives + 1);
+                    updateLives();
+                    break;
+                }
+            }
+        }
+
+        // ゲーム画面更新
+        function updateGameBoard() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                cell.className = 'cell';
+            });
+            
+            // プレイヤー
+            cells[gameState.player.y * 10 + gameState.player.x].classList.add('player');
+            
+            // 敵
+            gameState.enemies.forEach(enemy => {
+                if (enemy.y >= 0 && enemy.y < 10) {
+                    const index = Math.floor(enemy.y) * 10 + enemy.x;
+                    if (index >= 0 && index < 100) {
+                        cells[index].classList.add('enemy');
+                    }
+                }
+            });
+            
+            // パワーアップ
+            gameState.powerUps.forEach(powerUp => {
+                if (powerUp.y >= 0 && powerUp.y < 10) {
+                    const index = Math.floor(powerUp.y) * 10 + powerUp.x;
+                    if (index >= 0 && index < 100) {
+                        cells[index].classList.add('powerUp');
+                    }
+                }
+            });
+            
+            // 弾
+            gameState.bullets.forEach(bullet => {
+                if (bullet.y >= 0 && bullet.y < 10) {
+                    const index = Math.floor(bullet.y) * 10 + bullet.x;
+                    if (index >= 0 && index < 100) {
+                        cells[index].classList.add('bullet');
+                    }
+                }
+            });
+        }
+
+        // スコア更新
+        function updateScore() {
+            scoreElement.textContent = `スコア: ${gameState.score}`;
+        }
+
+        // ライフ更新
+        function updateLives() {
+            let hearts = '';
+            for (let i = 0; i < gameState.lives; i++) {
+                hearts += '❤️';
+            }
+            livesElement.textContent = `ライフ: ${hearts}`;
+        }
+
+        // ゲームオーバー
+        function gameOver() {
+            gameState.gameRunning = false;
+            finalScoreElement.textContent = `最終スコア: ${gameState.score}`;
+            gameOverScreen.style.display = 'block';
+        }
+
+        // イベントリスナー
+        startButton.addEventListener('click', () => {
+            startScreen.style.display = 'none';
+            gameScreen.style.display = 'block';
+            initGame();
+        });
+
+        restartButton.addEventListener('click', () => {
+            gameOverScreen.style.display = 'none';
+            initGame();
+        });
+
+        // キーボード操作
+        document.addEventListener('keydown', (e) => {
+            switch (e.key) {
+                case 'ArrowLeft':
+                case 'a':
+                    movePlayer(-1, 0);
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                    movePlayer(1, 0);
+                    break;
+                case 'ArrowUp':
+                case 'w':
+                    movePlayer(0, -1);
+                    break;
+                case 'ArrowDown':
+                case 's':
+                    movePlayer(0, 1);
+                    break;
+                case ' ':
+                    shoot();
+                    break;
+            }
+        });
+
+        // ボタン操作
+        leftBtn.addEventListener('click', () => movePlayer(-1, 0));
+        rightBtn.addEventListener('click', () => movePlayer(1, 0));
+        shootBtn.addEventListener('click', shoot);
+    </script>
+</body>
+</html>
