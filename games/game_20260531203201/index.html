@@ -38,6 +38,31 @@
     padding: 10px; gap: 12px;
   }
 
+  /* --- トップバー（ルールボタン用） --- */
+  .top-bar {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+    margin-bottom: -5px;
+  }
+  
+  .btn-rule {
+    background: #2974a6;
+    color: #fff;
+    border: 2px solid var(--btn-primary);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #154566;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .btn-rule:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 transparent;
+  }
+
   /* --- プレイヤー情報 --- */
   .player-info {
     background: rgba(0, 0, 0, 0.4);
@@ -155,6 +180,10 @@
 <body>
 
 <div class="app-container">
+  <div class="top-bar">
+    <button class="btn-rule" onclick="showRules()">📖 ルール</button>
+  </div>
+
   <div class="player-info" id="cpu-info">
     <div>
       <div class="player-name">CPU <span id="cpu-dealer" class="dealer-btn" style="display:none;">D</span></div>
@@ -193,7 +222,33 @@
   <div class="modal-box">
     <h2 class="modal-title" id="modal-title"></h2>
     <div class="modal-desc" id="modal-desc"></div>
-    <button class="btn btn-call" onclick="startNextHand()" style="width: 100%;">次のハンドへ</button>
+    <button class="btn btn-call" onclick="startNextHand()" style="width: 100%;">次の勝負へ</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="rule-modal">
+  <div class="modal-box" style="max-height: 85vh; overflow-y: auto; text-align: left; padding: 20px;">
+    <h2 class="modal-title" style="text-align: center; font-size: 1.5rem; color: var(--accent);">📖 1分でわかるルール！</h2>
+    <div style="color: var(--text-main); font-size: 0.95rem; line-height: 1.6; margin-top: 15px;">
+      <p>テキサスホールデムは、<b>「心理戦（だましあい）」</b>が楽しいポーカーだよ！</p>
+      
+      <p style="color: var(--accent); font-weight: bold; border-bottom: 1px solid var(--accent); padding-bottom: 5px; margin-top: 15px;">🃏 どうやって役を作るの？</p>
+      <p>自分だけの「ヒミツの手札2枚」と、みんなで使う「真ん中のカード5枚」を合わせた<b>合計7枚の中から、一番強い5枚</b>を自動で選んで勝負するよ。</p>
+      
+      <p style="color: var(--accent); font-weight: bold; border-bottom: 1px solid var(--accent); padding-bottom: 5px; margin-top: 15px;">🗣️ アクション（どう動くか）</p>
+      <p>カードがめくられるたびに、チップ（賭け金）をどうするか選べるよ。</p>
+      <ul style="padding-left: 20px;">
+        <li style="margin-bottom: 8px;"><b style="color: var(--btn-primary);">コール：</b> 相手と同じチップを出して勝負を続ける！</li>
+        <li style="margin-bottom: 8px;"><b style="color: var(--btn-success);">レイズ：</b> チップをさらに上乗せして相手をビビらせる！</li>
+        <li style="margin-bottom: 8px;"><b style="color: var(--btn-danger);">降りる (フォールド)：</b> 勝てないと思ったら逃げる（それまでのチップは取られちゃうけど被害は防げるよ）。</li>
+      </ul>
+      
+      <p style="color: var(--accent); font-weight: bold; border-bottom: 1px solid var(--accent); padding-bottom: 5px; margin-top: 15px;">🏆 どうすれば勝てるの？</p>
+      <p>勝ち方は2つ！<br>
+      ① 最後まで勝負して、相手より強い役を見せる！<br>
+      ② 相手が「降りる」を選ぶように仕向ける！（弱いカードでも、強気でレイズして相手を降ろせば勝ちだよ！）</p>
+    </div>
+    <button class="btn btn-call" onclick="closeRules()" style="width: 100%; margin-top: 20px;">ゲームに戻る</button>
   </div>
 </div>
 
@@ -227,12 +282,21 @@ let state = {
   playerBetTotal: 0,
   cpuBetTotal: 0,
   isPlayerTurn: false,
-  isProcessing: false, // バグ修正: 進行中のフラグをフェーズと分離
+  isProcessing: false, 
   dealer: 'cpu', // 'player' or 'cpu'
   bigBlind: 20,
   smallBlind: 10,
   actsThisRound: { player: false, cpu: false }
 };
+
+// --- ルールモーダル関数 ---
+function showRules() {
+  document.getElementById('rule-modal').classList.add('show');
+}
+
+function closeRules() {
+  document.getElementById('rule-modal').classList.remove('show');
+}
 
 function logAction(msg) {
   const logEl = document.getElementById('action-log');
@@ -300,7 +364,6 @@ function updateUI() {
     btnRaise.textContent = `レイズ(+${state.bigBlind})`;
   }
   
-  // 処理中やショーダウン時はボタンを触れなくする
   const canAct = state.isPlayerTurn && state.phase !== 'showdown' && !state.isProcessing;
   btnCall.disabled = !canAct;
   btnFold.disabled = !canAct;
@@ -409,20 +472,20 @@ function playerAction(action) {
   state.actsThisRound.player = true;
 
   if (action === 'fold') {
-    logAction("Player フォールド");
-    endHand('cpu', 'Player Folded');
+    logAction("あなたは 降りた(Fold) 🏃‍♂️💨");
+    endHand('cpu', 'あなたが降りました');
     return;
   } 
   
   const callAmount = state.currentBet - state.playerBetTotal;
   if (action === 'call') {
     placeBet('player', callAmount);
-    logAction(callAmount === 0 ? "Player チェック" : "Player コール");
+    logAction(callAmount === 0 ? "あなたは チェック(Check) した" : "あなたは コール(Call) した");
   } 
   else if (action === 'raise') {
     const raiseAmount = callAmount + state.bigBlind;
     placeBet('player', raiseAmount);
-    logAction("Player レイズ");
+    logAction("あなたは レイズ(Raise) した！🔥");
     state.actsThisRound.cpu = false; 
   }
 
@@ -467,18 +530,18 @@ function cpuAction() {
   }
 
   if (action === 'fold') {
-    logAction("CPU フォールド");
-    endHand('player', 'CPU Folded');
+    logAction("CPU は 降りた(Fold) 🏃‍♂️💨");
+    endHand('player', 'CPUが降りました');
     return;
   } 
   else if (action === 'raise') {
     placeBet('cpu', callAmount + state.bigBlind);
-    logAction("CPU レイズ");
+    logAction("CPU が レイズ(Raise) してきた！🔥");
     state.actsThisRound.player = false;
   } 
   else {
     placeBet('cpu', callAmount);
-    logAction(callAmount === 0 ? "CPU チェック" : "CPU コール");
+    logAction(callAmount === 0 ? "CPU は チェック(Check) した" : "CPU は コール(Call) した");
   }
 
   updateUI();
@@ -491,7 +554,7 @@ function checkRoundEnd() {
   const bothActed = state.actsThisRound.player && state.actsThisRound.cpu;
 
   if (isAllIn || (betsMatch && bothActed)) {
-    state.isProcessing = true; // バグ修正：進行をブロックして重複発火を防ぐ
+    state.isProcessing = true; 
     updateUI();
     setTimeout(nextPhase, 1200);
   } else {
@@ -533,7 +596,6 @@ function nextPhase() {
     return;
   }
 
-  // オールイン時は演出として次々めくっていく
   if (isAllIn) {
     updateUI(); renderCards(false);
     state.isProcessing = true;
@@ -541,7 +603,6 @@ function nextPhase() {
     return;
   }
 
-  // フロップ以降はNon-Dealer(BB)から
   if (state.dealer === 'player') {
     state.isPlayerTurn = false; 
     updateUI(); renderCards(false);
@@ -562,7 +623,7 @@ function resolveShowdown() {
   if (pResult.score > cResult.score) winner = 'player';
   else if (pResult.score < cResult.score) winner = 'cpu';
 
-  let desc = `あなた: ${pResult.name}<br>CPU: ${cResult.name}`;
+  let desc = `あなた: <b style="color:var(--btn-success)">${pResult.name}</b><br>CPU: <b style="color:var(--btn-danger)">${cResult.name}</b>`;
 
   if (winner === 'player') endHand('player', desc);
   else if (winner === 'cpu') endHand('cpu', desc);
@@ -578,17 +639,17 @@ function endHand(winner, descText) {
   const titleEl = document.getElementById('modal-title');
   if (winner === 'player') {
     state.playerChips += state.pot;
-    titleEl.textContent = "You Win!";
+    titleEl.textContent = "あなたの勝ち！🎉";
     titleEl.style.color = "var(--btn-success)";
   } else if (winner === 'cpu') {
     state.cpuChips += state.pot;
-    titleEl.textContent = "You Lose...";
+    titleEl.textContent = "あなたの負け...💀";
     titleEl.style.color = "var(--btn-danger)";
   } else {
     const half = Math.floor(state.pot / 2);
     state.playerChips += half;
     state.cpuChips += half;
-    titleEl.textContent = "Draw (引き分け)";
+    titleEl.textContent = "引き分け（チョップ）🤝";
     titleEl.style.color = "#fff";
   }
 
@@ -600,10 +661,10 @@ function endHand(winner, descText) {
   }, 1200);
 }
 
-// --- 役判定ロジック (バグ修正: 汎用化・スート取得修正) ---
+// --- 役判定ロジック ---
 function evaluate5Cards(hand) {
   const values = hand.map(c => c.value).sort((a, b) => b - a);
-  const suits = hand.map(c => c.id); // ※ここをc.idに修正
+  const suits = hand.map(c => c.id); 
   const isFlush = new Set(suits).size === 1;
   
   let isStraight = false;
@@ -641,7 +702,7 @@ function evaluate5Cards(hand) {
   if (countArr[0][0] === 2 && (countArr[1] && countArr[1][0] === 2)) return { name: "ツーペア", score: 2000000 + kickers };
   if (countArr[0][0] === 2) return { name: "ワンペア", score: 1000000 + kickers };
   
-  return { name: "ハイカード", score: kickers };
+  return { name: "ハイカード（役なし）", score: kickers };
 }
 
 function evaluateHandDynamic(hole, comm) {
