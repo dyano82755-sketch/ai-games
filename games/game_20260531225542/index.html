@@ -20,6 +20,7 @@
   /* Buttons */
   button { background: var(--primary); color: var(--text); border: 2px solid #2a5298; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.1s; }
   button:active { transform: scale(0.95); }
+  button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
   button.danger { background: var(--danger); border-color: #b71c1c; }
   button.success { background: var(--success); border-color: #2e7d32; }
   
@@ -210,7 +211,14 @@ let state = {
 
 // バトル用一時変数
 let battle = {
-  enemy: null, currentHp: 0, isBoss: false, bossCharge: 0, combo: 0, currentQ: null
+  enemy: null,
+  currentHp: 0,
+  isBoss: false,
+  bossCharge: 0,
+  combo: 0,
+  currentQ: null,
+  areaId: 0,
+  answerLocked: false
 };
 
 function saveGame() { localStorage.setItem('quizRpgSave', JSON.stringify(state)); }
@@ -324,6 +332,8 @@ function startBattle(areaId) {
   battle.isBoss = eData.isBoss;
   battle.bossCharge = 0;
   battle.combo = 0;
+  battle.areaId = areaId;
+  battle.answerLocked = false;
   
   updateBattleUI();
   nextQuestion();
@@ -358,6 +368,8 @@ function updateBattleUI() {
 }
 
 function nextQuestion() {
+  closeModal();
+  battle.answerLocked = false;
   const q = QUIZ_DB[Math.floor(Math.random() * QUIZ_DB.length)];
   battle.currentQ = q;
   
@@ -378,7 +390,17 @@ function nextQuestion() {
   });
 }
 
+function setQuizOptionsEnabled(enabled) {
+  document.querySelectorAll('#quiz-options button').forEach(btn => {
+    btn.disabled = !enabled;
+  });
+}
+
 function answerQuiz(isCorrect) {
+  if (battle.answerLocked || gameIsModalOpen()) return;
+  battle.answerLocked = true;
+  setQuizOptionsEnabled(false);
+
   const sprite = document.getElementById('enemy-sprite');
   const app = document.getElementById('app');
   
@@ -461,21 +483,22 @@ function handleVictory() {
   if (battle.enemy.id === "dragon") state.stats.dragonDefeated = true;
   
   // 報酬
-  const xpGained = battle.enemy.hp;
-  const coinsGained = Math.floor(battle.enemy.hp / 2);
+  const xpGained = battle.enemy.maxHp;
+  const coinsGained = Math.floor(battle.enemy.maxHp / 2);
   state.player.xp += xpGained;
   state.player.coins += coinsGained;
   
   let msg = `${battle.enemy.name}を倒した！<br>+${xpGained} XP<br>+${coinsGained} 🪙<br>`;
   
   // レベルアップ判定
-  const xpNeed = state.player.lv * 100;
-  if (state.player.xp >= xpNeed) {
+  let xpNeed = state.player.lv * 100;
+  while (state.player.xp >= xpNeed) {
     state.player.lv++;
     state.player.xp -= xpNeed;
     state.player.baseHp += 20;
     state.player.baseAtk += 5;
     msg += `<br><span style="color:var(--gold)">レベルアップ！ Lv${state.player.lv}になった！</span>`;
+    xpNeed = state.player.lv * 100;
   }
   
   // 仲間ドロップ判定 (10%)
@@ -487,8 +510,9 @@ function handleVictory() {
     msg += `<br><br><span style="color:var(--success)">${battle.enemy.emoji} ${battle.enemy.name} が仲間になった！</span>`;
   } else {
     // 連続戦闘の選択肢
+    const nextAreaId = battle.areaId;
     btnTxt = "さらに進む";
-    cb = () => { closeModal(); startBattle(state.unlockedArea); }; // 簡易的に現在のアンロックエリアと仮定
+    cb = () => startBattle(nextAreaId);
   }
   
   saveGame();
@@ -577,11 +601,18 @@ function showModal(title, contentHTML, buttons) {
     btn.innerText = b.text;
     if(b.text==="街へ戻る") btn.classList.add('danger');
     else btn.classList.add('success');
-    btn.onclick = b.cb;
+    btn.onclick = () => {
+      closeModal();
+      b.cb();
+    };
     actions.appendChild(btn);
   });
   
   document.getElementById('modal').classList.add('active');
+}
+
+function gameIsModalOpen() {
+  return document.getElementById('modal').classList.contains('active');
 }
 
 function closeModal() {
