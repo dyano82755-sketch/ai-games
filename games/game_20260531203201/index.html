@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>テキサスホールデム vs CPU</title>
+<title>ポーカー_テキサスホールデム vs CPU</title>
 <style>
   :root {
     --bg-color: #0d2b1a;
@@ -227,17 +227,18 @@ let state = {
   playerBetTotal: 0,
   cpuBetTotal: 0,
   isPlayerTurn: false,
-  dealer: 'cpu', // 'player' or 'cpu' (Dealer Button = SB in heads up)
+  isProcessing: false, // バグ修正: 進行中のフラグをフェーズと分離
+  dealer: 'cpu', // 'player' or 'cpu'
   bigBlind: 20,
   smallBlind: 10,
-  actsThisRound: { player: false, cpu: false } // ラウンド終了判定用
+  actsThisRound: { player: false, cpu: false }
 };
 
 function logAction(msg) {
   const logEl = document.getElementById('action-log');
   logEl.textContent = msg;
   logEl.classList.remove('show');
-  void logEl.offsetWidth; // リフローによるアニメーションリセット
+  void logEl.offsetWidth; // アニメーションリセット
   logEl.classList.add('show');
 }
 
@@ -253,7 +254,6 @@ function createDeck() {
   return deck;
 }
 
-// 組み合わせ生成 (5,6,7枚対応)
 function getCombinations(array, size) {
   const result = [];
   function p(t, i) {
@@ -278,7 +278,7 @@ function updateUI() {
   document.getElementById('cpu-dealer').style.display = state.dealer === 'cpu' ? 'flex' : 'none';
 
   const callAmount = state.currentBet - state.playerBetTotal;
-  const maxTotalBet = Math.min(state.playerChips + state.playerBetTotal, state.cpuChips + state.cpuBetTotal); // 有効スタックの計算
+  const maxTotalBet = Math.min(state.playerChips + state.playerBetTotal, state.cpuChips + state.cpuBetTotal);
   const maxAdditionalBet = maxTotalBet - state.playerBetTotal;
 
   const btnCall = document.getElementById('btn-call');
@@ -293,7 +293,6 @@ function updateUI() {
   const btnFold = document.getElementById('btn-fold');
   const btnRaise = document.getElementById('btn-raise');
   
-  // レイズ額の計算 (ミニマムレイズは通常BB額だが、ここではシンプルに+BB固定)
   let raiseAmount = callAmount + state.bigBlind;
   if (state.playerBetTotal + raiseAmount > maxTotalBet) {
     btnRaise.textContent = `オールイン`;
@@ -301,11 +300,10 @@ function updateUI() {
     btnRaise.textContent = `レイズ(+${state.bigBlind})`;
   }
   
-  const canAct = state.isPlayerTurn && state.phase !== 'showdown' && state.phase !== 'processing';
+  // 処理中やショーダウン時はボタンを触れなくする
+  const canAct = state.isPlayerTurn && state.phase !== 'showdown' && !state.isProcessing;
   btnCall.disabled = !canAct;
   btnFold.disabled = !canAct;
-  
-  // 有効スタックがコール額と同じ（またはそれ以下）ならレイズ不可
   btnRaise.disabled = !canAct || maxAdditionalBet <= callAmount;
 }
 
@@ -352,31 +350,29 @@ function startNextHand() {
     location.reload(); return;
   }
 
-  // ディーラーの交代
   state.dealer = state.dealer === 'player' ? 'cpu' : 'player';
   
   state.deck = createDeck();
-  // バーンカードはロジック内で pop() する
   state.playerHoleCards = [state.deck.pop(), state.deck.pop()];
   state.cpuHoleCards = [state.deck.pop(), state.deck.pop()];
   state.communityCards = [];
   
   state.phase = 'preflop';
+  state.isProcessing = false;
   state.pot = 0;
   state.playerBetTotal = 0;
   state.cpuBetTotal = 0;
   state.currentBet = 0;
   state.actsThisRound = { player: false, cpu: false };
 
-  // ブラインド支払い (ヘッズアップ: Dealer=SB, Non-Dealer=BB)
   if (state.dealer === 'player') {
     placeBet('player', state.smallBlind);
     placeBet('cpu', state.bigBlind);
-    state.isPlayerTurn = true; // プリフロップはSB(Player)から
+    state.isPlayerTurn = true; 
   } else {
     placeBet('cpu', state.smallBlind);
     placeBet('player', state.bigBlind);
-    state.isPlayerTurn = false; // プリフロップはSB(CPU)から
+    state.isPlayerTurn = false; 
   }
 
   updateUI();
@@ -407,9 +403,8 @@ function placeBet(who, amount) {
   }
 }
 
-// アクション処理
 function playerAction(action) {
-  if (!state.isPlayerTurn) return;
+  if (!state.isPlayerTurn || state.isProcessing) return;
   state.isPlayerTurn = false;
   state.actsThisRound.player = true;
 
@@ -428,7 +423,7 @@ function playerAction(action) {
     const raiseAmount = callAmount + state.bigBlind;
     placeBet('player', raiseAmount);
     logAction("Player レイズ");
-    state.actsThisRound.cpu = false; // レイズされたら相手の行動フラグをリセット
+    state.actsThisRound.cpu = false; 
   }
 
   updateUI();
@@ -436,7 +431,7 @@ function playerAction(action) {
 }
 
 function cpuAction() {
-  if (state.phase === 'showdown' || state.phase === 'processing') return;
+  if (state.phase === 'showdown' || state.isProcessing) return;
 
   state.actsThisRound.cpu = true;
   const callAmount = state.currentBet - state.cpuBetTotal;
@@ -446,18 +441,17 @@ function cpuAction() {
   let action = 'call';
   const r = Math.random();
 
-  // CPU 思考AI
   if (isPreflop) {
     if (callAmount > state.bigBlind && r < 0.4) action = 'fold';
     else if (r < 0.15) action = 'raise';
     else action = 'call';
   } else {
-    if (handStrength > 1000000) { // ワンペア以上
+    if (handStrength > 1000000) { 
       if (r < 0.3) action = 'raise';
       else action = 'call';
     } else {
       if (callAmount > 0) {
-        if (r < 0.1) action = 'raise'; // 10%ブラフ
+        if (r < 0.1) action = 'raise'; 
         else if (r < 0.4) action = 'call';
         else action = 'fold';
       } else {
@@ -467,7 +461,6 @@ function cpuAction() {
     }
   }
 
-  // 有効スタックチェック (オールイン状態などでレイズ不可ならコールへ)
   const maxTotalBet = Math.min(state.playerChips + state.playerBetTotal, state.cpuChips + state.cpuBetTotal);
   if (action === 'raise' && (maxTotalBet - state.cpuBetTotal) <= callAmount) {
     action = 'call';
@@ -492,17 +485,16 @@ function cpuAction() {
   checkRoundEnd();
 }
 
-// ベッティングラウンドの終了判定
 function checkRoundEnd() {
   const isAllIn = state.playerChips === 0 || state.cpuChips === 0;
   const betsMatch = state.playerBetTotal === state.cpuBetTotal;
   const bothActed = state.actsThisRound.player && state.actsThisRound.cpu;
 
   if (isAllIn || (betsMatch && bothActed)) {
-    state.phase = 'processing';
+    state.isProcessing = true; // バグ修正：進行をブロックして重複発火を防ぐ
+    updateUI();
     setTimeout(nextPhase, 1200);
   } else {
-    // ターン交代
     if (!state.actsThisRound.player || (state.actsThisRound.cpu && !betsMatch && state.cpuBetTotal > state.playerBetTotal)) {
       state.isPlayerTurn = true;
       updateUI();
@@ -513,15 +505,14 @@ function checkRoundEnd() {
 }
 
 function nextPhase() {
+  state.isProcessing = false;
   state.playerBetTotal = 0;
   state.cpuBetTotal = 0;
   state.currentBet = 0;
   state.actsThisRound = { player: false, cpu: false };
 
-  // オールイン時の自動進行
   const isAllIn = state.playerChips === 0 || state.cpuChips === 0;
 
-  // バーンカード処理
   if (state.phase !== 'showdown') state.deck.pop(); 
 
   if (state.phase === 'preflop') {
@@ -536,38 +527,33 @@ function nextPhase() {
     state.phase = 'river';
     state.communityCards.push(state.deck.pop());
   } 
-  else if (state.phase === 'river' || isAllIn) {
-    if (isAllIn && state.communityCards.length < 5) {
-      // オールインで場札が足りない場合は一気に開く
-      while(state.communityCards.length < 5) {
-        state.deck.pop(); // burn
-        state.communityCards.push(state.deck.pop());
-      }
-    }
+  else if (state.phase === 'river') {
     state.phase = 'showdown';
     resolveShowdown();
     return;
   }
 
-  // フロップ以降はNon-Dealer(BB)からアクション
-  if (!isAllIn) {
-    if (state.dealer === 'player') {
-      state.isPlayerTurn = false; // CPUから
-      updateUI(); renderCards(false);
-      setTimeout(cpuAction, 1000);
-    } else {
-      state.isPlayerTurn = true; // Playerから
-      updateUI(); renderCards(false);
-    }
-  } else {
+  // オールイン時は演出として次々めくっていく
+  if (isAllIn) {
     updateUI(); renderCards(false);
-    setTimeout(nextPhase, 1200); // オールイン時は自動で次へ
+    state.isProcessing = true;
+    setTimeout(nextPhase, 1200);
+    return;
+  }
+
+  // フロップ以降はNon-Dealer(BB)から
+  if (state.dealer === 'player') {
+    state.isPlayerTurn = false; 
+    updateUI(); renderCards(false);
+    setTimeout(cpuAction, 1000);
+  } else {
+    state.isPlayerTurn = true; 
+    updateUI(); renderCards(false);
   }
 }
 
-// 勝敗判定
 function resolveShowdown() {
-  renderCards(true); // CPUの手札を公開
+  renderCards(true); 
   
   const pResult = evaluateHandDynamic(state.playerHoleCards, state.communityCards);
   const cResult = evaluateHandDynamic(state.cpuHoleCards, state.communityCards);
@@ -586,6 +572,7 @@ function resolveShowdown() {
 function endHand(winner, descText) {
   state.phase = 'showdown';
   state.isPlayerTurn = false;
+  state.isProcessing = true;
   updateUI();
   
   const titleEl = document.getElementById('modal-title');
@@ -598,7 +585,6 @@ function endHand(winner, descText) {
     titleEl.textContent = "You Lose...";
     titleEl.style.color = "var(--btn-danger)";
   } else {
-    // 引き分け処理 (端数は切り捨ててポットに残るか、通常はSBが取るが簡易化のため均等割)
     const half = Math.floor(state.pot / 2);
     state.playerChips += half;
     state.cpuChips += half;
@@ -614,10 +600,10 @@ function endHand(winner, descText) {
   }, 1200);
 }
 
-// --- 役判定ロジック (5〜7枚の動的対応) ---
+// --- 役判定ロジック (バグ修正: 汎用化・スート取得修正) ---
 function evaluate5Cards(hand) {
   const values = hand.map(c => c.value).sort((a, b) => b - a);
-  const suits = hand.map(c => c.suit);
+  const suits = hand.map(c => c.id); // ※ここをc.idに修正
   const isFlush = new Set(suits).size === 1;
   
   let isStraight = false;
@@ -648,11 +634,11 @@ function evaluate5Cards(hand) {
     return { name: "ストレートフラッシュ", score: 8000000 + straightHigh };
   }
   if (countArr[0][0] === 4) return { name: "フォーカード", score: 7000000 + kickers };
-  if (countArr[0][0] === 3 && countArr[1][0] === 2) return { name: "フルハウス", score: 6000000 + kickers };
+  if (countArr[0][0] === 3 && (countArr[1] && countArr[1][0] === 2)) return { name: "フルハウス", score: 6000000 + kickers };
   if (isFlush) return { name: "フラッシュ", score: 5000000 + kickers };
   if (isStraight) return { name: "ストレート", score: 4000000 + straightHigh };
   if (countArr[0][0] === 3) return { name: "スリーカード", score: 3000000 + kickers };
-  if (countArr[0][0] === 2 && countArr[1][0] === 2) return { name: "ツーペア", score: 2000000 + kickers };
+  if (countArr[0][0] === 2 && (countArr[1] && countArr[1][0] === 2)) return { name: "ツーペア", score: 2000000 + kickers };
   if (countArr[0][0] === 2) return { name: "ワンペア", score: 1000000 + kickers };
   
   return { name: "ハイカード", score: kickers };
@@ -661,10 +647,9 @@ function evaluate5Cards(hand) {
 function evaluateHandDynamic(hole, comm) {
   const allCards = [...hole, ...comm];
   if (allCards.length < 5) {
-    // 5枚未満の場合は簡易的なスコア(手札の強さ)を返す(AI評価用)
     const vals = allCards.map(c=>c.value).sort((a,b)=>b-a);
     let tempScore = vals[0]*15 + (vals[1]||0);
-    if(vals[0]===vals[1]) tempScore += 1000; // ペアなら強い
+    if(vals[0]===vals[1]) tempScore += 1000;
     return { name: "判定中", score: tempScore }; 
   }
 
