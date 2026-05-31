@@ -1,531 +1,605 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>クイズRPG</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            touch-action: none;
-        }
-
-        #game-container {
-            width: 100%;
-            max-width: 500px;
-            height: 90vh;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            position: relative;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .screen {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            text-align: center;
-            transition: opacity 0.5s ease;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        h1 {
-            color: #fff;
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-        }
-
-        h2 {
-            color: #fff;
-            font-size: 1.8rem;
-            margin-bottom: 15px;
-        }
-
-        p {
-            color: #fff;
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            line-height: 1.6;
-        }
-
-        .btn {
-            background: linear-gradient(to right, #ff6b6b, #ffa502);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            border-radius: 50px;
-            cursor: pointer;
-            margin: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
-            width: 80%;
-            max-width: 250px;
-        }
-
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .btn:active {
-            transform: translateY(1px);
-        }
-
-        .question-container {
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 15px;
-            padding: 20px;
-            margin: 20px 0;
-            width: 90%;
-            min-height: 120px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .question-text {
-            color: white;
-            font-size: 1.3rem;
-            margin-bottom: 15px;
-        }
-
-        .options-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            width: 100%;
-        }
-
-        .option-btn {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            padding: 15px;
-            font-size: 1rem;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .option-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(1.05);
-        }
-
-        .option-btn.correct {
-            background: linear-gradient(to right, #00b09b, #96c93d);
-            border-color: #96c93d;
-        }
-
-        .option-btn.incorrect {
-            background: linear-gradient(to right, #ff416c, #ff4b2b);
-            border-color: #ff4b2b;
-        }
-
-        .health-bar {
-            width: 90%;
-            height: 20px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            margin: 20px 0;
-            overflow: hidden;
-        }
-
-        .health-fill {
-            height: 100%;
-            background: linear-gradient(to right, #ff6b6b, #ffa502);
-            border-radius: 10px;
-            transition: width 0.5s ease;
-        }
-
-        .score-display {
-            color: white;
-            font-size: 1.2rem;
-            margin: 10px 0;
-        }
-
-        .character {
-            font-size: 4rem;
-            margin: 20px 0;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-        }
-
-        .game-over {
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .result {
-            font-size: 1.5rem;
-            margin: 20px 0;
-        }
-
-        .final-score {
-            font-size: 2rem;
-            color: #ffcc00;
-            margin: 10px 0;
-        }
-
-        .progress-bar {
-            width: 90%;
-            height: 10px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 5px;
-            margin: 20px 0;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(to right, #00c9ff, #92fe9d);
-            border-radius: 5px;
-            transition: width 0.3s ease;
-        }
-
-        .timer {
-            color: #ffcc00;
-            font-size: 1.2rem;
-            margin: 10px 0;
-        }
-
-        .level-indicator {
-            color: #fff;
-            font-size: 1.1rem;
-            margin: 10px 0;
-        }
-
-        .difficulty {
-            color: #ffcc00;
-            font-weight: bold;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>クイズモンスターアドベンチャー</title>
+<style>
+  :root {
+    --bg: #1a1a2e; --panel: #16213e; --primary: #0f3460; --accent: #e94560;
+    --text: #f1f1f1; --success: #4caf50; --danger: #e53935; --gold: #ffd700;
+  }
+  * { box-sizing: border-box; font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif; user-select: none; }
+  body { margin: 0; background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+  #app { width: 100%; max-width: 480px; height: 100vh; max-height: 850px; background: var(--panel); position: relative; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+  
+  /* Layouts */
+  .screen { display: none; flex-direction: column; height: 100%; padding: 15px; overflow-y: auto; }
+  .screen.active { display: flex; }
+  
+  /* Buttons */
+  button { background: var(--primary); color: var(--text); border: 2px solid #2a5298; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.1s; }
+  button:active { transform: scale(0.95); }
+  button.danger { background: var(--danger); border-color: #b71c1c; }
+  button.success { background: var(--success); border-color: #2e7d32; }
+  
+  /* Title Screen */
+  .title-container { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 20px; }
+  .title-text { font-size: 32px; font-weight: 900; color: var(--gold); text-shadow: 2px 2px 4px #000; margin-bottom: 20px; line-height: 1.3; }
+  
+  /* Header */
+  .header { display: flex; justify-content: space-between; align-items: center; background: #0b172a; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; border: 1px solid #2a5298;}
+  .header-stats div { margin-bottom: 4px; }
+  
+  /* Town Screen */
+  .town-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; }
+  .area-list { display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto; margin-bottom: 15px;}
+  .area-btn { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #1f3b6c; }
+  .area-btn.locked { background: #333; color: #777; pointer-events: none; }
+  
+  /* Battle Screen */
+  .battle-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+  .enemy-sprite { font-size: 100px; margin-bottom: 10px; transition: 0.1s; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5)); }
+  .enemy-info { text-align: center; margin-bottom: 20px; width: 100%; }
+  .hp-bar-bg { width: 100%; height: 20px; background: #333; border-radius: 10px; overflow: hidden; border: 2px solid #000; margin-top: 5px; position: relative;}
+  .hp-bar-fill { height: 100%; background: var(--danger); transition: 0.3s; }
+  .hp-text { position: absolute; width: 100%; text-align: center; font-size: 12px; font-weight: bold; line-height: 20px; top: 0; }
+  
+  /* Quiz Box */
+  .quiz-box { background: #0b172a; padding: 15px; border-radius: 8px; border: 2px solid var(--accent); margin-bottom: 10px; }
+  .question-text { font-size: 18px; margin-bottom: 15px; font-weight: bold; line-height: 1.4; }
+  .options { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  
+  /* Battle Effects & Combo */
+  .combo-text { font-size: 20px; color: var(--gold); font-weight: bold; position: absolute; top: 10px; left: 10px; text-shadow: 1px 1px 2px #000; }
+  .boss-charge { font-size: 14px; color: #ff9800; font-weight: bold; margin-bottom: 5px; }
+  
+  /* Modal */
+  .modal { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100; padding: 20px; text-align: center; }
+  .modal.active { display: flex; }
+  .modal-box { background: var(--panel); padding: 25px; border-radius: 12px; border: 2px solid var(--gold); width: 100%; max-width: 400px; }
+  .modal-title { font-size: 24px; color: var(--gold); margin-bottom: 15px; }
+  
+  /* Party & Gacha */
+  .monster-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; overflow-y: auto; max-height: 300px; margin-bottom: 15px; }
+  .monster-card { background: #222; border: 1px solid #555; border-radius: 8px; padding: 10px 5px; text-align: center; font-size: 12px; cursor: pointer; }
+  .monster-card.in-party { border-color: var(--success); background: #1b3a1e; }
+  .monster-emoji { font-size: 30px; margin-bottom: 5px; }
+  
+  /* Animations */
+  @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); } }
+  .shake { animation: shake 0.3s; }
+  @keyframes attack { 0% { transform: translateY(0); } 50% { transform: translateY(-30px) scale(1.1); } 100% { transform: translateY(0); } }
+  .attack-anim { animation: attack 0.2s; }
+</style>
 </head>
 <body>
-    <div id="game-container">
-        <!-- スタート画面 -->
-        <div id="start-screen" class="screen">
-            <h1>🧠 クイズRPG</h1>
-            <div class="character">🧙‍♂️</div>
-            <p>知識で戦う冒険の始まりです！</p>
-            <p>正解で敵を倒し、間違えるとダメージを受けます</p>
-            <p>レベルに応じて難易度が上がります</p>
-            <button id="start-btn" class="btn">ゲーム開始</button>
-        </div>
 
-        <!-- プレイ画面 -->
-        <div id="game-screen" class="screen hidden">
-            <div class="level-indicator">レベル <span id="level">1</span></div>
-            <div class="health-bar">
-                <div class="health-fill" id="health-bar"></div>
-            </div>
-            <div class="score-display">スコア: <span id="score">0</span></div>
-            <div class="timer">残り時間: <span id="timer">30</span>秒</div>
-            <div class="question-container">
-                <div class="question-text" id="question-text">問題が読み込まれています...</div>
-            </div>
-            <div class="options-container" id="options-container">
-                <!-- オプションはJavaScriptで追加 -->
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill" id="progress-fill"></div>
-            </div>
-        </div>
-
-        <!-- ゲームオーバー画面 -->
-        <div id="game-over-screen" class="screen hidden game-over">
-            <h2>ゲームオーバー</h2>
-            <div class="character">💀</div>
-            <div class="result">あなたの結果</div>
-            <div class="final-score">スコア: <span id="final-score">0</span></div>
-            <div class="final-score">レベル: <span id="final-level">1</span></div>
-            <button id="restart-btn" class="btn">もう一度遊ぶ</button>
-        </div>
+<div id="app">
+  <div id="screen-title" class="screen active">
+    <div class="title-container">
+      <div class="title-text">クイズモンスター<br>アドベンチャー</div>
+      <div style="font-size: 60px; margin-bottom: 20px;">🐉🗡️📚</div>
+      <button onclick="startGame()" style="width: 200px; padding: 15px; font-size: 20px;" class="success">冒険をはじめる</button>
+      <button onclick="resetData()" style="width: 200px;" class="danger">データリセット</button>
     </div>
+  </div>
 
-    <script>
-        // ゲーム状態管理
-        const gameState = {
-            score: 0,
-            level: 1,
-            health: 100,
-            timeLeft: 30,
-            timer: null,
-            currentQuestion: null,
-            isGameActive: false,
-            questions: [],
-            questionIndex: 0,
-            progress: 0
-        };
+  <div id="screen-town" class="screen">
+    <div class="header">
+      <div class="header-stats">
+        <div id="town-lv">Lv: 1</div>
+        <div id="town-hp">HP: 100/100</div>
+        <div id="town-atk">攻撃力: 10</div>
+      </div>
+      <div class="header-stats" style="text-align: right;">
+        <div id="town-coins" style="color: var(--gold);">🪙 0</div>
+        <div>実績: <span id="town-achieve">0/3</span></div>
+      </div>
+    </div>
+    
+    <h3 style="margin-top:0;">エリア選択</h3>
+    <div class="area-list" id="area-list"></div>
+    
+    <div class="town-menu">
+      <button onclick="openPartyMenu()" style="background: #8e24aa; border-color: #6a1b9a;">仲間編成</button>
+      <button onclick="openGacha()" style="background: #f39c12; border-color: #ef6c00;">ガチャ (100🪙)</button>
+    </div>
+  </div>
 
-        // 問題データ
-        const quizQuestions = [
-            {
-                question: "日本の首都は？",
-                options: ["東京", "大阪", "京都", "名古屋"],
-                correct: 0,
-                difficulty: "easy"
-            },
-            {
-                question: "地球の半径は約何km？",
-                options: ["6371", "5000", "7000", "5500"],
-                correct: 0,
-                difficulty: "medium"
-            },
-            {
-                question: "水の化学式は？",
-                options: ["H2O", "CO2", "NaCl", "O2"],
-                correct: 0,
-                difficulty: "easy"
-            },
-            {
-                question: "太陽系で一番大きな惑星は？",
-                options: ["木星", "土星", "天王星", "海王星"],
-                correct: 0,
-                difficulty: "medium"
-            },
-            {
-                question: "1メートルは何センチメートル？",
-                options: ["100", "1000", "10", "1"],
-                correct: 0,
-                difficulty: "easy"
-            },
-            {
-                question: "光の速度は秒あたり何km？",
-                options: ["300000", "299792", "350000", "280000"],
-                correct: 1,
-                difficulty: "hard"
-            },
-            {
-                question: "日本の最高峰は？",
-                options: ["富士山", "白山", "槍岳", "御岳山"],
-                correct: 0,
-                difficulty: "medium"
-            },
-            {
-                question: "酸素の元素記号は？",
-                options: ["O", "H", "C", "N"],
-                correct: 0,
-                difficulty: "easy"
-            },
-            {
-                question: "1週間は何時間？",
-                options: ["168", "120", "240", "144"],
-                correct: 0,
-                difficulty: "medium"
-            },
-            {
-                question: "地球の表面の約何%が水で覆われている？",
-                options: ["71", "60", "80", "50"],
-                correct: 0,
-                difficulty: "hard"
-            }
-        ];
+  <div id="screen-battle" class="screen">
+    <div class="header" style="margin-bottom: 5px;">
+      <div>Lv <span id="battle-lv"></span></div>
+      <div style="flex:1; margin: 0 15px;">
+        <div style="font-size:12px; margin-bottom:2px;">Player HP</div>
+        <div class="hp-bar-bg"><div id="battle-player-hp-fill" class="hp-bar-fill" style="background: var(--success);"></div><div id="battle-player-hp-text" class="hp-text">100/100</div></div>
+      </div>
+      <div><button onclick="fleeBattle()" class="danger" style="padding: 5px 10px;">逃げる</button></div>
+    </div>
+    
+    <div class="battle-area">
+      <div id="combo-display" class="combo-text"></div>
+      <div class="enemy-info">
+        <div id="boss-charge-display" class="boss-charge"></div>
+        <div id="enemy-name" style="font-size: 20px; font-weight: bold; margin-bottom: 5px;">スライム (水)</div>
+        <div id="enemy-sprite" class="enemy-sprite">💧</div>
+        <div class="hp-bar-bg" style="width: 80%; margin: 0 auto;"><div id="enemy-hp-fill" class="hp-bar-fill"></div><div id="enemy-hp-text" class="hp-text">20/20</div></div>
+      </div>
+    </div>
+    
+    <div class="quiz-box">
+      <div id="question-category" style="font-size:12px; color:var(--gold); margin-bottom:5px;"></div>
+      <div id="question-text" class="question-text">読み込み中...</div>
+      <div class="options" id="quiz-options"></div>
+    </div>
+  </div>
 
-        // DOM要素
-        const startScreen = document.getElementById('start-screen');
-        const gameScreen = document.getElementById('game-screen');
-        const gameOverScreen = document.getElementById('game-over-screen');
-        const startBtn = document.getElementById('start-btn');
-        const restartBtn = document.getElementById('restart-btn');
-        const questionText = document.getElementById('question-text');
-        const optionsContainer = document.getElementById('options-container');
-        const scoreDisplay = document.getElementById('score');
-        const levelDisplay = document.getElementById('level');
-        const healthBar = document.getElementById('health-bar');
-        const timerDisplay = document.getElementById('timer');
-        const finalScore = document.getElementById('final-score');
-        const finalLevel = document.getElementById('final-level');
-        const progressFill = document.getElementById('progress-fill');
+  <div id="modal" class="modal">
+    <div class="modal-box">
+      <h2 id="modal-title" class="modal-title">結果</h2>
+      <div id="modal-content" style="font-size: 18px; margin-bottom: 20px; line-height: 1.5;"></div>
+      <div id="modal-actions" style="display:flex; gap:10px; justify-content:center;"></div>
+    </div>
+  </div>
+</div>
 
-        // ゲーム初期化
-        function initGame() {
-            gameState.score = 0;
-            gameState.level = 1;
-            gameState.health = 100;
-            gameState.questionIndex = 0;
-            gameState.progress = 0;
-            gameState.isGameActive = true;
+<script>
+/* ==========================================================================
+   データベース (問題・モンスター・エリア)
+   ========================================================================== */
+const QUIZ_DB = [
+  // 国語
+  { q: "「犬も歩けば◯に当たる」◯に入るのは？", opts: ["棒", "壁", "猫", "石"], ans: 0, cat: "国語" },
+  { q: "「一石二◯」◯に入る漢字は？", opts: ["鳥", "魚", "犬", "兎"], ans: 0, cat: "国語" },
+  { q: "「矛盾」の正しい読み方は？", opts: ["むじゅん", "むじょん", "むどん", "むとん"], ans: 0, cat: "国語" },
+  // 歴史
+  { q: "「ホトトギス」の俳句で「鳴かぬなら殺してしまえ」と詠まれたとされる武将は？", opts: ["織田信長", "豊臣秀吉", "徳川家康", "武田信玄"], ans: 0, cat: "歴史" },
+  { q: "江戸幕府を開いたのは誰？", opts: ["徳川家康", "徳川家光", "徳川吉宗", "徳川慶喜"], ans: 0, cat: "歴史" },
+  { q: "大政奉還が行われたのは何時代？", opts: ["江戸時代", "明治時代", "大正時代", "昭和時代"], ans: 0, cat: "歴史" },
+  // 理科
+  { q: "水が氷になるときの温度は通常何度？", opts: ["0度", "100度", "50度", "-10度"], ans: 0, cat: "理科" },
+  { q: "太陽系で一番大きい惑星は？", opts: ["木星", "土星", "地球", "火星"], ans: 0, cat: "理科" },
+  { q: "人間の骨の数は大人の場合およそいくつ？", opts: ["約200個", "約100個", "約300個", "約500個"], ans: 0, cat: "理科" },
+  // 地理
+  { q: "日本で一番高い山は？", opts: ["富士山", "阿蘇山", "筑波山", "高尾山"], ans: 0, cat: "地理" },
+  { q: "日本で一番面積が広い都道府県は？", opts: ["北海道", "岩手県", "福島県", "長野県"], ans: 0, cat: "地理" },
+  { q: "アメリカの首都は？", opts: ["ワシントンD.C.", "ニューヨーク", "ロサンゼルス", "シカゴ"], ans: 0, cat: "地理" },
+  // 雑学
+  { q: "サッカーは1チーム何人でプレイする？", opts: ["11人", "9人", "10人", "12人"], ans: 0, cat: "雑学" },
+  { q: "ティラノサウルスの意味は？", opts: ["暴君トカゲ", "角竜", "飛ぶ鳥", "大きな歯"], ans: 0, cat: "雑学" },
+  // モンスター知識（ゲーム内独自）
+  { q: "このゲームで、水属性に強い属性は？", opts: ["木属性", "火属性", "光属性", "闇属性"], ans: 0, cat: "モンスター知識" },
+  { q: "連続正解で発動する「必殺技」は何連続で出る？", opts: ["5連続", "3連続", "7連続", "10連続"], ans: 0, cat: "モンスター知識" }
+];
 
-            updateScore();
-            updateLevel();
-            updateHealth();
-            updateProgress();
+const MONSTER_DB = {
+  slime: { id: "slime", name: "スライム", emoji: "💧", hp: 20, atk: 5, el: "水" },
+  bat: { id: "bat", name: "コウモリ", emoji: "🦇", hp: 25, atk: 8, el: "闇" },
+  goblin: { id: "goblin", name: "ゴブリン", emoji: "👺", hp: 30, atk: 12, el: "木" },
+  fireLizard: { id: "fireLizard", name: "炎トカゲ", emoji: "🦎", hp: 40, atk: 15, el: "火" },
+  golem: { id: "golem", name: "ゴーレム", emoji: "🪨", hp: 60, atk: 10, el: "木" },
+  ghost: { id: "ghost", name: "ゴースト", emoji: "👻", hp: 50, atk: 20, el: "闇" },
+  angel: { id: "angel", name: "エンジェル", emoji: "👼", hp: 70, atk: 25, el: "光" },
+  dragon: { id: "dragon", name: "ドラゴン", emoji: "🐉", hp: 100, atk: 35, el: "火", isBoss: true },
+  demonKing: { id: "demonKing", name: "魔王", emoji: "👿", hp: 300, atk: 50, el: "闇", isBoss: true }
+};
 
-            showScreen(gameScreen);
-            startTimer();
-            loadQuestion();
-        }
+const AREA_DB = [
+  { id: 0, name: "草原", reqLv: 1, enemies: ["slime", "bat"], boss: "goblin", bg: "#2d4a22" },
+  { id: 1, name: "森", reqLv: 5, enemies: ["goblin", "bat", "fireLizard"], boss: "golem", bg: "#1a3300" },
+  { id: 2, name: "洞窟", reqLv: 10, enemies: ["golem", "ghost"], boss: "fireLizard", bg: "#3e2723" },
+  { id: 3, name: "火山", reqLv: 15, enemies: ["fireLizard", "golem", "ghost"], boss: "dragon", bg: "#b71c1c" },
+  { id: 4, name: "魔王城", reqLv: 20, enemies: ["ghost", "angel", "dragon"], boss: "demonKing", bg: "#1a1a2e" }
+];
 
-        // 画面切り替え
-        function showScreen(screen) {
-            startScreen.classList.add('hidden');
-            gameScreen.classList.add('hidden');
-            gameOverScreen.classList.add('hidden');
-            screen.classList.remove('hidden');
-        }
+/* ==========================================================================
+   システム状態・セーブデータ
+   ========================================================================== */
+let state = {
+  player: {
+    lv: 1, xp: 0, coins: 0,
+    baseHp: 100, hp: 100, baseAtk: 10,
+    box: [], // 所持モンスターIDの配列
+    party: [] // 最大3体
+  },
+  stats: {
+    totalCorrect: 0, maxCombo: 0, dragonDefeated: false
+  },
+  unlockedArea: 0
+};
 
-        // 問題をロード
-        function loadQuestion() {
-            if (gameState.questionIndex >= quizQuestions.length) {
-                endGame();
-                return;
-            }
+// バトル用一時変数
+let battle = {
+  enemy: null, currentHp: 0, isBoss: false, bossCharge: 0, combo: 0, currentQ: null
+};
 
-            gameState.currentQuestion = quizQuestions[gameState.questionIndex];
-            questionText.textContent = gameState.currentQuestion.question;
-            
-            optionsContainer.innerHTML = '';
-            gameState.currentQuestion.options.forEach((option, index) => {
-                const button = document.createElement('button');
-                button.className = 'option-btn';
-                button.textContent = option;
-                button.onclick = () => checkAnswer(index);
-                optionsContainer.appendChild(button);
-            });
-        }
+function saveGame() { localStorage.setItem('quizRpgSave', JSON.stringify(state)); }
+function loadGame() {
+  const s = localStorage.getItem('quizRpgSave');
+  if(s) { state = JSON.parse(s); }
+}
+function resetData() {
+  if(confirm("本当にデータを消去しますか？")) { localStorage.removeItem('quizRpgSave'); location.reload(); }
+}
 
-        // 回答をチェック
-        function checkAnswer(selectedIndex) {
-            const isCorrect = selectedIndex === gameState.currentQuestion.correct;
-            const buttons = optionsContainer.querySelectorAll('.option-btn');
-            
-            // 正解/不正解の表示
-            buttons.forEach((btn, index) => {
-                if (index === gameState.currentQuestion.correct) {
-                    btn.classList.add('correct');
-                } else {
-                    btn.classList.add('incorrect');
-                }
-                btn.disabled = true;
-            });
+/* ==========================================================================
+   計算・ユーティリティ
+   ========================================================================== */
+function getMaxHp() {
+  let hp = state.player.baseHp + (state.player.lv * 10);
+  state.player.party.forEach(id => { hp += Math.floor(MONSTER_DB[id].hp * 0.5); });
+  return hp;
+}
+function getAtk() {
+  let atk = state.player.baseAtk + (state.player.lv * 2);
+  state.player.party.forEach(id => { atk += Math.floor(MONSTER_DB[id].atk * 0.5); });
+  return atk;
+}
+function getPlayerElement() {
+  // 先頭の仲間の属性、いなければ無属性(光扱い)
+  return state.player.party.length > 0 ? MONSTER_DB[state.player.party[0]].el : "光";
+}
+function getElementMultiplier(atkEl, defEl) {
+  if(atkEl === "火" && defEl === "木") return 1.5;
+  if(atkEl === "火" && defEl === "水") return 0.5;
+  if(atkEl === "水" && defEl === "火") return 1.5;
+  if(atkEl === "水" && defEl === "木") return 0.5;
+  if(atkEl === "木" && defEl === "水") return 1.5;
+  if(atkEl === "木" && defEl === "火") return 0.5;
+  if(atkEl === "光" && defEl === "闇") return 1.5;
+  if(atkEl === "闇" && defEl === "光") return 1.5;
+  return 1.0;
+}
+function shuffle(array) {
+  let curId = array.length;
+  while (0 !== curId) {
+    let randId = Math.floor(Math.random() * curId); curId -= 1;
+    let tmp = array[curId]; array[curId] = array[randId]; array[randId] = tmp;
+  }
+  return array;
+}
 
-            if (isCorrect) {
-                gameState.score += 10 * gameState.level;
-                updateScore();
-                // 正解時は少し回復
-                gameState.health = Math.min(100, gameState.health + 5);
-                updateHealth();
-            } else {
-                // 不正解時はダメージ
-                gameState.health -= 15;
-                updateHealth();
-                if (gameState.health <= 0) {
-                    endGame();
-                    return;
-                }
-            }
+/* ==========================================================================
+   画面遷移・UI更新
+   ========================================================================== */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
 
-            // 次の問題へ
-            setTimeout(() => {
-                gameState.questionIndex++;
-                gameState.progress = (gameState.questionIndex / quizQuestions.length) * 100;
-                updateProgress();
-                loadQuestion();
-            }, 1000);
-        }
+function startGame() {
+  loadGame();
+  state.player.hp = getMaxHp(); // 街に戻ると全回復
+  updateTownUI();
+  showScreen('screen-town');
+}
 
-        // タイマー開始
-        function startTimer() {
-            clearInterval(gameState.timer);
-            gameState.timeLeft = 30;
-            updateTimer();
-            gameState.timer = setInterval(() => {
-                gameState.timeLeft--;
-                updateTimer();
-                if (gameState.timeLeft <= 0) {
-                    clearInterval(gameState.timer);
-                    gameState.health -= 10;
-                    updateHealth();
-                    if (gameState.health <= 0) {
-                        endGame();
-                    } else {
-                        gameState.questionIndex++;
-                        gameState.progress = (gameState.questionIndex / quizQuestions.length) * 100;
-                        updateProgress();
-                        loadQuestion();
-                    }
-                }
-            }, 1000);
-        }
+function updateTownUI() {
+  document.getElementById('town-lv').innerText = `Lv: ${state.player.lv}`;
+  document.getElementById('town-hp').innerText = `HP: ${state.player.hp}/${getMaxHp()}`;
+  document.getElementById('town-atk').innerText = `攻撃力: ${getAtk()}`;
+  document.getElementById('town-coins').innerText = `🪙 ${state.player.coins}`;
+  
+  // Achievements check
+  let achCount = 0;
+  if(state.stats.maxCombo >= 10) achCount++;
+  if(state.stats.totalCorrect >= 100) achCount++;
+  if(state.stats.dragonDefeated) achCount++;
+  document.getElementById('town-achieve').innerText = `${achCount}/3`;
+  
+  // Area List
+  const list = document.getElementById('area-list');
+  list.innerHTML = "";
+  AREA_DB.forEach((area, i) => {
+    let isLocked = state.player.lv < area.reqLv;
+    let btn = document.createElement('div');
+    btn.className = `area-btn ${isLocked ? 'locked' : ''}`;
+    btn.innerHTML = `
+      <div>
+        <div style="font-weight:bold; font-size:18px;">${area.name}</div>
+        <div style="font-size:12px;">推奨Lv ${area.reqLv}</div>
+      </div>
+      <button onclick="startBattle(${i})" ${isLocked ? 'disabled' : ''} style="padding: 8px 15px;">出発</button>
+    `;
+    list.appendChild(btn);
+  });
+}
 
-        // タイマー更新
-        function updateTimer() {
-            timerDisplay.textContent = gameState.timeLeft;
-        }
+/* ==========================================================================
+   バトルシステム
+   ========================================================================== */
+function startBattle(areaId) {
+  const area = AREA_DB[areaId];
+  document.getElementById('screen-battle').style.background = area.bg;
+  
+  // ボスか雑魚か
+  const isBossFight = (Math.random() < 0.2); // 20%でボス出現
+  const enemyId = isBossFight ? area.boss : area.enemies[Math.floor(Math.random() * area.enemies.length)];
+  const eData = MONSTER_DB[enemyId];
+  
+  // 敵のステータススケーリング（エリアに合わせる）
+  const multiplier = 1 + (areaId * 0.5);
+  battle.enemy = { ...eData, maxHp: Math.floor(eData.hp * multiplier), atk: Math.floor(eData.atk * multiplier) };
+  battle.currentHp = battle.enemy.maxHp;
+  battle.isBoss = eData.isBoss;
+  battle.bossCharge = 0;
+  battle.combo = 0;
+  
+  updateBattleUI();
+  nextQuestion();
+  showScreen('screen-battle');
+}
 
-        // スコア更新
-        function updateScore() {
-            scoreDisplay.textContent = gameState.score;
-        }
+function updateBattleUI() {
+  document.getElementById('battle-lv').innerText = state.player.lv;
+  
+  // Player HP
+  const pMax = getMaxHp();
+  const pPct = Math.max(0, (state.player.hp / pMax) * 100);
+  document.getElementById('battle-player-hp-fill').style.width = pPct + '%';
+  document.getElementById('battle-player-hp-text').innerText = `${state.player.hp}/${pMax}`;
+  
+  // Enemy Info
+  document.getElementById('enemy-name').innerText = `${battle.enemy.name} (${battle.enemy.el})`;
+  document.getElementById('enemy-sprite').innerText = battle.enemy.emoji;
+  
+  const ePct = Math.max(0, (battle.currentHp / battle.enemy.maxHp) * 100);
+  document.getElementById('enemy-hp-fill').style.width = ePct + '%';
+  document.getElementById('enemy-hp-text').innerText = `${battle.currentHp}/${battle.enemy.maxHp}`;
+  
+  // Combo & Boss
+  document.getElementById('combo-display').innerText = battle.combo > 1 ? `${battle.combo} COMBO!` : "";
+  const chargeEl = document.getElementById('boss-charge-display');
+  if(battle.isBoss) {
+    chargeEl.innerText = `ボスバリア: 残り正解 ${3 - battle.bossCharge}回で攻撃可能！`;
+  } else {
+    chargeEl.innerText = "";
+  }
+}
 
-        // レベル更新
-        function updateLevel() {
-            levelDisplay.textContent = gameState.level;
-        }
+function nextQuestion() {
+  const q = QUIZ_DB[Math.floor(Math.random() * QUIZ_DB.length)];
+  battle.currentQ = q;
+  
+  document.getElementById('question-category').innerText = `【${q.cat}】`;
+  document.getElementById('question-text').innerText = q.q;
+  
+  // 選択肢シャッフル
+  let opts = q.opts.map((text, idx) => ({text, isCorrect: idx === q.ans}));
+  opts = shuffle(opts);
+  
+  const optBox = document.getElementById('quiz-options');
+  optBox.innerHTML = "";
+  opts.forEach(opt => {
+    let btn = document.createElement('button');
+    btn.innerText = opt.text;
+    btn.onclick = () => answerQuiz(opt.isCorrect);
+    optBox.appendChild(btn);
+  });
+}
 
-        // ヘルス更新
-        function updateHealth() {
-            healthBar.style.width = `${gameState.health}%`;
-        }
+function answerQuiz(isCorrect) {
+  const sprite = document.getElementById('enemy-sprite');
+  const app = document.getElementById('app');
+  
+  if (isCorrect) {
+    state.stats.totalCorrect++;
+    battle.combo++;
+    if(battle.combo > state.stats.maxCombo) state.stats.maxCombo = battle.combo;
+    
+    if (battle.isBoss) {
+      battle.bossCharge++;
+      if (battle.bossCharge >= 3) {
+        battle.bossCharge = 0;
+        executeAttack(sprite);
+      } else {
+        showModal("正解！", `ボスバリアを削った！<br>あと${3-battle.bossCharge}回！`, [{text:"次へ", cb:nextQuestion}]);
+        updateBattleUI();
+      }
+    } else {
+      executeAttack(sprite);
+    }
+  } else {
+    battle.combo = 0;
+    if(battle.isBoss) battle.bossCharge = 0;
+    
+    // 敵の攻撃
+    app.classList.add('shake');
+    setTimeout(() => app.classList.remove('shake'), 300);
+    const dmg = battle.enemy.atk;
+    state.player.hp -= dmg;
+    
+    if (state.player.hp <= 0) {
+      state.player.hp = 0;
+      updateBattleUI();
+      showModal("敗北...", "目の前が真っ暗になった...<br>街に戻ります。", [{text:"戻る", cb:startGame}]);
+    } else {
+      showModal("不正解！", `敵の攻撃！ ${dmg}ダメージを受けた！`, [{text:"次へ", cb:nextQuestion}]);
+      updateBattleUI();
+    }
+  }
+}
 
-        // プログレス更新
-        function updateProgress() {
-            progressFill.style.width = `${gameState.progress}%`;
-        }
+function executeAttack(sprite) {
+  // アニメーション
+  sprite.classList.add('shake');
+  document.querySelector('.battle-area').classList.add('attack-anim');
+  setTimeout(() => {
+    sprite.classList.remove('shake');
+    document.querySelector('.battle-area').classList.remove('attack-anim');
+  }, 300);
 
-        // ゲーム終了
-        function endGame() {
-            gameState.isGameActive = false;
-            clearInterval(gameState.timer);
-            finalScore.textContent = gameState.score;
-            finalLevel.textContent = gameState.level;
-            showScreen(gameOverScreen);
-        }
+  // ダメージ計算
+  let baseAtk = getAtk();
+  let mult = getElementMultiplier(getPlayerElement(), battle.enemy.el);
+  
+  // コンボボーナス
+  if (battle.combo >= 5) {
+    mult *= 3.0; // 必殺技
+    battle.combo = 0; // リセット
+    showFloatText("必殺技！", "#ffd700");
+  } else if (battle.combo >= 3) {
+    mult *= 1.5;
+  }
+  
+  let dmg = Math.floor(baseAtk * mult);
+  if(dmg < 1) dmg = 1;
+  
+  battle.currentHp -= dmg;
+  if(battle.currentHp <= 0) battle.currentHp = 0;
+  
+  updateBattleUI();
+  
+  if(battle.currentHp === 0) {
+    handleVictory();
+  } else {
+    setTimeout(nextQuestion, 600);
+  }
+}
 
-        // イベントリスナー
-        startBtn.addEventListener('click', () => {
-            initGame();
-        });
+function handleVictory() {
+  if (battle.enemy.id === "dragon") state.stats.dragonDefeated = true;
+  
+  // 報酬
+  const xpGained = battle.enemy.hp;
+  const coinsGained = Math.floor(battle.enemy.hp / 2);
+  state.player.xp += xpGained;
+  state.player.coins += coinsGained;
+  
+  let msg = `${battle.enemy.name}を倒した！<br>+${xpGained} XP<br>+${coinsGained} 🪙<br>`;
+  
+  // レベルアップ判定
+  const xpNeed = state.player.lv * 100;
+  if (state.player.xp >= xpNeed) {
+    state.player.lv++;
+    state.player.xp -= xpNeed;
+    state.player.baseHp += 20;
+    state.player.baseAtk += 5;
+    msg += `<br><span style="color:var(--gold)">レベルアップ！ Lv${state.player.lv}になった！</span>`;
+  }
+  
+  // 仲間ドロップ判定 (10%)
+  let btnTxt = "街へ戻る";
+  let cb = startGame;
+  
+  if (Math.random() < 0.1) {
+    state.player.box.push(battle.enemy.id);
+    msg += `<br><br><span style="color:var(--success)">${battle.enemy.emoji} ${battle.enemy.name} が仲間になった！</span>`;
+  } else {
+    // 連続戦闘の選択肢
+    btnTxt = "さらに進む";
+    cb = () => { closeModal(); startBattle(state.unlockedArea); }; // 簡易的に現在のアンロックエリアと仮定
+  }
+  
+  saveGame();
+  showModal("勝利！", msg, [
+    {text: btnTxt, cb: cb},
+    {text: "街へ戻る", cb: startGame}
+  ]);
+}
 
-        restartBtn.addEventListener('click', () => {
-            initGame();
-        });
+function fleeBattle() {
+  showModal("逃走", "戦闘から逃げ出した...", [{text:"街へ戻る", cb:startGame}]);
+}
 
-        // ゲーム初期化
-        showScreen(startScreen);
-    </script>
+/* ==========================================================================
+   ガチャ & パーティ編成
+   ========================================================================== */
+function openGacha() {
+  if (state.player.coins < 100) {
+    alert("コインが足りません！");
+    return;
+  }
+  state.player.coins -= 100;
+  
+  const mKeys = Object.keys(MONSTER_DB);
+  const pulledId = mKeys[Math.floor(Math.random() * mKeys.length)];
+  const monster = MONSTER_DB[pulledId];
+  
+  state.player.box.push(pulledId);
+  saveGame();
+  
+  showModal("ガチャ結果", `<div style="font-size:60px;">${monster.emoji}</div><br>${monster.name}をゲットした！`, [{text:"OK", cb:()=>{ closeModal(); updateTownUI(); }}]);
+}
+
+function openPartyMenu() {
+  let html = `<div style="font-size:14px; margin-bottom:10px;">パーティ (最大3体タップで選択)</div><div class="monster-grid" id="party-grid">`;
+  
+  // 重複除去して種類ごとに表示（シンプル化のため）
+  const uniqueBox = [...new Set(state.player.box)];
+  
+  if(uniqueBox.length === 0) {
+    html += `<div style="grid-column: span 4; font-size:12px;">モンスターがいません。ガチャかドロップで集めよう！</div>`;
+  } else {
+    uniqueBox.forEach(id => {
+      const m = MONSTER_DB[id];
+      const count = state.player.box.filter(x => x===id).length;
+      const inParty = state.player.party.includes(id);
+      html += `<div class="monster-card ${inParty?'in-party':''}" onclick="toggleParty('${id}')">
+        <div class="monster-emoji">${m.emoji}</div>
+        <div>${m.name}</div>
+        <div>所持:${count}</div>
+      </div>`;
+    });
+  }
+  html += `</div>`;
+  
+  showModal("仲間編成", html, [{text:"閉じる", cb:()=>{ closeModal(); updateTownUI(); saveGame(); }}]);
+}
+
+function toggleParty(id) {
+  const idx = state.player.party.indexOf(id);
+  if (idx > -1) {
+    state.player.party.splice(idx, 1);
+  } else {
+    if (state.player.party.length < 3) {
+      state.player.party.push(id);
+    } else {
+      alert("パーティは最大3体までです！");
+      return;
+    }
+  }
+  // 再描画
+  openPartyMenu();
+}
+
+/* ==========================================================================
+   モーダル・演出
+   ========================================================================== */
+function showModal(title, contentHTML, buttons) {
+  document.getElementById('modal-title').innerHTML = title;
+  document.getElementById('modal-content').innerHTML = contentHTML;
+  
+  const actions = document.getElementById('modal-actions');
+  actions.innerHTML = "";
+  buttons.forEach(b => {
+    let btn = document.createElement('button');
+    btn.innerText = b.text;
+    if(b.text==="街へ戻る") btn.classList.add('danger');
+    else btn.classList.add('success');
+    btn.onclick = b.cb;
+    actions.appendChild(btn);
+  });
+  
+  document.getElementById('modal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('active');
+}
+
+function showFloatText(text, color) {
+  // 簡易的なフロートテキスト（コンボエリアに表示して消す）
+  const el = document.getElementById('combo-display');
+  el.innerText = text;
+  el.style.color = color;
+  setTimeout(() => { if(el.innerText === text) el.innerText = ""; el.style.color = "var(--gold)"; }, 1500);
+}
+
+// 初期化実行
+loadGame();
+// 最初はタイトル画面（HTML上でactiveになっているためそのまま）
+</script>
+
 </body>
 </html>
