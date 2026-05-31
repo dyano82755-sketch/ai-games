@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>倉庫番</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: white;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 500px;
+            height: 90vh;
+            position: relative;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        /* スタート画面 */
+        #start-screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10;
+        }
+
+        #start-screen h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+
+        #start-screen p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        #start-button {
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            background: linear-gradient(45deg, #ff6b6b, #ffa502);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        #start-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.6);
+        }
+
+        /* ゲーム画面 */
+        #game-screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+        }
+
+        #game-header {
+            padding: 15px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.5);
+            border-bottom: 2px solid #ff6b6b;
+        }
+
+        #score {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            gap: 2px;
+            flex: 1;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin: 10px;
+        }
+
+        .cell {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+        }
+
+        .cell:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .cell.selected {
+            background: rgba(255, 107, 107, 0.7);
+            transform: scale(1.1);
+        }
+
+        .cell.warehouse {
+            background: rgba(139, 69, 19, 0.7);
+        }
+
+        .cell.warehouse::before {
+            content: "🏪";
+        }
+
+        .cell.box {
+            background: rgba(255, 215, 0, 0.7);
+        }
+
+        .cell.box::before {
+            content: "📦";
+        }
+
+        .cell.empty {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .cell.empty::before {
+            content: " ";
+        }
+
+        /* ゲームオーバー画面 */
+        #game-over-screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10;
+        }
+
+        #game-over-screen h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #ff6b6b;
+        }
+
+        #final-score {
+            font-size: 2rem;
+            margin-bottom: 30px;
+        }
+
+        #restart-button {
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            background: linear-gradient(45deg, #4ecdc4, #45b7d1);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(78, 205, 196, 0.4);
+        }
+
+        #restart-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(78, 205, 196, 0.6);
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 500px) {
+            #game-container {
+                height: 95vh;
+                border-radius: 10px;
+            }
+            
+            #start-screen h1 {
+                font-size: 2rem;
+            }
+            
+            #start-screen p {
+                font-size: 1rem;
+            }
+            
+            #start-button, #restart-button {
+                padding: 12px 30px;
+                font-size: 1.2rem;
+            }
+            
+            .cell {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- スタート画面 -->
+        <div id="start-screen">
+            <h1>🏪 倉庫番</h1>
+            <p>📦 ボックスを倉庫に運びましょう！<br>同じ種類のボックスをつなげて消すとスコアが入ります。</p>
+            <button id="start-button">スタート</button>
+        </div>
+
+        <!-- ゲーム画面 -->
+        <div id="game-screen">
+            <div id="game-header">
+                <div id="score">スコア: 0</div>
+            </div>
+            <div id="game-board"></div>
+        </div>
+
+        <!-- ゲームオーバー画面 -->
+        <div id="game-over-screen">
+            <h2>ゲームオーバー</h2>
+            <div id="final-score">最終スコア: 0</div>
+            <button id="restart-button">もう一度プレイ</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ゲーム状態
+            const gameState = {
+                board: [],
+                score: 0,
+                selectedCells: [],
+                isGameActive: false
+            };
+
+            // DOM要素
+            const startScreen = document.getElementById('start-screen');
+            const gameScreen = document.getElementById('game-screen');
+            const gameOverScreen = document.getElementById('game-over-screen');
+            const startButton = document.getElementById('start-button');
+            const restartButton = document.getElementById('restart-button');
+            const gameBoard = document.getElementById('game-board');
+            const scoreDisplay = document.getElementById('score');
+            const finalScoreDisplay = document.getElementById('final-score');
+
+            // ゲーム初期化
+            function initGame() {
+                gameState.board = [];
+                gameState.score = 0;
+                gameState.selectedCells = [];
+                gameState.isGameActive = true;
+                
+                scoreDisplay.textContent = `スコア: ${gameState.score}`;
+                gameBoard.innerHTML = '';
+                
+                // 10x10のボードを作成
+                for (let i = 0; i < 100; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.index = i;
+                    cell.addEventListener('click', handleCellClick);
+                    gameBoard.appendChild(cell);
+                }
+                
+                // ボードを初期化
+                generateBoard();
+                renderBoard();
+            }
+
+            // ボード生成
+            function generateBoard() {
+                const cellTypes = ['empty', 'warehouse', 'box'];
+                const board = [];
+                
+                for (let i = 0; i < 100; i++) {
+                    // 一部のセルを倉庫にする
+                    if (Math.random() < 0.1) {
+                        board.push('warehouse');
+                    } else if (Math.random() < 0.4) {
+                        board.push('box');
+                    } else {
+                        board.push('empty');
+                    }
+                }
+                
+                gameState.board = board;
+            }
+
+            // ボード描画
+            function renderBoard() {
+                const cells = document.querySelectorAll('.cell');
+                cells.forEach((cell, index) => {
+                    cell.className = 'cell ' + gameState.board[index];
+                    cell.classList.remove('selected');
+                });
+            }
+
+            // セルクリック処理
+            function handleCellClick(event) {
+                if (!gameState.isGameActive) return;
+                
+                const cell = event.target;
+                const index = parseInt(cell.dataset.index);
+                
+                // 倉庫は選択不可
+                if (gameState.board[index] === 'warehouse') return;
+                
+                // 選択状態を切り替え
+                if (cell.classList.contains('selected')) {
+                    cell.classList.remove('selected');
+                    gameState.selectedCells = gameState.selectedCells.filter(i => i !== index);
+                } else {
+                    cell.classList.add('selected');
+                    gameState.selectedCells.push(index);
+                }
+                
+                // 3つ以上選択されたら消去
+                if (gameState.selectedCells.length >= 3) {
+                    checkAndRemove();
+                }
+            }
+
+            // 消去チェック
+            function checkAndRemove() {
+                const selectedType = gameState.board[gameState.selectedCells[0]];
+                let allSameType = true;
+                
+                // 全て同じ種類か確認
+                for (let i = 0; i < gameState.selectedCells.length; i++) {
+                    if (gameState.board[gameState.selectedCells[i]] !== selectedType) {
+                        allSameType = false;
+                        break;
+                    }
+                }
+                
+                if (allSameType) {
+                    // 消去処理
+                    gameState.selectedCells.forEach(index => {
+                        gameState.board[index] = 'empty';
+                    });
+                    
+                    // スコア加算
+                    gameState.score += gameState.selectedCells.length * 10;
+                    scoreDisplay.textContent = `スコア: ${gameState.score}`;
+                    
+                    // 選択解除
+                    gameState.selectedCells = [];
+                    renderBoard();
+                    
+                    // ゲームオーバーチェック
+                    setTimeout(checkGameOver, 300);
+                } else {
+                    // 選択解除
+                    gameState.selectedCells.forEach(index => {
+                        const cell = document.querySelector(`[data-index="${index}"]`);
+                        cell.classList.remove('selected');
+                    });
+                    gameState.selectedCells = [];
+                }
+            }
+
+            // ゲームオーバーチェック
+            function checkGameOver() {
+                // 倉庫がなくなるとゲームオーバー
+                const hasWarehouse = gameState.board.some(cell => cell === 'warehouse');
+                
+                if (!hasWarehouse) {
+                    gameState.isGameActive = false;
+                    finalScoreDisplay.textContent = `最終スコア: ${gameState.score}`;
+                    gameOverScreen.style.display = 'flex';
+                }
+            }
+
+            // ゲーム開始
+            startButton.addEventListener('click', () => {
+                startScreen.style.display = 'none';
+                gameScreen.style.display = 'flex';
+                initGame();
+            });
+
+            // リスタート
+            restartButton.addEventListener('click', () => {
+                gameOverScreen.style.display = 'none';
+                gameScreen.style.display = 'flex';
+                initGame();
+            });
+
+            // タッチ操作対応
+            gameBoard.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (element && element.classList.contains('cell')) {
+                    element.click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
