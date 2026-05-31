@@ -1,0 +1,518 @@
+```html
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>ヴァンパイア サバイバーズ</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: manipulation;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #fff;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #game-container {
+      width: 100%;
+      max-width: 500px;
+      height: 100vh;
+      max-height: 800px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #screen {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 10px;
+      margin: 10px;
+      overflow: hidden;
+    }
+
+    .screen-content {
+      text-align: center;
+      padding: 20px;
+      max-width: 90%;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px #ff0000;
+      animation: pulse 1.5s infinite;
+    }
+
+    h2 {
+      font-size: 1.8rem;
+      margin-bottom: 15px;
+      color: #ff6b6b;
+    }
+
+    p {
+      font-size: 1.1rem;
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    button {
+      background: linear-gradient(to right, #ff6b6b, #ff8e8e);
+      border: none;
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      border-radius: 50px;
+      color: white;
+      cursor: pointer;
+      margin: 10px;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+    }
+
+    button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(255, 107, 107, 0.6);
+    }
+
+    #start-screen, #game-over-screen {
+      display: none;
+    }
+
+    #game-screen {
+      display: none;
+    }
+
+    #player {
+      position: absolute;
+      font-size: 3rem;
+      z-index: 10;
+      transition: all 0.1s ease;
+    }
+
+    #vampires {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+
+    .vampire {
+      position: absolute;
+      font-size: 2rem;
+      animation: float 3s infinite ease-in-out;
+    }
+
+    #score-display {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 1.5rem;
+      z-index: 20;
+    }
+
+    #health-bar {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 150px;
+      height: 20px;
+      background: #333;
+      border-radius: 10px;
+      overflow: hidden;
+      z-index: 20;
+    }
+
+    #health-fill {
+      height: 100%;
+      background: linear-gradient(to right, #ff6b6b, #ff0000);
+      width: 100%;
+      transition: width 0.3s ease;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-15px); }
+      100% { transform: translateY(0px); }
+    }
+
+    .hit-effect {
+      position: absolute;
+      font-size: 2rem;
+      animation: hit 0.5s forwards;
+      pointer-events: none;
+    }
+
+    @keyframes hit {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(2); opacity: 0; }
+    }
+
+    .instructions {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .control-key {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 8px 12px;
+      border-radius: 5px;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 500px) {
+      h1 { font-size: 2rem; }
+      h2 { font-size: 1.5rem; }
+      button { padding: 12px 20px; font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <div id="screen">
+      <div id="start-screen" class="screen-content">
+        <h1>🧛‍♂️ ヴァンパイア サバイバーズ 🧛‍♀️</h1>
+        <p>避けて倒すだけ！</p>
+        <p>ヴァンパイアを倒して、生存を競え！</p>
+        <div class="instructions">
+          <p>🎯 タッチまたはクリックして移動</p>
+          <p>💥 タップでヴァンパイアを倒す</p>
+        </div>
+        <button id="start-button">スタート</button>
+      </div>
+
+      <div id="game-screen" class="screen-content">
+        <div id="score-display">スコア: 0</div>
+        <div id="health-bar">
+          <div id="health-fill"></div>
+        </div>
+        <div id="player">🧛</div>
+        <div id="vampires"></div>
+      </div>
+
+      <div id="game-over-screen" class="screen-content">
+        <h2>💀 ゲームオーバー 💀</h2>
+        <p id="final-score">スコア: 0</p>
+        <p id="vampires-defeated">倒したヴァンパイア: 0</p>
+        <button id="restart-button">リスタート</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // ゲーム状態
+      const gameState = {
+        isPlaying: false,
+        score: 0,
+        health: 100,
+        vampiresDefeated: 0,
+        playerX: 0,
+        playerY: 0,
+        vampires: [],
+        gameLoopId: null,
+        touchStartX: 0,
+        touchStartY: 0
+      };
+
+      // DOM要素
+      const startScreen = document.getElementById('start-screen');
+      const gameScreen = document.getElementById('game-screen');
+      const gameOverScreen = document.getElementById('game-over-screen');
+      const startButton = document.getElementById('start-button');
+      const restartButton = document.getElementById('restart-button');
+      const scoreDisplay = document.getElementById('score-display');
+      const healthFill = document.getElementById('health-fill');
+      const finalScore = document.getElementById('final-score');
+      const vampiresDefeated = document.getElementById('vampires-defeated');
+      const player = document.getElementById('player');
+      const vampiresContainer = document.getElementById('vampires');
+
+      // ゲーム開始
+      startButton.addEventListener('click', startGame);
+      restartButton.addEventListener('click', startGame);
+
+      function startGame() {
+        // 初期化
+        gameState.isPlaying = true;
+        gameState.score = 0;
+        gameState.health = 100;
+        gameState.vampiresDefeated = 0;
+        gameState.vampires = [];
+        gameState.playerX = window.innerWidth / 2;
+        gameState.playerY = window.innerHeight / 2;
+
+        // スクリーン切り替え
+        startScreen.style.display = 'none';
+        gameScreen.style.display = 'flex';
+        gameOverScreen.style.display = 'none';
+
+        // プレイヤー初期位置
+        player.style.left = `${gameState.playerX - 25}px`;
+        player.style.top = `${gameState.playerY - 25}px`;
+
+        // スコアとHP表示更新
+        updateScore();
+        updateHealth();
+
+        // ゲームループ開始
+        if (gameState.gameLoopId) {
+          cancelAnimationFrame(gameState.gameLoopId);
+        }
+        gameState.gameLoopId = requestAnimationFrame(gameLoop);
+
+        // タッチイベント
+        document.addEventListener('touchstart', handleTouchStart);
+        document.addEventListener('touchmove', handleTouchMove);
+        document.addEventListener('touchend', handleTouchEnd);
+
+        // マウスイベント
+        document.addEventListener('mousedown', handleMouseDown);
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        // ヴァンパイア生成
+        generateVampires();
+      }
+
+      // タッチイベント
+      function handleTouchStart(e) {
+        if (!gameState.isPlaying) return;
+        gameState.touchStartX = e.touches[0].clientX;
+        gameState.touchStartY = e.touches[0].clientY;
+      }
+
+      function handleTouchMove(e) {
+        if (!gameState.isPlaying) return;
+        e.preventDefault();
+        const touchX = e.touches[0].clientX;
+        const touchY = e.touches[0].clientY;
+        movePlayer(touchX, touchY);
+      }
+
+      function handleTouchEnd() {
+        // タッチ終了時は何もしない
+      }
+
+      // マウスイベント
+      function handleMouseDown(e) {
+        if (!gameState.isPlaying) return;
+        gameState.touchStartX = e.clientX;
+        gameState.touchStartY = e.clientY;
+      }
+
+      function handleMouseMove(e) {
+        if (!gameState.isPlaying) return;
+        movePlayer(e.clientX, e.clientY);
+      }
+
+      function handleMouseUp() {
+        // マウスアップ時は何もしない
+      }
+
+      // プレイヤー移動
+      function movePlayer(x, y) {
+        const container = document.getElementById('screen');
+        const containerRect = container.getBoundingClientRect();
+        
+        // プレイヤーの位置を制限
+        let newX = x - containerRect.left - 25;
+        let newY = y - containerRect.top - 25;
+        
+        // コンテナ内に収める
+        newX = Math.max(0, Math.min(newX, containerRect.width - 50));
+        newY = Math.max(0, Math.min(newY, containerRect.height - 50));
+        
+        gameState.playerX = newX + 25;
+        gameState.playerY = newY + 25;
+        
+        player.style.left = `${newX}px`;
+        player.style.top = `${newY}px`;
+      }
+
+      // ヴァンパイア生成
+      function generateVampires() {
+        if (!gameState.isPlaying) return;
+        
+        const vampire = document.createElement('div');
+        vampire.className = 'vampire';
+        vampire.textContent = '🧛‍♂️';
+        
+        // ランダムな位置に配置
+        const containerRect = document.getElementById('screen').getBoundingClientRect();
+        const x = Math.random() * (containerRect.width - 50);
+        const y = Math.random() * (containerRect.height - 50);
+        
+        vampire.style.left = `${x}px`;
+        vampire.style.top = `${y}px`;
+        
+        // ランダムなアニメーション遅延
+        vampire.style.animationDelay = `${Math.random() * 2}s`;
+        
+        vampiresContainer.appendChild(vampire);
+        
+        // ヴァンパイアを状態に追加
+        gameState.vampires.push({
+          element: vampire,
+          x: x,
+          y: y,
+          speed: 0.5 + Math.random() * 1.5,
+          size: 1 + Math.random() * 1
+        });
+        
+        // 1秒ごとに新しいヴァンパイアを生成
+        setTimeout(generateVampires, 1000 + Math.random() * 1000);
+      }
+
+      // クリックでヴァンパイアを倒す
+      document.getElementById('screen').addEventListener('click', (e) => {
+        if (!gameState.isPlaying) return;
+        
+        const rect = e.currentTarget.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+        
+        // ヴァンパイアを倒す
+        for (let i = gameState.vampires.length - 1; i >= 0; i--) {
+          const vampire = gameState.vampires[i];
+          const distance = Math.sqrt(
+            Math.pow(clickX - (vampire.x + 25), 2) + 
+            Math.pow(clickY - (vampire.y + 25), 2)
+          );
+          
+          if (distance < 40) {
+            // ヒットエフェクト
+            createHitEffect(vampire.x + 25, vampire.y + 25);
+            
+            // ヴァンパイアを削除
+            vampire.element.remove();
+            gameState.vampires.splice(i, 1);
+            
+            // スコアと倒した数を更新
+            gameState.score += 100;
+            gameState.vampiresDefeated++;
+            updateScore();
+            
+            // プレイヤーに近づく
+            const playerDistance = Math.sqrt(
+              Math.pow(clickX - gameState.playerX, 2) + 
+              Math.pow(clickY - gameState.playerY, 2)
+            );
+            
+            if (playerDistance < 100) {
+              gameState.health = Math.min(100, gameState.health + 5);
+              updateHealth();
+            }
+            
+            break;
+          }
+        }
+      });
+
+      // ヒットエフェクト
+      function createHitEffect(x, y) {
+        const effect = document.createElement('div');
+        effect.className = 'hit-effect';
+        effect.textContent = '💥';
+        effect.style.left = `${x - 20}px`;
+        effect.style.top = `${y - 20}px`;
+        document.getElementById('screen').appendChild(effect);
+        
+        setTimeout(() => {
+          effect.remove();
+        }, 500);
+      }
+
+      // スコアとHP更新
+      function updateScore() {
+        scoreDisplay.textContent = `スコア: ${gameState.score}`;
+      }
+
+      function updateHealth() {
+        healthFill.style.width = `${gameState.health}%`;
+        if (gameState.health <= 0) {
+          endGame();
+        }
+      }
+
+      // ゲーム終了
+      function endGame() {
+        gameState.isPlaying = false;
+        cancelAnimationFrame(gameState.gameLoopId);
+        
+        // スクリーン切り替え
+        gameScreen.style.display = 'none';
+        gameOverScreen.style.display = 'flex';
+        
+        // 最終スコア表示
+        finalScore.textContent = `スコア: ${gameState.score}`;
+        vampiresDefeated.textContent = `倒したヴァンパイア: ${gameState.vampiresDefeated}`;
+        
+        // タッチイベント削除
+        document.removeEventListener('touchstart', handleTouchStart);
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('touchend', handleTouchEnd);
+        
+        document.removeEventListener('mousedown', handleMouseDown);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      }
+
+      // ゲームループ
+      function gameLoop() {
+        if (!gameState.isPlaying) return;
+        
+        // ヴァンパイアを移動
+        gameState.vampires.forEach(vampire => {
+          // プレイヤーに向かって移動
+          const dx = gameState.playerX - (vampire.x + 25);
+          const dy = gameState.playerY - (vampire.y + 25);
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance > 0) {
+            vampire.x += (dx / distance) * vampire.speed;
+            vampire.y += (dy / distance) * vampire.speed;
+            
+            vampire.element.style.left = `${vampire.x}px`;
+            vampire.element.style.top = `${vampire.y}px`;
+            
+            // プレイヤーに近づいた場合、HPを減らす
+            if (distance < 50) {
+              gameState.health = Math.max(0, gameState.health - 0.1);
+              updateHealth();
+            }
+          }
+        });
+        
+        gameState.gameLoopId = requestAnimationFrame(gameLoop);
+      }
+    })();
