@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ボクセルゲーム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 500px;
+            height: 90vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+        }
+
+        #screen {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #screen::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(255,255,255,0.1) 0%, transparent 20%),
+                radial-gradient(circle at 80% 70%, rgba(255,255,255,0.1) 0%, transparent 20%);
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            background: linear-gradient(to right, #ff9966, #ff5858);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .screen-content {
+            display: none;
+        }
+
+        .active {
+            display: block;
+        }
+
+        #start-screen h1 {
+            font-size: 2.2rem;
+        }
+
+        #start-screen p {
+            margin: 15px 0;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        #game-over-screen h1 {
+            font-size: 2rem;
+            color: #ff5858;
+        }
+
+        #game-over-screen p {
+            margin: 15px 0;
+            font-size: 1.2rem;
+        }
+
+        #score-display {
+            font-size: 1.8rem;
+            margin: 10px 0;
+            font-weight: bold;
+            color: #ffcc00;
+        }
+
+        #controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            background: linear-gradient(to bottom, #ff9966, #ff5858);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            gap: 2px;
+            width: 90%;
+            height: 400px;
+            margin: 20px auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 5px;
+        }
+
+        .cell {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.1s;
+        }
+
+        .cell.active {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .cell.filled {
+            background: linear-gradient(135deg, #ff9966, #ff5858);
+            box-shadow: 0 0 10px rgba(255, 88, 88, 0.7);
+        }
+
+        .cell.filled::after {
+            content: "■";
+            font-size: 1.2rem;
+            color: white;
+        }
+
+        #instructions {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        #game-over-screen {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 500px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            #game-board {
+                height: 300px;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="screen">
+            <div id="start-screen" class="screen-content active">
+                <h1>ボクセルゲーム</h1>
+                <p>タップまたはクリックでボクセルを配置してください</p>
+                <p>連続したボクセルを揃えると消えます</p>
+                <div id="score-display">スコア: 0</div>
+                <div id="controls">
+                    <button id="start-btn" class="btn">スタート</button>
+                </div>
+                <div id="instructions">
+                    <p>💡 タップでボクセルを配置</p>
+                    <p>💡 3つ以上揃うと消えるよ</p>
+                </div>
+            </div>
+
+            <div id="game-screen" class="screen-content">
+                <div id="score-display">スコア: 0</div>
+                <div id="game-board"></div>
+                <div id="controls">
+                    <button id="reset-btn" class="btn">リセット</button>
+                </div>
+            </div>
+
+            <div id="game-over-screen" class="screen-content">
+                <h1>ゲームオーバー</h1>
+                <p>スコア: <span id="final-score">0</span></p>
+                <div id="controls">
+                    <button id="restart-btn" class="btn">もう一度</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ゲーム状態管理
+            const gameState = {
+                score: 0,
+                board: [],
+                isPlaying: false,
+                gameBoard: document.getElementById('game-board'),
+                scoreDisplay: document.getElementById('score-display'),
+                finalScore: document.getElementById('final-score'),
+                startScreen: document.getElementById('start-screen'),
+                gameScreen: document.getElementById('game-screen'),
+                gameOverScreen: document.getElementById('game-over-screen')
+            };
+
+            // ゲーム初期化
+            function initGame() {
+                gameState.board = Array(10).fill().map(() => Array(10).fill(0));
+                renderBoard();
+                gameState.score = 0;
+                updateScore();
+            }
+
+            // ボード描画
+            function renderBoard() {
+                gameState.gameBoard.innerHTML = '';
+                for (let row = 0; row < 10; row++) {
+                    for (let col = 0; col < 10; col++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.row = row;
+                        cell.dataset.col = col;
+                        
+                        if (gameState.board[row][col] === 1) {
+                            cell.classList.add('filled');
+                        }
+                        
+                        cell.addEventListener('click', () => handleCellClick(row, col));
+                        gameState.gameBoard.appendChild(cell);
+                    }
+                }
+            }
+
+            // セルクリック処理
+            function handleCellClick(row, col) {
+                if (!gameState.isPlaying) return;
+                
+                // セルを反転
+                gameState.board[row][col] = gameState.board[row][col] ? 0 : 1;
+                renderBoard();
+                
+                // ボクセルのチェックとスコア計算
+                checkMatches();
+            }
+
+            // マッチチェック
+            function checkMatches() {
+                let matched = false;
+                
+                // 横方向のチェック
+                for (let row = 0; row < 10; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        if (gameState.board[row][col] === 1 &&
+                            gameState.board[row][col + 1] === 1 &&
+                            gameState.board[row][col + 2] === 1) {
+                            // マッチした場合はスコア加算
+                            gameState.score += 10;
+                            matched = true;
+                            
+                            // マッチしたセルを消す
+                            gameState.board[row][col] = 0;
+                            gameState.board[row][col + 1] = 0;
+                            gameState.board[row][col + 2] = 0;
+                        }
+                    }
+                }
+                
+                // 縦方向のチェック
+                for (let col = 0; col < 10; col++) {
+                    for (let row = 0; row < 8; row++) {
+                        if (gameState.board[row][col] === 1 &&
+                            gameState.board[row + 1][col] === 1 &&
+                            gameState.board[row + 2][col] === 1) {
+                            // マッチした場合はスコア加算
+                            gameState.score += 10;
+                            matched = true;
+                            
+                            // マッチしたセルを消す
+                            gameState.board[row][col] = 0;
+                            gameState.board[row + 1][col] = 0;
+                            gameState.board[row + 2][col] = 0;
+                        }
+                    }
+                }
+                
+                if (matched) {
+                    updateScore();
+                    renderBoard();
+                    
+                    // ボクセルがすべて消えたかチェック
+                    if (gameState.board.every(row => row.every(cell => cell === 0))) {
+                        endGame();
+                    }
+                }
+            }
+
+            // スコア更新
+            function updateScore() {
+                gameState.scoreDisplay.textContent = `スコア: ${gameState.score}`;
+            }
+
+            // ゲーム開始
+            function startGame() {
+                gameState.isPlaying = true;
+                gameState.startScreen.classList.remove('active');
+                gameState.gameScreen.classList.add('active');
+                initGame();
+            }
+
+            // ゲーム終了
+            function endGame() {
+                gameState.isPlaying = false;
+                gameState.gameScreen.classList.remove('active');
+                gameState.gameOverScreen.classList.add('active');
+                gameState.finalScore.textContent = gameState.score;
+            }
+
+            // リセット
+            function resetGame() {
+                gameState.gameOverScreen.classList.remove('active');
+                gameState.startScreen.classList.add('active');
+            }
+
+            // イベントリスナー
+            document.getElementById('start-btn').addEventListener('click', startGame);
+            document.getElementById('restart-btn').addEventListener('click', resetGame);
+            document.getElementById('reset-btn').addEventListener('click', () => {
+                initGame();
+            });
+
+            // タッチ対応
+            document.addEventListener('touchstart', function(e) {
+                if (gameState.isPlaying) {
+                    const rect = gameState.gameBoard.getBoundingClientRect();
+                    const touch = e.touches[0];
+                    const x = touch.clientX - rect.left;
+                    const y = touch.clientY - rect.top;
+                    
+                    const cellWidth = rect.width / 10;
+                    const cellHeight = rect.height / 10;
+                    
+                    const col = Math.floor(x / cellWidth);
+                    const row = Math.floor(y / cellHeight);
+                    
+                    if (row >= 0 && row < 10 && col >= 0 && col < 10) {
+                        handleCellClick(row, col);
+                    }
+                }
+            }, { passive: false });
+        });
+    </script>
+</body>
+</html>
