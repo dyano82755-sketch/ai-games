@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>レトロ・ゴールドランナー DX</title>
+<title>レトロ・アイスクライマー DX</title>
 <style>
   :root {
     --ink: #f6e8b4;
@@ -15,1548 +15,613 @@
     --gold: #f6c945;
     --red: #df5142;
     --blue: #45a4e8;
-    --green: #5cc66e;
+    --ice: #a0e6ff;
+    --cloud: #ffffff;
     --shadow: rgba(0, 0, 0, 0.42);
   }
 
-  * {
-    box-sizing: border-box;
-  }
-
-  html,
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; min-height: 100%; touch-action: none; overflow: hidden; }
   body {
-    margin: 0;
-    min-height: 100%;
-  }
-
-  body {
-    min-height: 100dvh;
-    overflow: hidden;
+    background: var(--bg);
     color: var(--ink);
-    background:
-      linear-gradient(180deg, #071224 0 62%, #100d18 62%),
-      var(--bg);
-    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Hiragino Sans", "Yu Gothic", monospace;
-  }
-
-  button {
-    font: inherit;
-    touch-action: manipulation;
+    font-family: ui-monospace, "SFMono-Regular", monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
 
   .app {
-    width: min(1180px, 100%);
+    width: min(800px, 100%);
     height: 100dvh;
-    min-height: 100dvh;
-    margin: 0 auto;
     display: grid;
     grid-template-rows: auto 1fr auto;
     gap: 8px;
     padding: 8px;
   }
 
-  .hud,
-  .screen,
-  .controls,
-  .modal-card {
+  .hud, .controls {
     border: 2px solid var(--line);
     border-radius: 8px;
-    box-shadow: 0 10px 28px var(--shadow);
-  }
-
-  .hud {
-    min-height: 70px;
-    display: grid;
-    grid-template-columns: minmax(250px, 1fr) repeat(6, auto);
-    gap: 8px;
-    align-items: center;
+    background: var(--panel);
     padding: 8px;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
-      var(--panel);
-  }
-
-  .brand {
-    min-width: 0;
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 10px;
-  }
-
-  .sprite-mark {
-    width: 50px;
-    height: 50px;
-    flex: 0 0 auto;
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    grid-template-rows: repeat(5, 1fr);
-    gap: 2px;
-    padding: 4px;
-    border: 2px solid var(--line);
-    background: #050910;
-  }
-
-  .sprite-mark span {
-    background: var(--gold);
-  }
-
-  .sprite-mark span:nth-child(1),
-  .sprite-mark span:nth-child(2),
-  .sprite-mark span:nth-child(3),
-  .sprite-mark span:nth-child(6),
-  .sprite-mark span:nth-child(8),
-  .sprite-mark span:nth-child(11),
-  .sprite-mark span:nth-child(12),
-  .sprite-mark span:nth-child(13),
-  .sprite-mark span:nth-child(17),
-  .sprite-mark span:nth-child(22),
-  .sprite-mark span:nth-child(23),
-  .sprite-mark span:nth-child(24) {
-    background: var(--blue);
-  }
-
-  .brand-title {
-    min-width: 0;
-    display: grid;
-    gap: 2px;
-  }
-
-  .brand-title strong {
-    font-size: 1.16rem;
-    line-height: 1.08;
-  }
-
-  .brand-title span {
-    max-width: 100%;
-    color: var(--muted);
-    font-size: 0.82rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .stat {
-    min-width: 78px;
-    min-height: 46px;
-    display: grid;
-    align-content: center;
-    gap: 2px;
-    padding: 5px 8px;
     text-align: center;
-    border: 1px solid rgba(240, 216, 120, 0.34);
-    border-radius: 8px;
-    background: rgba(5, 9, 16, 0.55);
+    background: rgba(0,0,0,0.5);
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--muted);
   }
 
-  .stat span {
-    color: var(--muted);
-    font-size: 0.64rem;
-    line-height: 1;
-  }
-
-  .stat b {
-    font-size: 1rem;
-    line-height: 1.1;
-  }
-
-  .btn,
-  .pad-btn,
-  .dig-btn {
-    border: 2px solid var(--line);
-    border-radius: 8px;
-    color: var(--ink);
-    background: linear-gradient(180deg, #2c3e52, #162334);
-    cursor: pointer;
-    font-weight: 900;
-    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.52);
-  }
-
-  .btn {
-    min-height: 44px;
-    padding: 0 14px;
-  }
-
-  .btn.icon {
-    width: 46px;
-    padding: 0;
-  }
-
-  .btn.play {
-    color: #05100a;
-    background: linear-gradient(180deg, #86e18d, #42a953);
-  }
-
-  .btn:active,
-  .pad-btn:active,
-  .dig-btn:active {
-    transform: translateY(2px);
-    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.52);
-  }
+  .stat span { font-size: 0.7rem; color: var(--muted); display: block; }
+  .stat b { font-size: 1.2rem; }
 
   .screen {
     position: relative;
-    min-height: 0;
+    width: 100%;
+    height: 100%;
+    border: 2px solid var(--line);
+    border-radius: 8px;
     overflow: hidden;
-    background:
-      radial-gradient(circle at 50% 30%, rgba(60, 89, 126, 0.28), transparent 48%),
-      #050910;
+    background: linear-gradient(180deg, #1a2a40 0%, #050910 100%);
   }
 
-  #gameCanvas {
+  canvas {
     display: block;
     width: 100%;
     height: 100%;
-    min-height: 340px;
     image-rendering: pixelated;
-    touch-action: none; /* スワイプ操作用 */
-  }
-
-  .message {
-    position: absolute;
-    left: 50%;
-    bottom: 10px;
-    width: min(720px, calc(100% - 24px));
-    min-height: 40px;
-    transform: translateX(-50%);
-    display: grid;
-    place-items: center;
-    padding: 7px 12px;
-    border: 2px solid rgba(240, 216, 120, 0.82);
-    border-radius: 8px;
-    background: rgba(5, 9, 16, 0.86);
-    text-align: center;
-    font-weight: 900;
-    pointer-events: none;
   }
 
   .controls {
-    min-height: 118px;
     display: grid;
-    grid-template-columns: minmax(180px, 1fr) auto auto minmax(180px, 1fr);
+    grid-template-columns: 1fr auto 1fr;
     gap: 10px;
-    align-items: center;
-    padding: 8px;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
-      var(--panel-2);
   }
 
-  .mini-panel {
-    min-width: 0;
-    display: grid;
-    gap: 5px;
-    font-weight: 800;
-    line-height: 1.28;
-  }
-
-  .mini-panel small {
-    color: var(--muted);
-    font-size: 0.78rem;
-  }
-
-  .dpad {
-    width: 174px;
-    height: 96px;
-    display: grid;
-    grid-template-columns: repeat(3, 54px);
-    grid-template-rows: repeat(2, 44px);
-    gap: 6px;
-  }
-
-  .pad-btn {
-    min-width: 0;
-    min-height: 0;
-    font-size: 1.18rem;
-  }
-
-  .pad-btn.up {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
-  .pad-btn.left {
-    grid-column: 1;
-    grid-row: 2;
-  }
-
-  .pad-btn.down {
-    grid-column: 2;
-    grid-row: 2;
-  }
-
-  .pad-btn.right {
-    grid-column: 3;
-    grid-row: 2;
-  }
-
-  .dig-tools {
-    display: grid;
-    grid-template-columns: repeat(2, 86px);
-    gap: 8px;
-  }
-
-  .dig-btn {
-    min-height: 48px;
-    padding: 0 6px;
-    color: #04100a;
-    background: linear-gradient(180deg, #ffd875, #cf8a22);
-  }
-
-  .bar-wrap {
-    justify-self: end;
-    width: min(260px, 100%);
-    display: grid;
-    gap: 6px;
-  }
-
-  .bar {
-    width: 100%;
-    height: 16px;
-    overflow: hidden;
-    border: 2px solid var(--line);
-    border-radius: 8px;
-    background: rgba(5, 9, 16, 0.66);
-  }
-
-  .bar span {
-    display: block;
-    width: 0%;
-    height: 100%;
-    background: linear-gradient(90deg, var(--gold), #fff2a6);
-    transition: width 140ms linear;
-  }
-
-  .modal {
-    position: fixed;
-    inset: 0;
-    z-index: 30;
-    display: none;
-    place-items: center;
-    padding: 16px;
-    background: rgba(0, 0, 0, 0.62);
-  }
-
-  .modal.show {
-    display: grid;
-  }
-
-  .modal-card {
-    width: min(580px, 100%);
-    padding: 18px;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
-      var(--panel);
-    text-align: center;
-  }
-
-  .modal-card h1 {
-    margin: 0;
-    font-size: 1.85rem;
-    line-height: 1.1;
-  }
-
-  .modal-card p {
-    margin: 10px auto 0;
-    max-width: 500px;
-    color: #d8c889;
-    line-height: 1.55;
-    font-weight: 720;
-  }
-
-  .modal-actions {
+  .dpad, .action-pad {
     display: flex;
+    gap: 10px;
     justify-content: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 16px;
   }
 
-  @media (max-width: 940px) {
-    body {
-      overflow: auto;
-    }
-
-    .app {
-      height: auto;
-      min-height: 100dvh;
-      grid-template-rows: auto minmax(420px, 1fr) auto;
-    }
-
-    .hud {
-      grid-template-columns: minmax(210px, 1fr) repeat(4, auto);
-    }
-
-    .hud .stat:nth-of-type(n+4) {
-      display: none;
-    }
-
-    .controls {
-      grid-template-columns: 1fr auto auto;
-    }
-
-    .bar-wrap {
-      grid-column: 1 / -1;
-      width: 100%;
-      justify-self: stretch;
-    }
+  .btn {
+    width: 60px;
+    height: 60px;
+    border: 2px solid var(--line);
+    border-radius: 50%;
+    background: linear-gradient(180deg, #2c3e52, #162334);
+    color: var(--ink);
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5);
+    user-select: none;
+  }
+  .btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 rgba(0,0,0,0);
+  }
+  .btn.jump {
+    background: linear-gradient(180deg, #df5142, #8b2d23);
+    width: 80px;
+    border-radius: 12px;
   }
 
-  @media (max-width: 590px) {
-    .app {
-      gap: 7px;
-      padding: 7px;
-      grid-template-rows: auto minmax(390px, 1fr) auto;
-    }
-
-    .hud {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      min-height: 0;
-    }
-
-    .brand {
-      grid-column: 1 / -1;
-    }
-
-    .sprite-mark {
-      width: 42px;
-      height: 42px;
-    }
-
-    .brand-title strong {
-      font-size: 1.02rem;
-    }
-
-    .brand-title span {
-      font-size: 0.74rem;
-    }
-
-    .stat {
-      min-width: 0;
-      min-height: 38px;
-      padding: 4px 3px;
-    }
-
-    .stat span {
-      font-size: 0.58rem;
-    }
-
-    .stat b {
-      font-size: 0.82rem;
-    }
-
-    .btn {
-      min-height: 38px;
-      padding: 0 8px;
-      font-size: 0.84rem;
-    }
-
-    .btn.icon {
-      width: 40px;
-    }
-
-    .controls {
-      grid-template-columns: 1fr;
-      min-height: 0;
-      gap: 8px;
-    }
-
-    .mini-panel {
-      display: none;
-    }
-
-    .dpad {
-      justify-self: center;
-      width: 168px;
-      height: 92px;
-      grid-template-columns: repeat(3, 52px);
-      grid-template-rows: repeat(2, 42px);
-    }
-
-    .dig-tools {
-      justify-self: center;
-      grid-template-columns: repeat(2, 84px);
-    }
-
-    .dig-btn {
-      min-height: 44px;
-      font-size: 0.9rem;
-    }
-
-    .message {
-      bottom: 8px;
-      min-height: 36px;
-      padding: 6px 8px;
-      font-size: 0.82rem;
-    }
-
-    .modal-card h1 {
-      font-size: 1.44rem;
-    }
+  #message {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.85);
+    padding: 20px;
+    border: 2px solid var(--line);
+    text-align: center;
+    border-radius: 8px;
+    display: none;
+    z-index: 10;
   }
+
+  #msgTitle { margin: 0 0 10px 0; font-size: 1.8rem; color: var(--gold); }
+  #msgSub { color: var(--ice); font-size: 0.9rem; margin-bottom: 20px;}
 </style>
 </head>
 <body>
+
 <div class="app">
-  <header class="hud">
-    <div class="brand">
-      <div class="sprite-mark" aria-hidden="true">
-        <span></span><span></span><span></span><span></span><span></span>
-        <span></span><span></span><span></span><span></span><span></span>
-        <span></span><span></span><span></span><span></span><span></span>
-        <span></span><span></span><span></span><span></span><span></span>
-        <span></span><span></span><span></span><span></span><span></span>
-      </div>
-      <div class="brand-title">
-        <strong>レトロ・ゴールドランナー</strong>
-        <span id="statusText">金塊を集め、穴を掘って逃げろ</span>
-      </div>
-    </div>
-    <div class="stat"><span>LEVEL</span><b id="levelText">1</b></div>
-    <div class="stat"><span>GOLD</span><b id="goldText">0/0</b></div>
-    <div class="stat"><span>LIFE</span><b id="lifeText">3</b></div>
-    <div class="stat"><span>SCORE</span><b id="scoreText">0</b></div>
-    <button class="btn icon" id="muteBtn" type="button" aria-label="音を切り替え">♪</button>
-    <button class="btn play" id="startBtn" type="button">START</button>
-  </header>
+  <div class="hud">
+    <div class="stat"><span>SCORE</span><b id="scoreDisplay">0</b></div>
+    <div class="stat"><span>FLOOR</span><b id="floorDisplay">1</b></div>
+  </div>
 
-  <main class="screen" aria-label="レトロなランナーゲーム画面">
-    <canvas id="gameCanvas"></canvas>
-    <div class="message" id="messageText">STARTを押して開始</div>
-  </main>
+  <div class="screen">
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div id="message">
+      <h2 id="msgTitle">ICE CLIMBER DX</h2>
+      <div id="msgSub">左右移動: Arrow / ボタン<br>ジャンプ: Space / JUMP</div>
+      <button class="btn jump" onclick="startGame()" style="font-size:1rem; height:40px;">START</button>
+    </div>
+  </div>
 
-  <footer class="controls">
-    <div class="mini-panel">
-      <b>ミッション</b>
-      <small id="missionText">金塊を全部集めると脱出はしごが出ます。</small>
+  <div class="controls">
+    <div class="dpad">
+      <button class="btn" id="btnLeft">◀</button>
+      <button class="btn" id="btnRight">▶</button>
     </div>
-    <div class="dpad" aria-label="移動ボタン">
-      <button class="pad-btn up" type="button" data-move="up" aria-label="上へ">▲</button>
-      <button class="pad-btn left" type="button" data-move="left" aria-label="左へ">◀</button>
-      <button class="pad-btn down" type="button" data-move="down" aria-label="下へ">▼</button>
-      <button class="pad-btn right" type="button" data-move="right" aria-label="右へ">▶</button>
+    <div style="text-align:center; font-size:0.8rem; color:var(--muted)">滑る氷に注意！<br>頂上のコンドルを狙え</div>
+    <div class="action-pad">
+      <button class="btn jump" id="btnJump">JUMP</button>
     </div>
-    <div class="dig-tools" aria-label="穴掘りボタン">
-      <button class="dig-btn" id="digLeftBtn" type="button">左を掘る</button>
-      <button class="dig-btn" id="digRightBtn" type="button">右を掘る</button>
-    </div>
-    <div class="bar-wrap">
-      <div class="mini-panel">
-        <b id="toolText">スワイプ移動 / Z・X 穴掘り</b>
-        <small id="bestText">BEST 0</small>
-      </div>
-      <div class="bar" aria-label="金塊回収率"><span id="progressBar"></span></div>
-    </div>
-  </footer>
-</div>
-
-<div class="modal show" id="modal">
-  <div class="modal-card">
-    <h1 id="modalTitle">レトロ・ゴールドランナー DX</h1>
-    <p id="modalText">敵は金塊を奪い、穴から這い上がってきます。金塊を全部集めると脱出はしごが現れます。敵をかわし、左右の足元に穴を掘って道を作りましょう。<br><br><small>※画面スワイプでの移動にも対応しています。</small></p>
-    <div class="modal-actions" id="modalActions"></div>
   </div>
 </div>
 
 <script>
-(() => {
-  const TILE = {
-    EMPTY: 0,
-    BRICK: 1,
-    SOLID: 2,
-    LADDER: 3,
-    ROPE: 4,
-    ESCAPE: 5
-  };
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-  const DIR = {
-    left: [-1, 0],
-    right: [1, 0],
-    up: [0, -1],
-    down: [0, 1]
-  };
+// --- ファミコン風 物理演算定数 ---
+const GRAVITY = 0.35;
+const JUMP_FORCE = -8.2;
+const MAX_SPEED = 3.2;
+const ACCEL = 0.25;       // 氷上の歩き出しの鈍さ
+const FRICTION = 0.96;    // 氷の滑りやすさ（1.0に近いほど滑る）
+const AIR_CONTROL = 0.05; // 空中での制御の効かなさ（原作リスペクト）
+const TILE_SIZE = 32;
 
-  const canvas = document.getElementById("gameCanvas");
-  const ctx = canvas.getContext("2d");
-  const el = {
-    level: document.getElementById("levelText"),
-    gold: document.getElementById("goldText"),
-    life: document.getElementById("lifeText"),
-    score: document.getElementById("scoreText"),
-    best: document.getElementById("bestText"),
-    progress: document.getElementById("progressBar"),
-    status: document.getElementById("statusText"),
-    message: document.getElementById("messageText"),
-    mission: document.getElementById("missionText"),
-    tool: document.getElementById("toolText"),
-    start: document.getElementById("startBtn"),
-    mute: document.getElementById("muteBtn"),
-    digLeft: document.getElementById("digLeftBtn"),
-    digRight: document.getElementById("digRightBtn"),
-    modal: document.getElementById("modal"),
-    modalTitle: document.getElementById("modalTitle"),
-    modalText: document.getElementById("modalText"),
-    modalActions: document.getElementById("modalActions")
-  };
+// 階層設定
+const MOUNTAIN_FLOORS = 8; // 氷の山
+const BONUS_FLOORS = 4;    // 雲のボーナスステージ
+const TOTAL_FLOORS = MOUNTAIN_FLOORS + BONUS_FLOORS;
+const FLOOR_HEIGHT = 100;
 
-  // ※ ここがバグの原因でした（インデントの余分なスペースを削除しマップ構造を修復）
-  const levels = [
-    [
-      "########################",
-      "#P    G     H      G E #",
-      "#BBBBBBBB   H   BBBBBBB#",
-      "#       H   H   H      #",
-      "#---BB  H---BBB-H---   #",
-      "#   H     G     H      #",
-      "#   H  BBBBBBBBB   BB  #",
-      "#   H       H   H      #",
-      "#   BBBB    H   BBBB   #",
-      "#      H    H      G   #",
-      "#---   H---BBBB-H---   #",
-      "#    A H      A H      #",
-      "#BBBBBBBBBBBBBBBBBBB   #",
-      "#         G     H      #",
-      "#BBBBBBBBBBBBBBBHBBBBBB#",
-      "########################"
-    ],
-    [
-      "########################",
-      "#P   H       G      E  #",
-      "#BBBBHBBBBBBBBBBBBBBB  #",
-      "#    H       H         #",
-      "# ---BBBB--- H ---BBB--#",
-      "#   H     G  H       A #",
-      "#   H BBBBBBBBBBBB     #",
-      "#   H        H     G   #",
-      "# BBBBBB  ---H ---BBBB #",
-      "#      H     H         #",
-      "#  G   H BBBBBBBB H    #",
-      "#BBBB  H        A H    #",
-      "#      H---BBBB---H    #",
-      "#   G        H      H  #",
-      "#BBBBBBBBBBBBBBBBBBBBBB#",
-      "########################"
-    ],
-    [
-      "########################",
-      "#P G      H       G E  #",
-      "#BBBBBBBB H BBBBBBBBBB #",
-      "#       H H       H    #",
-      "# ---BB H---BBBB--H--- #",
-      "#   H   H      G  H A  #",
-      "#   H BBBBBBBBBBBBH    #",
-      "#   H        H      G  #",
-      "# BBBBBB --- H ---BBBBB#",
-      "#      H     H         #",
-      "# G    H BBBBBBBB H    #",
-      "#BBBB  H       A  H    #",
-      "#      H---BBBB---H    #",
-      "#   G        H      H  #",
-      "#BBBBBBBBBBBBHBBBBBBBBB#",
-      "########################"
-    ]
-  ];
+let state = {
+  running: false,
+  score: 0,
+  cameraY: 0,
+  maxFloorReached: 1,
+  keys: { left: false, right: false, jump: false },
+  frame: 0
+};
 
-  const state = {
-    running: false,
-    paused: false,
-    muted: false,
-    levelIndex: 0,
-    grid: [],
-    width: 24,
-    height: 16,
-    gold: new Map(),
-    totalGold: 0,
-    holes: [],
-    player: null,
-    guards: [],
-    lives: 3,
-    score: 0,
-    best: Number(localStorage.getItem("retroGoldRunnerBest") || 0),
-    keys: new Set(),
-    lastPlayerStep: 0,
-    lastGuardStep: 0,
-    tileSize: 28,
-    offsetX: 0,
-    offsetY: 0,
-    particles: [],
-    floatTexts: [],
-    audio: null
-  };
+let player = { x: 200, y: 0, vx: 0, vy: 0, width: 24, height: 32, isGrounded: false, dir: 1 };
+let blocks = [];
+let particles = [];
+let enemies = []; // トッピー
+let birds = [];   // ニットピッカー
+let condor = null;
 
-  function makeEntity(x, y, kind) {
-    return {
-      x,
-      y,
-      drawX: x,
-      drawY: y,
-      spawnX: x,
-      spawnY: y,
-      dir: 1,
-      kind,
-      trappedUntil: 0,
-      blinkUntil: 0,
-      stepPulse: 0,
-      carryingGold: false,
-      inHole: false
-    };
-  }
+function generateMap() {
+  blocks = [];
+  enemies = [];
+  birds = [];
+  condor = null;
+  
+  const groundY = 560;
+  player.y = groundY - player.height;
+  player.x = canvas.width / 2;
+  player.vx = 0;
+  player.vy = 0;
+  state.cameraY = 0;
 
-  function resizeCanvas() {
-    const rect = canvas.getBoundingClientRect();
-    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    canvas.width = Math.max(1, Math.floor(rect.width * dpr));
-    canvas.height = Math.max(1, Math.floor(rect.height * dpr));
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const tileByW = (rect.width - 24) / state.width;
-    const tileByH = (rect.height - 62) / state.height;
-    state.tileSize = Math.max(18, Math.min(34, Math.floor(Math.min(tileByW, tileByH))));
-    state.offsetX = Math.floor((rect.width - state.width * state.tileSize) / 2);
-    state.offsetY = Math.max(12, Math.floor((rect.height - state.height * state.tileSize) / 2) - 8);
-  }
-
-  function normalizeRows(rows) {
-    const width = Math.max(...rows.map(row => row.length));
-    return rows.map(row => row.padEnd(width, "#"));
-  }
-
-  function loadLevel(index) {
-    const rows = normalizeRows(levels[index % levels.length]);
-    state.width = rows[0].length;
-    state.height = rows.length;
-    state.grid = [];
-    state.gold = new Map();
-    state.holes = [];
-    state.guards = [];
-    state.totalGold = 0;
-    state.lastPlayerStep = 0;
-    state.lastGuardStep = 0;
-    state.particles = [];
-    state.floatTexts = [];
-
-    rows.forEach((row, y) => {
-      const line = [];
-      for (let x = 0; x < row.length; x++) {
-        const char = row[x];
-        if (char === "P") {
-          state.player = makeEntity(x, y, "player");
-          line.push(TILE.EMPTY);
-        } else if (char === "A") {
-          state.guards.push(makeEntity(x, y, "guard"));
-          line.push(TILE.EMPTY);
-        } else if (char === "G") {
-          state.gold.set(keyOf(x, y), { x, y });
-          state.totalGold++;
-          line.push(TILE.EMPTY);
-        } else {
-          line.push(tileFromChar(char));
-        }
-      }
-      state.grid.push(line);
-    });
-
-    resizeCanvas();
-    updateHud();
-    setMessage("金塊を全部集めよう。Z/Xで左右を掘れます。");
-  }
-
-  function tileFromChar(char) {
-    if (char === "#") return TILE.SOLID;
-    if (char === "B") return TILE.BRICK;
-    if (char === "H") return TILE.LADDER;
-    if (char === "-") return TILE.ROPE;
-    if (char === "E") return TILE.ESCAPE;
-    return TILE.EMPTY;
-  }
-
-  function keyOf(x, y) {
-    return `${x},${y}`;
-  }
-
-  function inBounds(x, y) {
-    return x >= 0 && y >= 0 && x < state.width && y < state.height;
-  }
-
-  function tileAt(x, y) {
-    if (!inBounds(x, y)) return TILE.SOLID;
-    return state.grid[y][x];
-  }
-
-  function setTile(x, y, tile) {
-    if (inBounds(x, y)) state.grid[y][x] = tile;
-  }
-
-  function escapeActive() {
-    const uncollected = state.gold.size + state.guards.filter(g => g.carryingGold).length;
-    return uncollected === 0;
-  }
-
-  function isSolid(tile) {
-    return tile === TILE.BRICK || tile === TILE.SOLID;
-  }
-
-  function canOccupy(x, y) {
-    const tile = tileAt(x, y);
-    if (tile === TILE.SOLID || tile === TILE.BRICK) return false;
-    if (tile === TILE.ESCAPE && !escapeActive()) return false;
-    return true;
-  }
-
-  function canUseLadder(x, y) {
-    const tile = tileAt(x, y);
-    return tile === TILE.LADDER || (tile === TILE.ESCAPE && escapeActive());
-  }
-
-  function hasSupport(entity) {
-    if (canUseLadder(entity.x, entity.y) || tileAt(entity.x, entity.y) === TILE.ROPE) return true;
-    const below = tileAt(entity.x, entity.y + 1);
-    return below === TILE.BRICK || below === TILE.SOLID || below === TILE.LADDER || (below === TILE.ESCAPE && escapeActive());
-  }
-
-  function canFall(entity) {
-    if (canUseLadder(entity.x, entity.y) || tileAt(entity.x, entity.y) === TILE.ROPE) return false;
-    return canOccupy(entity.x, entity.y + 1);
-  }
-
-  function holeAt(x, y) {
-    return state.holes.find(hole => hole.x === x && hole.y === y);
-  }
-
-  function startGame() {
-    state.running = true;
-    state.paused = false;
-    state.levelIndex = 0;
-    state.score = 0;
-    state.lives = 3;
-    hideModal();
-    loadLevel(state.levelIndex);
-    playTone(520, 0.08, "square");
-    playTone(780, 0.12, "square", 0.06);
-  }
-
-  function togglePause() {
-    if (!state.running) {
-      startGame();
-      return;
-    }
-    state.paused = !state.paused;
-    setMessage(state.paused ? "PAUSE" : "GO!");
-    updateHud();
-  }
-
-  function stepGame(time) {
-    if (!state.running || state.paused) return;
-    updateHoles(time);
-    if (time - state.lastPlayerStep > 92) {
-      state.lastPlayerStep = time;
-      stepPlayer(time);
-      collectGold();
-      checkExit();
-    }
-    if (time - state.lastGuardStep > 150) {
-      state.lastGuardStep = time;
-      state.guards.forEach(guard => stepGuard(guard, time));
-    }
-    checkGuardHits(time);
-    updateHud();
-  }
-
-  function stepPlayer(time) {
-    const player = state.player;
-    if (canFall(player)) {
-      moveEntity(player, 0, 1);
-      return;
-    }
-
-    if ((state.keys.has("up") || state.keys.has("down")) && canUseLadder(player.x, player.y + (state.keys.has("up") ? -1 : 1))) {
-      moveEntity(player, 0, state.keys.has("up") ? -1 : 1);
-      return;
-    }
-
-    if (state.keys.has("up") && canUseLadder(player.x, player.y)) {
-      moveEntity(player, 0, -1);
-      return;
-    }
-
-    if (state.keys.has("down") && (canUseLadder(player.x, player.y) || canUseLadder(player.x, player.y + 1))) {
-      moveEntity(player, 0, 1);
-      return;
-    }
-
-    const horizontal = state.keys.has("left") ? -1 : state.keys.has("right") ? 1 : 0;
-    if (horizontal) {
-      player.dir = horizontal;
-      if (canOccupy(player.x + horizontal, player.y)) {
-        moveEntity(player, horizontal, 0);
-      }
-    }
-  }
-
-  function moveEntity(entity, dx, dy) {
-    if (!canOccupy(entity.x + dx, entity.y + dy)) return false;
-    entity.x += dx;
-    entity.y += dy;
-    if (dx) entity.dir = dx;
-    entity.stepPulse = 1;
-    return true;
-  }
-
-  function collectGold() {
-    const key = keyOf(state.player.x, state.player.y);
-    if (!state.gold.has(key)) return;
-    state.gold.delete(key);
-    state.score += 250;
-    burst(state.player.x, state.player.y, "#f6c945", 18);
-    floatText(state.player.x, state.player.y, "+250", "#fff2a6");
+  for (let floor = 0; floor <= TOTAL_FLOORS; floor++) {
+    const floorY = groundY - (floor * FLOOR_HEIGHT);
+    const isBonus = floor >= MOUNTAIN_FLOORS;
     
-    const uncollected = state.gold.size + state.guards.filter(g => g.carryingGold).length;
-    setMessage(uncollected > 0 ? `金塊あと${uncollected}個。` : "脱出はしごが出現！");
-    playTone(720, 0.08, "triangle");
-    if (uncollected === 0) playTone(960, 0.16, "triangle", 0.08);
-  }
+    // 穴の位置を決定
+    const gapStart = Math.floor(Math.random() * 8) + 1;
+    const gapWidth = Math.floor(Math.random() * 2) + 2;
 
-  function checkExit() {
-    if (tileAt(state.player.x, state.player.y) !== TILE.ESCAPE || !escapeActive()) return;
-    state.score += 1000 + state.lives * 300;
-    saveBest();
-    if (state.levelIndex < levels.length - 1) {
-      showModal("STAGE CLEAR", `スコア ${state.score}。次の面へ進みます。`, [
-        { label: "NEXT", className: "play", action: () => {
-          state.levelIndex++;
-          hideModal();
-          loadLevel(state.levelIndex);
-          playTone(660, 0.1, "square");
-        } }
-      ]);
-      return;
-    }
-    state.running = false;
-    showModal("ALL CLEAR", `スコア ${state.score}。BEST ${state.best}。`, [
-      { label: "もう一度", className: "play", action: startGame }
-    ]);
-  }
-
-  function dig(side) {
-    if (!state.running) {
-      startGame();
-      return;
-    }
-    if (state.paused) return;
-    const dir = side === "left" ? -1 : 1;
-    state.player.dir = dir;
-    const tx = state.player.x + dir;
-    const ty = state.player.y + 1;
-    if (tileAt(tx, ty) !== TILE.BRICK || tileAt(tx, ty - 1) === TILE.SOLID) {
-      setMessage("そこは掘れない。足元の左右のレンガを狙おう。");
-      playTone(140, 0.06, "square");
-      return;
-    }
-    setTile(tx, ty, TILE.EMPTY);
-    state.holes.push({ x: tx, y: ty, born: performance.now(), refillAt: performance.now() + 4400, warningAt: performance.now() + 3100 });
-    state.score += 15;
-    burst(tx, ty, "#a15f39", 12);
-    setMessage(side === "left" ? "左を掘った！" : "右を掘った！");
-    playTone(260, 0.07, "square");
-  }
-
-  function updateHoles(time) {
-    state.holes = state.holes.filter(hole => {
-      if (time < hole.refillAt) return true;
-      if (state.player.x === hole.x && state.player.y === hole.y) {
-        loseLife("穴が戻ってつぶされた！");
+    for (let i = 0; i < Math.ceil(canvas.width / TILE_SIZE); i++) {
+      // 0階（最下層）は穴なし。それ以外は穴を空ける。
+      if (floor > 0 && i >= gapStart && i < gapStart + gapWidth) {
+         // ボーナスステージの雲は点在させる
+         if (isBonus && Math.random() > 0.5) continue;
+         if (!isBonus) continue;
       }
-      state.guards.forEach(guard => {
-        if (guard.x === hole.x && guard.y === hole.y) {
-          resetGuard(guard, true);
-        }
+      
+      blocks.push({
+        x: i * TILE_SIZE,
+        y: floorY,
+        width: TILE_SIZE,
+        height: 16,
+        type: isBonus ? 'cloud' : 'breakable'
       });
-      setTile(hole.x, hole.y, TILE.BRICK);
-      burst(hole.x, hole.y, "#a15f39", 10);
-      return false;
-    });
-  }
-
-  function dropGuardGold(guard) {
-    if (!guard.carryingGold) return;
-    guard.carryingGold = false;
-    
-    // 金塊は空きスペースが見つかるまで浮上する（FC版特有のギミック）
-    let dropY = guard.y - 1;
-    while (dropY >= 0 && !canOccupy(guard.x, dropY)) {
-      dropY--;
-    }
-    
-    if (dropY >= 0 && !state.gold.has(keyOf(guard.x, dropY))) {
-      state.gold.set(keyOf(guard.x, dropY), { x: guard.x, y: dropY });
-    } else {
-      // 浮上先がない場合は初期位置に安全に配置
-      state.gold.set(keyOf(guard.spawnX, guard.spawnY), { x: guard.spawnX, y: guard.spawnY });
-    }
-  }
-
-  function stepGuard(guard, time) {
-    const hole = holeAt(guard.x, guard.y);
-
-    // 穴に落ちた時の処理（這い上がり対応）
-    if (hole) {
-      if (!guard.inHole) {
-        // 穴に落ちた瞬間
-        guard.inHole = true;
-        guard.trappedUntil = time + 2500; // 2.5秒間もがく
-        state.score += 75;
-        floatText(guard.x, guard.y, "+75", "#b8ffbc");
-        dropGuardGold(guard);
-        return;
-      } else {
-        if (time < guard.trappedUntil) {
-          return; // まだもがいている
-        } else {
-          // 時間が来たら這い上がる！
-          if (canOccupy(guard.x, guard.y - 1)) {
-            moveEntity(guard, 0, -1);
-            guard.inHole = false;
-          }
-          return;
-        }
-      }
-    } else {
-      guard.inHole = false;
     }
 
-    if (canFall(guard)) {
-      moveEntity(guard, 0, 1);
-      return;
+    // 敵の配置 (氷の山のみ)
+    if (floor >= 2 && floor < MOUNTAIN_FLOORS && Math.random() > 0.2) {
+      enemies.push({
+        x: (gapStart > 6 ? 2 : 10) * TILE_SIZE,
+        y: floorY - 24,
+        vx: gapStart > 6 ? 1.5 : -1.5,
+        width: 28,
+        height: 24,
+        type: 'topi',
+        state: 'walk' // walk, carry
+      });
     }
 
-    // 金塊泥棒ロジック（50%の確率で拾う）
-    if (!guard.carryingGold && state.gold.has(keyOf(guard.x, guard.y))) {
-       if (Math.random() < 0.5) {
-           state.gold.delete(keyOf(guard.x, guard.y));
-           guard.carryingGold = true;
-       }
-    }
-
-    const options = guardOptions(guard);
-    if (!options.length) return;
-    options.sort((a, b) => scoreGuardMove(guard, a) - scoreGuardMove(guard, b));
-    const best = options[0];
-    moveEntity(guard, best[0], best[1]);
-  }
-
-  function guardOptions(guard) {
-    const moves = [];
-    const px = state.player.x;
-    const py = state.player.y;
-    if (canUseLadder(guard.x, guard.y) || canUseLadder(guard.x, guard.y - 1)) {
-      if (py < guard.y && canOccupy(guard.x, guard.y - 1)) moves.push([0, -1]);
-    }
-    if (canUseLadder(guard.x, guard.y) || canUseLadder(guard.x, guard.y + 1)) {
-      if (py > guard.y && canOccupy(guard.x, guard.y + 1)) moves.push([0, 1]);
-    }
-    [-1, 1].forEach(dx => {
-      if (canOccupy(guard.x + dx, guard.y)) moves.push([dx, 0]);
-    });
-    if (!moves.length && px === guard.x && canUseLadder(guard.x, guard.y)) {
-      moves.push(py < guard.y ? [0, -1] : [0, 1]);
-    }
-    return moves;
-  }
-
-  function scoreGuardMove(guard, move) {
-    const nx = guard.x + move[0];
-    const ny = guard.y + move[1];
-    const distance = Math.abs(nx - state.player.x) + Math.abs(ny - state.player.y);
-    const ropePenalty = tileAt(nx, ny) === TILE.ROPE ? 0.4 : 0;
-    return distance + ropePenalty + Math.random() * 0.35;
-  }
-
-  function checkGuardHits(time) {
-    const hit = state.guards.some(guard => !guard.inHole && guard.x === state.player.x && guard.y === state.player.y);
-    if (hit) loseLife("つかまった！");
-  }
-
-  function loseLife(message) {
-    if (!state.running) return;
-    state.lives--;
-    state.player.blinkUntil = performance.now() + 1200;
-    burst(state.player.x, state.player.y, "#df5142", 22);
-    playTone(120, 0.16, "sawtooth");
-    if (state.lives <= 0) {
-      state.running = false;
-      saveBest();
-      showModal("GAME OVER", `スコア ${state.score}。BEST ${state.best}。`, [
-        { label: "RETRY", className: "play", action: startGame }
-      ]);
-      setMessage("GAME OVER");
-      return;
-    }
-    state.player.x = state.player.spawnX;
-    state.player.y = state.player.spawnY;
-    state.player.drawX = state.player.x;
-    state.player.drawY = state.player.y;
-    state.guards.forEach(guard => resetGuard(guard, false));
-    setMessage(message);
-    updateHud();
-  }
-
-  function resetGuard(guard, score) {
-    if (score) {
-      state.score += 150;
-      floatText(guard.x, guard.y, "+150", "#b8ffbc");
-    }
-    dropGuardGold(guard);
-    guard.x = guard.spawnX;
-    guard.y = guard.spawnY;
-    guard.drawX = guard.x;
-    guard.drawY = guard.y;
-    guard.inHole = false;
-    guard.trappedUntil = performance.now() + 500;
-  }
-
-  function updateHud() {
-    const uncollected = state.gold.size + state.guards.filter(g => g.carryingGold).length;
-    el.level.textContent = state.levelIndex + 1;
-    el.gold.textContent = `${state.totalGold - uncollected}/${state.totalGold}`;
-    el.life.textContent = "♥".repeat(Math.max(0, state.lives)) || "0";
-    el.score.textContent = state.score;
-    el.best.textContent = `BEST ${state.best}`;
-    el.progress.style.width = state.totalGold ? `${((state.totalGold - uncollected) / state.totalGold) * 100}%` : "0%";
-    el.start.textContent = state.running ? (state.paused ? "RESUME" : "PAUSE") : "START";
-    el.status.textContent = escapeActive() ? "脱出はしごへ向かえ" : "金塊を集め、穴を掘って逃げろ";
-    el.mission.textContent = escapeActive() ? "光った脱出はしごへ。" : "金塊を全部集めると脱出はしごが出ます。";
-  }
-
-  function setMessage(text) {
-    el.message.textContent = text;
-  }
-
-  function saveBest() {
-    if (state.score <= state.best) return;
-    state.best = state.score;
-    localStorage.setItem("retroGoldRunnerBest", String(state.best));
-  }
-
-  function render(time) {
-    stepGame(time);
-    drawBackground();
-    drawTiles(time);
-    drawGold(time);
-    drawHoles(time);
-    drawEntities(time);
-    drawParticles(time);
-    drawFloatTexts();
-    requestAnimationFrame(render);
-  }
-
-  function drawBackground() {
-    const w = canvas.clientWidth || 800;
-    const h = canvas.clientHeight || 500;
-    ctx.fillStyle = "#050910";
-    ctx.fillRect(0, 0, w, h);
-    ctx.save();
-    ctx.globalAlpha = 0.24;
-    ctx.fillStyle = "#162742";
-    for (let i = 0; i < 18; i++) {
-      const x = (i * 97) % Math.max(1, w);
-      const y = 16 + (i * 43) % Math.max(1, h - 40);
-      ctx.fillRect(x, y, 46, 3);
-    }
-    ctx.restore();
-  }
-
-  function drawTiles(time) {
-    for (let y = 0; y < state.height; y++) {
-      for (let x = 0; x < state.width; x++) {
-        const tile = tileAt(x, y);
-        if (tile === TILE.EMPTY) continue;
-        if (tile === TILE.BRICK) drawBrick(x, y);
-        if (tile === TILE.SOLID) drawSolid(x, y);
-        if (tile === TILE.LADDER) drawLadder(x, y, "#d89b42");
-        if (tile === TILE.ROPE) drawRope(x, y);
-        if (tile === TILE.ESCAPE) drawLadder(x, y, escapeActive() ? "#93f6ff" : "rgba(87, 99, 114, 0.5)", time);
-      }
-    }
-  }
-
-  function tileRect(x, y) {
-    const s = state.tileSize;
-    return {
-      x: state.offsetX + x * s,
-      y: state.offsetY + y * s,
-      s
-    };
-  }
-
-  function drawBrick(x, y) {
-    const r = tileRect(x, y);
-    ctx.fillStyle = "#8d4f32";
-    ctx.fillRect(r.x, r.y, r.s, r.s);
-    ctx.fillStyle = "#b96f42";
-    ctx.fillRect(r.x + 2, r.y + 2, r.s - 4, Math.max(3, r.s * 0.18));
-    ctx.strokeStyle = "#4a2b22";
-    ctx.lineWidth = 1;
-    for (let i = 1; i < 4; i++) {
-      const yy = r.y + Math.floor((r.s / 4) * i);
-      ctx.beginPath();
-      ctx.moveTo(r.x, yy);
-      ctx.lineTo(r.x + r.s, yy);
-      ctx.stroke();
-    }
-    ctx.beginPath();
-    ctx.moveTo(r.x + r.s * 0.5, r.y);
-    ctx.lineTo(r.x + r.s * 0.5, r.y + r.s * 0.5);
-    ctx.moveTo(r.x + r.s * 0.25, r.y + r.s * 0.5);
-    ctx.lineTo(r.x + r.s * 0.25, r.y + r.s);
-    ctx.moveTo(r.x + r.s * 0.75, r.y + r.s * 0.5);
-    ctx.lineTo(r.x + r.s * 0.75, r.y + r.s);
-    ctx.stroke();
-  }
-
-  function drawSolid(x, y) {
-    const r = tileRect(x, y);
-    ctx.fillStyle = "#293448";
-    ctx.fillRect(r.x, r.y, r.s, r.s);
-    ctx.fillStyle = "#53667d";
-    ctx.fillRect(r.x + 3, r.y + 3, r.s - 6, r.s - 6);
-    ctx.fillStyle = "#1b2433";
-    ctx.fillRect(r.x + 7, r.y + 7, r.s - 14, r.s - 14);
-  }
-
-  function drawLadder(x, y, color) {
-    const r = tileRect(x, y);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = Math.max(2, r.s * 0.1);
-    const left = r.x + r.s * 0.28;
-    const right = r.x + r.s * 0.72;
-    ctx.beginPath();
-    ctx.moveTo(left, r.y);
-    ctx.lineTo(left, r.y + r.s);
-    ctx.moveTo(right, r.y);
-    ctx.lineTo(right, r.y + r.s);
-    ctx.stroke();
-    ctx.lineWidth = Math.max(2, r.s * 0.08);
-    for (let i = 0; i < 3; i++) {
-      const yy = r.y + r.s * (0.22 + i * 0.28);
-      ctx.beginPath();
-      ctx.moveTo(left, yy);
-      ctx.lineTo(right, yy);
-      ctx.stroke();
-    }
-  }
-
-  function drawRope(x, y) {
-    const r = tileRect(x, y);
-    ctx.strokeStyle = "#e5bd69";
-    ctx.lineWidth = Math.max(2, r.s * 0.1);
-    ctx.beginPath();
-    ctx.moveTo(r.x, r.y + r.s * 0.42);
-    ctx.lineTo(r.x + r.s, r.y + r.s * 0.42);
-    ctx.stroke();
-    ctx.fillStyle = "#f3d98d";
-    for (let i = 0; i < 3; i++) {
-      ctx.fillRect(r.x + r.s * (0.18 + i * 0.28), r.y + r.s * 0.3, 3, r.s * 0.24);
-    }
-  }
-
-  function drawGold(time) {
-    state.gold.forEach(gold => {
-      const r = tileRect(gold.x, gold.y);
-      const pulse = Math.sin(time * 0.007 + gold.x) * 0.08 + 1;
-      const w = r.s * 0.48 * pulse;
-      const h = r.s * 0.34 * pulse;
-      ctx.fillStyle = "#6d4715";
-      ctx.fillRect(r.x + r.s * 0.28, r.y + r.s * 0.58, r.s * 0.5, r.s * 0.12);
-      ctx.fillStyle = "#f6c945";
-      ctx.fillRect(r.x + r.s * 0.5 - w / 2, r.y + r.s * 0.34 - h / 2, w, h);
-      ctx.fillStyle = "#fff2a6";
-      ctx.fillRect(r.x + r.s * 0.4, r.y + r.s * 0.24, Math.max(2, r.s * 0.12), Math.max(2, r.s * 0.08));
-    });
-  }
-
-  function drawHoles(time) {
-    state.holes.forEach(hole => {
-      const r = tileRect(hole.x, hole.y);
-      const left = Math.max(0, hole.refillAt - time);
-      ctx.fillStyle = "#160f0c";
-      ctx.fillRect(r.x, r.y + r.s * 0.42, r.s, r.s * 0.58);
-      ctx.fillStyle = left < 1200 ? "#d7a35d" : "#4a2b22";
-      ctx.fillRect(r.x + r.s * 0.12, r.y + r.s * 0.75, r.s * 0.76, Math.max(3, r.s * 0.14));
-    });
-  }
-
-  function drawEntities(time) {
-    state.guards.forEach(guard => drawRunner(guard, time, "#df5142", "#7e2f28"));
-    drawRunner(state.player, time, "#45a4e8", "#214d77");
-  }
-
-  function drawRunner(entity, time, color, dark) {
-    entity.drawX += (entity.x - entity.drawX) * 0.34;
-    entity.drawY += (entity.y - entity.drawY) * 0.34;
-    entity.stepPulse *= 0.8;
-    const r = tileRect(entity.drawX, entity.drawY);
-    const s = r.s;
-    const blink = time < entity.blinkUntil && Math.floor(time / 90) % 2 === 0;
-    ctx.save();
-    ctx.globalAlpha = blink ? 0.45 : 1;
-    const bob = Math.sin(time * 0.013 + entity.x) * 1.5 + entity.stepPulse * 3;
-    const x = r.x + s * 0.24;
-    const y = r.y + s * 0.12 - bob;
-    
-    ctx.fillStyle = "rgba(0,0,0,0.32)";
-    ctx.fillRect(r.x + s * 0.22, r.y + s * 0.82, s * 0.58, s * 0.12);
-    ctx.fillStyle = color;
-    ctx.fillRect(x + s * 0.1, y, s * 0.32, s * 0.24);
-    ctx.fillStyle = dark;
-    ctx.fillRect(x + s * 0.02, y + s * 0.25, s * 0.48, s * 0.3);
-    ctx.fillStyle = "#f7d8a8";
-    ctx.fillRect(x + s * 0.1, y + s * 0.08, s * 0.24, s * 0.12);
-    ctx.fillStyle = color;
-    ctx.fillRect(x - s * 0.02, y + s * 0.58, s * 0.18, s * 0.22);
-    ctx.fillRect(x + s * 0.34, y + s * 0.58, s * 0.18, s * 0.22);
-    ctx.fillStyle = "#f1c17b";
-    ctx.fillRect(x - s * 0.1 * entity.dir, y + s * 0.34, s * 0.16, s * 0.12);
-    
-    if (entity.inHole) {
-      ctx.fillStyle = "#fff2a6";
-      ctx.fillRect(r.x + s * 0.36, r.y - s * 0.08, s * 0.28, s * 0.08);
-    }
-
-    // 敵が金塊を背負っている視覚エフェクト
-    if (entity.carryingGold) {
-      ctx.fillStyle = "#f6c945";
-      ctx.fillRect(x + s * 0.1, y + s * 0.1, s * 0.25, s * 0.2);
-      ctx.fillStyle = "#fff2a6";
-      ctx.fillRect(x + s * 0.15, y + s * 0.15, s * 0.1, s * 0.05);
-    }
-
-    ctx.restore();
-  }
-
-  function burst(x, y, color, count) {
-    const r = tileRect(x, y);
-    for (let i = 0; i < count; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 1 + Math.random() * 2.2;
-      state.particles.push({
-        x: r.x + r.s / 2,
-        y: r.y + r.s / 2,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 0.6,
-        born: performance.now(),
-        life: 460 + Math.random() * 260,
-        color
+    // 鳥の配置 (3階以上)
+    if (floor >= 3 && Math.random() > 0.4) {
+      birds.push({
+        x: Math.random() > 0.5 ? 0 : canvas.width,
+        y: floorY - 50,
+        baseY: floorY - 50,
+        vx: Math.random() > 0.5 ? 2 : -2,
+        width: 24,
+        height: 16,
+        time: Math.random() * 100
       });
     }
   }
 
-  function drawParticles(time) {
-    state.particles = state.particles.filter(p => time - p.born < p.life);
-    state.particles.forEach(p => {
-      const age = (time - p.born) / p.life;
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.08;
-      ctx.save();
-      ctx.globalAlpha = 1 - age;
-      ctx.fillStyle = p.color;
-      ctx.fillRect(p.x, p.y, 4, 4);
-      ctx.restore();
+  // 頂上のコンドル
+  condor = {
+    x: 0,
+    y: groundY - (TOTAL_FLOORS * FLOOR_HEIGHT) - 80,
+    width: 60,
+    height: 40,
+    vx: 3,
+    time: 0
+  };
+}
+
+function startGame() {
+  document.getElementById('message').style.display = 'none';
+  state.score = 0;
+  state.maxFloorReached = 1;
+  state.frame = 0;
+  updateScore();
+  generateMap();
+  state.running = true;
+  requestAnimationFrame(gameLoop);
+}
+
+function gameOver(isClear = false) {
+  state.running = false;
+  document.getElementById('msgTitle').innerText = isClear ? "STAGE CLEAR!" : "GAME OVER";
+  document.getElementById('msgTitle').style.color = isClear ? "var(--gold)" : "var(--red)";
+  document.getElementById('message').style.display = 'block';
+}
+
+function updateScore() {
+  document.getElementById('scoreDisplay').innerText = state.score;
+  document.getElementById('floorDisplay').innerText = state.maxFloorReached;
+}
+
+function createParticles(x, y, isCloud) {
+  const color = isCloud ? '#ffffff' : '#a0e6ff';
+  for (let i = 0; i < 6; i++) {
+    particles.push({
+      x: x, y: y,
+      vx: (Math.random() - 0.5) * 8,
+      vy: (Math.random() - 1) * 6,
+      life: 25,
+      color: color
     });
   }
+}
 
-  function floatText(x, y, text, color) {
-    const r = tileRect(x, y);
-    state.floatTexts.push({ x: r.x + r.s / 2, y: r.y + r.s / 2, text, color, born: performance.now(), life: 760 });
+// 矩形交差判定
+function rectIntersect(r1, r2) {
+  return !(r2.x >= r1.x + r1.width || 
+           r2.x + r2.width <= r1.x || 
+           r2.y >= r1.y + r1.height || 
+           r2.y + r2.height <= r1.y);
+}
+
+function update() {
+  if (!state.running) return;
+  state.frame++;
+
+  // --- プレイヤーの物理演算 (ファミコン特有の挙動) ---
+  const currentAccel = player.isGrounded ? ACCEL : AIR_CONTROL;
+  
+  if (state.keys.left) {
+    player.vx -= currentAccel;
+    player.dir = -1;
+  } else if (state.keys.right) {
+    player.vx += currentAccel;
+    player.dir = 1;
+  } else {
+    // 氷の摩擦（滑る）
+    if (player.isGrounded) {
+      // 雲の上は少し滑りにくい
+      const isCloudFloor = state.maxFloorReached > MOUNTAIN_FLOORS;
+      player.vx *= (isCloudFloor ? 0.8 : FRICTION);
+    }
   }
 
-  function drawFloatTexts() {
-    const now = performance.now();
-    state.floatTexts = state.floatTexts.filter(item => now - item.born < item.life);
-    state.floatTexts.forEach(item => {
-      const age = (now - item.born) / item.life;
-      ctx.save();
-      ctx.globalAlpha = 1 - age;
-      ctx.font = "900 16px ui-monospace, monospace";
-      ctx.textAlign = "center";
-      ctx.strokeStyle = "#050910";
-      ctx.lineWidth = 4;
-      ctx.strokeText(item.text, item.x, item.y - age * 28);
-      ctx.fillStyle = item.color;
-      ctx.fillText(item.text, item.x, item.y - age * 28);
-      ctx.restore();
-    });
+  // 速度制限
+  if (player.vx > MAX_SPEED) player.vx = MAX_SPEED;
+  if (player.vx < -MAX_SPEED) player.vx = -MAX_SPEED;
+
+  // X軸の移動と画面端のループ処理
+  player.x += player.vx;
+  if (player.x < -player.width) player.x = canvas.width;
+  if (player.x > canvas.width) player.x = -player.width;
+
+  // Y軸の移動（重力）
+  player.vy += GRAVITY;
+  player.y += player.vy;
+  player.isGrounded = false;
+
+  // --- 衝突判定 ---
+  for (let i = blocks.length - 1; i >= 0; i--) {
+    let b = blocks[i];
+    
+    if (rectIntersect(player, b)) {
+      // 上から乗った場合（着地）
+      if (player.vy > 0 && player.y + player.height - player.vy <= b.y + 10) {
+        player.y = b.y - player.height;
+        player.vy = 0;
+        player.isGrounded = true;
+      } 
+      // 下から突き上げた場合（ブロック破壊）
+      else if (player.vy < 0 && player.y - player.vy >= b.y + b.height - 10) {
+        player.y = b.y + b.height;
+        player.vy = 1; // 下にはじかれる
+        
+        if (b.type === 'breakable') {
+          createParticles(b.x + b.width/2, b.y + b.height/2, false);
+          blocks.splice(i, 1);
+          state.score += 10;
+          updateScore();
+        } else if (b.type === 'cloud') {
+           // 雲は壊れないがボヨンと跳ね返る
+           player.vy = 2;
+        }
+      }
+    }
   }
 
-  function showModal(title, text, actions) {
-    el.modalTitle.textContent = title;
-    el.modalText.innerHTML = text;
-    el.modalActions.innerHTML = "";
-    actions.forEach(action => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = `btn ${action.className || ""}`;
-      button.textContent = action.label;
-      button.addEventListener("click", action.action);
-      el.modalActions.appendChild(button);
-    });
-    el.modal.classList.add("show");
-  }
+  // --- トッピー（敵）のブロック修復AI ---
+  enemies.forEach(e => {
+    e.x += e.vx;
+    
+    // 画面端で反転
+    if (e.x < 0 || e.x + e.width > canvas.width) {
+       e.vx *= -1;
+    }
 
-  function hideModal() {
-    el.modal.classList.remove("show");
-  }
+    // 足元のブロックを確認
+    const checkX = e.vx > 0 ? e.x + e.width + 5 : e.x - 5;
+    const blockUnder = blocks.find(b => 
+       b.y === e.y + e.height && 
+       checkX >= b.x && checkX <= b.x + b.width
+    );
 
-  function ensureAudio() {
-    if (state.muted) return null;
-    if (!state.audio) {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContext) return null;
-      state.audio = new AudioContext();
+    // 足元にブロックがない（穴がある）場合
+    if (!blockUnder) {
+        // 穴を修復する
+        const gridX = Math.floor(checkX / TILE_SIZE) * TILE_SIZE;
+        // すでに修復済みでなければブロック生成
+        if (!blocks.some(b => b.x === gridX && b.y === e.y + e.height)) {
+            blocks.push({
+                x: gridX,
+                y: e.y + e.height,
+                width: TILE_SIZE,
+                height: 16,
+                type: 'breakable'
+            });
+            createParticles(gridX + 16, e.y + e.height + 8, false);
+        }
+        // 修復したらUターン
+        e.vx *= -1;
     }
-    if (state.audio.state === "suspended") state.audio.resume();
-    return state.audio;
-  }
 
-  function playTone(freq, duration, type = "square", delay = 0) {
-    const audio = ensureAudio();
-    if (!audio) return;
-    const start = audio.currentTime + delay;
-    const osc = audio.createOscillator();
-    const gain = audio.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, start);
-    gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(0.09, start + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-    osc.connect(gain);
-    gain.connect(audio.destination);
-    osc.start(start);
-    osc.stop(start + duration + 0.03);
-  }
-
-  function keyToMove(key) {
-    if (key === "arrowleft" || key === "a") return "left";
-    if (key === "arrowright" || key === "d") return "right";
-    if (key === "arrowup" || key === "w") return "up";
-    if (key === "arrowdown" || key === "s") return "down";
-    return "";
-  }
-
-  document.addEventListener("keydown", event => {
-    const key = event.key.toLowerCase();
-    const move = keyToMove(key);
-    if (move) {
-      event.preventDefault();
-      state.keys.add(move);
-      return;
-    }
-    if (key === "z") {
-      event.preventDefault();
-      dig("left");
-      return;
-    }
-    if (key === "x") {
-      event.preventDefault();
-      dig("right");
-      return;
-    }
-    if (key === "r") {
-      event.preventDefault();
-      loadLevel(state.levelIndex);
-      return;
-    }
-    if (key === "enter" || key === " ") {
-      event.preventDefault();
-      togglePause();
-      return;
-    }
-    if (key === "escape" && state.running) {
-      event.preventDefault();
-      togglePause();
-    }
-  }, { passive: false });
-
-  document.addEventListener("keyup", event => {
-    const move = keyToMove(event.key.toLowerCase());
-    if (move) state.keys.delete(move);
+    // プレイヤーと接触でゲームオーバー
+    if (rectIntersect(player, e)) gameOver();
   });
 
-  document.querySelectorAll("[data-move]").forEach(button => {
-    const move = button.dataset.move;
-    button.addEventListener("pointerdown", event => {
-      event.preventDefault();
-      state.keys.add(move);
-    });
-    button.addEventListener("pointerup", () => state.keys.delete(move));
-    button.addEventListener("pointercancel", () => state.keys.delete(move));
-    button.addEventListener("click", () => {
-      state.keys.add(move);
-      setTimeout(() => state.keys.delete(move), 130);
-    });
+  // --- ニットピッカー（鳥）の挙動 ---
+  birds.forEach(b => {
+    b.time += 0.05;
+    b.x += b.vx;
+    b.y = b.baseY + Math.sin(b.time) * 30; // サインカーブで飛ぶ
+
+    if (b.x < -50) b.x = canvas.width + 20;
+    if (b.x > canvas.width + 50) b.x = -20;
+
+    if (rectIntersect(player, b)) gameOver();
   });
 
-  // スワイプ操作の実装
-  let touchStartX = 0;
-  let touchStartY = 0;
-  let currentSwipeDir = "";
+  // --- コンドル（クリア目標）の挙動 ---
+  if (condor) {
+      condor.time += 0.03;
+      condor.x += condor.vx;
+      condor.y += Math.sin(condor.time) * 1.5;
+      
+      if (condor.x < 50 || condor.x > canvas.width - 50 - condor.width) condor.vx *= -1;
 
-  canvas.addEventListener("touchstart", e => {
-    e.preventDefault();
-    touchStartX = e.changedTouches[0].screenX;
-    touchStartY = e.changedTouches[0].screenY;
-    currentSwipeDir = "";
-  }, { passive: false });
+      // 掴まったらクリア！
+      if (rectIntersect(player, condor)) {
+          state.score += 3000;
+          updateScore();
+          gameOver(true);
+      }
+  }
 
-  canvas.addEventListener("touchmove", e => {
-    e.preventDefault();
-    if (!state.running || state.paused) return;
-    const tx = e.changedTouches[0].screenX;
-    const ty = e.changedTouches[0].screenY;
-    const dx = tx - touchStartX;
-    const dy = ty - touchStartY;
+  // --- パーティクル更新 ---
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += GRAVITY;
+    p.life--;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
 
-    if (Math.abs(dx) > 20 || Math.abs(dy) > 20) {
-      let newDir = "";
-      if (Math.abs(dx) > Math.abs(dy)) {
-        newDir = dx > 0 ? "right" : "left";
+  // --- カメラと進行度の更新 ---
+  // プレイヤーが上に行ったらカメラを追従させる
+  const targetCameraY = 400 - player.y;
+  if (targetCameraY > state.cameraY) {
+    state.cameraY += (targetCameraY - state.cameraY) * 0.15;
+  }
+
+  // 現在の階層を計算 (y=560が1階、以降100pxごと)
+  const currentFloor = Math.floor((560 - player.y) / FLOOR_HEIGHT) + 1;
+  if (currentFloor > state.maxFloorReached) {
+    state.maxFloorReached = currentFloor;
+    state.score += (currentFloor > MOUNTAIN_FLOORS) ? 50 : 20;
+    updateScore();
+  }
+
+  // 落下判定（カメラ外の下に落ちたらミス）
+  if (player.y > 600 - state.cameraY + 50) {
+    gameOver();
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  ctx.save();
+  ctx.translate(0, state.cameraY);
+
+  // 背景の山のシルエット（固定）
+  ctx.fillStyle = '#0a1526';
+  ctx.beginPath();
+  ctx.moveTo(canvas.width/2, 560 - (TOTAL_FLOORS * FLOOR_HEIGHT) - 200);
+  ctx.lineTo(canvas.width + 100, 600);
+  ctx.lineTo(-100, 600);
+  ctx.fill();
+
+  // --- ブロック描画 ---
+  blocks.forEach(b => {
+    if (b.type === 'breakable') {
+      ctx.fillStyle = 'var(--ice)'; 
+      ctx.fillRect(b.x, b.y, b.width, b.height);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(b.x, b.y, b.width, 2); // ハイライト
+      ctx.strokeStyle = 'var(--blue)';
+      ctx.strokeRect(b.x, b.y, b.width, b.height);
+    } else {
+      // ボーナスステージの雲
+      ctx.fillStyle = 'var(--cloud)';
+      ctx.beginPath();
+      ctx.arc(b.x + 8, b.y + 8, 8, 0, Math.PI*2);
+      ctx.arc(b.x + b.width - 8, b.y + 8, 8, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillRect(b.x + 8, b.y, b.width - 16, 16);
+    }
+  });
+
+  // --- 敵（トッピー風）描画 ---
+  enemies.forEach(e => {
+    const walkAnim = (Math.floor(state.frame / 8) % 2 === 0) ? 2 : 0;
+    ctx.fillStyle = 'var(--muted)';
+    ctx.fillRect(e.x, e.y + walkAnim, e.width, e.height - walkAnim);
+    // 顔（目）
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(e.x + (e.vx > 0 ? 18 : 6), e.y + 6 + walkAnim, 4, 4);
+  });
+
+  // --- 鳥（ニットピッカー風）描画 ---
+  birds.forEach(b => {
+    const flap = (Math.floor(state.frame / 5) % 2 === 0);
+    ctx.fillStyle = 'var(--red)';
+    ctx.beginPath();
+    ctx.arc(b.x + b.width/2, b.y + b.height/2, b.height/2, 0, Math.PI*2);
+    ctx.fill();
+    // 翼
+    ctx.fillStyle = '#ff8888';
+    if (flap) {
+        ctx.fillRect(b.x + 4, b.y - 8, 16, 8);
+    } else {
+        ctx.fillRect(b.x + 4, b.y + b.height, 16, 8);
+    }
+  });
+
+  // --- コンドル描画 ---
+  if (condor) {
+      const flap = (Math.floor(state.frame / 10) % 2 === 0);
+      ctx.fillStyle = '#d89b42';
+      ctx.fillRect(condor.x + 10, condor.y + 10, 40, 20); // 胴体
+      ctx.fillStyle = 'var(--cloud)';
+      if (flap) {
+          ctx.fillRect(condor.x, condor.y, 60, 10); // 翼 上
       } else {
-        newDir = dy > 0 ? "down" : "up";
+          ctx.fillRect(condor.x, condor.y + 30, 60, 10); // 翼 下
       }
-      if (newDir !== currentSwipeDir) {
-        if (currentSwipeDir) state.keys.delete(currentSwipeDir);
-        state.keys.add(newDir);
-        currentSwipeDir = newDir;
-        touchStartX = tx; 
-        touchStartY = ty;
-      }
-    }
-  }, { passive: false });
+      ctx.fillStyle = 'var(--red)';
+      ctx.fillRect(condor.x + (condor.vx > 0 ? 50 : 0), condor.y + 10, 10, 10); // くちばし
+  }
 
-  canvas.addEventListener("touchend", e => {
-    e.preventDefault();
-    if (currentSwipeDir) {
-      state.keys.delete(currentSwipeDir);
-      currentSwipeDir = "";
-    }
-  }, { passive: false });
+  // --- プレイヤー描画 ---
+  ctx.fillStyle = 'var(--blue)'; // ポポ
+  ctx.fillRect(player.x, player.y, player.width, player.height);
+  // パーカーの顔部分
+  ctx.fillStyle = '#ffccaa';
+  ctx.fillRect(player.x + (player.dir > 0 ? 12 : 4), player.y + 8, 8, 8);
+  // ハンマー
+  ctx.fillStyle = 'var(--red)';
+  ctx.fillRect(player.x + (player.dir > 0 ? 18 : -2), player.y + (player.isGrounded ? 16 : 4), 8, 14);
 
-  el.digLeft.addEventListener("click", () => dig("left"));
-  el.digRight.addEventListener("click", () => dig("right"));
-  el.start.addEventListener("click", togglePause);
-  el.mute.addEventListener("click", () => {
-    state.muted = !state.muted;
-    el.mute.textContent = state.muted ? "×" : "♪";
-    el.mute.setAttribute("aria-label", state.muted ? "音を出す" : "音を消す");
+  // --- パーティクル描画 ---
+  particles.forEach(p => {
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = p.life / 25;
+    ctx.fillRect(p.x, p.y, 4, 4);
   });
-  window.addEventListener("resize", resizeCanvas);
+  ctx.globalAlpha = 1.0;
 
-  showModal("レトロ・ゴールドランナー DX", "敵は金塊を奪い、穴から這い上がってきます。金塊を全部集めると脱出はしごが現れます。敵をかわし、左右の足元に穴を掘って道を作りましょう。<br><br><small>※画面スワイプでの移動にも対応しています。</small>", [
-    { label: "START", className: "play", action: startGame }
-  ]);
+  ctx.restore();
+}
 
-  loadLevel(0);
-  resizeCanvas();
-  requestAnimationFrame(render);
-})();
+function gameLoop() {
+  update();
+  draw();
+  if (state.running) requestAnimationFrame(gameLoop);
+}
+
+// --- 入力制御 ---
+window.addEventListener('keydown', e => {
+  if (e.code === 'ArrowLeft') state.keys.left = true;
+  if (e.code === 'ArrowRight') state.keys.right = true;
+  if (e.code === 'Space' && player.isGrounded) { 
+      state.keys.jump = true; 
+      player.vy = JUMP_FORCE; 
+  }
+});
+window.addEventListener('keyup', e => {
+  if (e.code === 'ArrowLeft') state.keys.left = false;
+  if (e.code === 'ArrowRight') state.keys.right = false;
+  if (e.code === 'Space') state.keys.jump = false;
+});
+
+// スマホ用ボタン制御
+const bindBtn = (id, key) => {
+  const btn = document.getElementById(id);
+  const press = (e) => { 
+      e.preventDefault(); 
+      if (key === 'jump' && player.isGrounded) { 
+          player.vy = JUMP_FORCE; 
+      } 
+      state.keys[key] = true; 
+  };
+  const release = (e) => { 
+      e.preventDefault(); 
+      state.keys[key] = false; 
+  };
+  btn.addEventListener('touchstart', press, {passive: false});
+  btn.addEventListener('touchend', release, {passive: false});
+  btn.addEventListener('mousedown', press);
+  btn.addEventListener('mouseup', release);
+  btn.addEventListener('mouseleave', release);
+};
+
+bindBtn('btnLeft', 'left');
+bindBtn('btnRight', 'right');
+bindBtn('btnJump', 'jump');
+
+// 初期表示
+draw();
 </script>
 </body>
 </html>
