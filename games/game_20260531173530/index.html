@@ -1,582 +1,430 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>アイスクライマー</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            touch-action: none;
-        }
-        
-        body {
-            font-family: 'Courier New', monospace;
-            background: linear-gradient(to bottom, #0066cc, #003366);
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-        }
-        
-        #game-container {
-            position: relative;
-            width: 100%;
-            max-width: 500px;
-            height: 80vh;
-            background: #000;
-            border: 4px solid #fff;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-            overflow: hidden;
-        }
-        
-        /* スタート画面 */
-        #start-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 10;
-        }
-        
-        #start-screen h1 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px #00ffff;
-            animation: pulse 1.5s infinite;
-        }
-        
-        #start-screen p {
-            font-size: 1.2rem;
-            margin-bottom: 30px;
-            text-align: center;
-            line-height: 1.6;
-        }
-        
-        #start-button {
-            padding: 15px 40px;
-            font-size: 1.5rem;
-            background: #ff0000;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
-        }
-        
-        #start-button:hover {
-            background: #ff3333;
-            transform: scale(1.05);
-        }
-        
-        /* ゲーム画面 */
-        #game-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none;
-        }
-        
-        #game-header {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 10px;
-            display: flex;
-            justify-content: space-between;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 5;
-        }
-        
-        #score, #level {
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-        
-        #game-board {
-            position: absolute;
-            top: 60px;
-            left: 0;
-            width: 100%;
-            height: calc(100% - 60px);
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            grid-template-rows: repeat(15, 1fr);
-            gap: 1px;
-            background: #000;
-        }
-        
-        .ice-block {
-            background: #00aaff;
-            border-radius: 2px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.2rem;
-            animation: ice-fade 2s infinite;
-        }
-        
-        .player {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background: #ff0000;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.5rem;
-            z-index: 3;
-            box-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
-        }
-        
-        .goal {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background: #ffff00;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.5rem;
-            z-index: 2;
-            box-shadow: 0 0 10px rgba(255, 255, 0, 0.7);
-        }
-        
-        /* ゲームオーバー画面 */
-        #game-over-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 10;
-        }
-        
-        #game-over-screen h2 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            color: #ff0000;
-            text-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
-        }
-        
-        #final-score {
-            font-size: 1.8rem;
-            margin-bottom: 30px;
-        }
-        
-        #restart-button {
-            padding: 15px 40px;
-            font-size: 1.5rem;
-            background: #00ff00;
-            color: black;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
-        }
-        
-        #restart-button:hover {
-            background: #33ff33;
-            transform: scale(1.05);
-        }
-        
-        /* アニメーション */
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-        
-        @keyframes ice-fade {
-            0% { opacity: 0.7; }
-            50% { opacity: 1; }
-            100% { opacity: 0.7; }
-        }
-        
-        /* タッチ操作用のヒント */
-        #touch-hint {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            width: 100%;
-            text-align: center;
-            font-size: 0.9rem;
-            opacity: 0.7;
-        }
-        
-        /* レスポンシブ対応 */
-        @media (max-width: 500px) {
-            #game-container {
-                height: 90vh;
-            }
-            
-            #start-screen h1 {
-                font-size: 2rem;
-            }
-            
-            #start-screen p {
-                font-size: 1rem;
-                padding: 0 10px;
-            }
-            
-            #start-button {
-                padding: 12px 30px;
-                font-size: 1.2rem;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>アイスクライマー</title>
+<style>
+  :root {
+    --ink: #f6e8b4;
+    --muted: #b7a878;
+    --bg: #050910;
+    --panel: #111827;
+    --panel-2: #1d2b3a;
+    --line: #f0d878;
+    --gold: #f6c945;
+    --red: #df5142;
+    --blue: #45a4e8;
+    --ice: #a0e6ff;
+    --cloud: #ffffff;
+    --shadow: rgba(0, 0, 0, 0.42);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; min-height: 100%; touch-action: none; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-monospace, "SFMono-Regular", monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .app {
+    width: min(800px, 100%);
+    height: 100dvh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .hud, .controls {
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    padding: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .stat {
+    text-align: center;
+    background: rgba(0,0,0,0.5);
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--muted);
+  }
+
+  .stat span { font-size: 0.7rem; color: var(--muted); display: block; }
+  .stat b { font-size: 1.2rem; }
+
+  .screen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #1a2a40 0%, #050910 100%);
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 10px;
+  }
+
+  .dpad, .action-pad {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .btn {
+    width: 60px;
+    height: 60px;
+    border: 2px solid var(--line);
+    border-radius: 50%;
+    background: linear-gradient(180deg, #2c3e52, #162334);
+    color: var(--ink);
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5);
+    user-select: none;
+  }
+  .btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 rgba(0,0,0,0);
+  }
+  .btn.jump {
+    background: linear-gradient(180deg, #df5142, #8b2d23);
+    width: 80px;
+    border-radius: 12px;
+  }
+
+  #message {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8);
+    padding: 20px;
+    border: 2px solid var(--line);
+    text-align: center;
+    border-radius: 8px;
+    display: none;
+  }
+</style>
 </head>
 <body>
-    <div id="game-container">
-        <!-- スタート画面 -->
-        <div id="start-screen">
-            <h1>アイスクライマー</h1>
-            <p>アイスクリムの上を登ってゴールを目指そう！<br>タッチ操作で移動し、氷の上を登ってゴールを目指せ！</p>
-            <button id="start-button">スタート</button>
-        </div>
-        
-        <!-- ゲーム画面 -->
-        <div id="game-screen">
-            <div id="game-header">
-                <div id="score">スコア: 0</div>
-                <div id="level">レベル: 1</div>
-            </div>
-            <div id="game-board"></div>
-            <div id="touch-hint">タッチで移動</div>
-        </div>
-        
-        <!-- ゲームオーバー画面 -->
-        <div id="game-over-screen">
-            <h2>ゲームオーバー</h2>
-            <div id="final-score">スコア: 0</div>
-            <button id="restart-button">リスタート</button>
-        </div>
-    </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // ゲーム状態管理
-            const gameState = {
-                isPlaying: false,
-                score: 0,
-                level: 1,
-                playerX: 5,
-                playerY: 14,
-                goalX: 5,
-                goalY: 0,
-                iceBlocks: [],
-                gameBoard: null,
-                gameContainer: document.getElementById('game-container'),
-                gameBoardElement: document.getElementById('game-board'),
-                scoreElement: document.getElementById('score'),
-                levelElement: document.getElementById('level'),
-                finalScoreElement: document.getElementById('final-score'),
-                startScreen: document.getElementById('start-screen'),
-                gameScreen: document.getElementById('game-screen'),
-                gameOverScreen: document.getElementById('game-over-screen'),
-                startButton: document.getElementById('start-button'),
-                restartButton: document.getElementById('restart-button')
-            };
-            
-            // ゲーム初期化
-            function initGame() {
-                // ゲームボード初期化
-                gameState.gameBoardElement.innerHTML = '';
-                
-                // プレイヤー初期位置
-                gameState.playerX = 5;
-                gameState.playerY = 14;
-                
-                // ゴール位置
-                gameState.goalX = Math.floor(Math.random() * 10);
-                gameState.goalY = 0;
-                
-                // レベルに応じて氷のブロックを生成
-                generateIceBlocks();
-                
-                // プレイヤーとゴールを描画
-                renderPlayer();
-                renderGoal();
-                
-                // スコアとレベル更新
-                updateScore();
-            }
-            
-            // 氷のブロックを生成
-            function generateIceBlocks() {
-                gameState.iceBlocks = [];
-                const blockCount = 30 + (gameState.level * 5);
-                
-                for (let i = 0; i < blockCount; i++) {
-                    let x, y;
-                    let validPosition = false;
-                    
-                    // 重複しない位置を確保
-                    while (!validPosition) {
-                        x = Math.floor(Math.random() * 10);
-                        y = Math.floor(Math.random() * 15);
-                        
-                        // プレイヤーの位置とゴールの位置は除外
-                        if ((x === gameState.playerX && y === gameState.playerY) || 
-                            (x === gameState.goalX && y === gameState.goalY)) {
-                            continue;
-                        }
-                        
-                        // 他のブロックと重複しないか確認
-                        let overlap = false;
-                        for (const block of gameState.iceBlocks) {
-                            if (block.x === x && block.y === y) {
-                                overlap = true;
-                                break;
-                            }
-                        }
-                        
-                        if (!overlap) {
-                            validPosition = true;
-                            gameState.iceBlocks.push({ x, y });
-                        }
-                    }
-                }
-                
-                // ブロックを描画
-                renderIceBlocks();
-            }
-            
-            // 氷のブロックを描画
-            function renderIceBlocks() {
-                gameState.gameBoardElement.innerHTML = '';
-                
-                // ゲームボードの初期化
-                for (let y = 0; y < 15; y++) {
-                    for (let x = 0; x < 10; x++) {
-                        const cell = document.createElement('div');
-                        cell.style.gridRow = y + 1;
-                        cell.style.gridColumn = x + 1;
-                        gameState.gameBoardElement.appendChild(cell);
-                    }
-                }
-                
-                // 氷のブロックを描画
-                for (const block of gameState.iceBlocks) {
-                    const blockElement = document.createElement('div');
-                    blockElement.className = 'ice-block';
-                    blockElement.style.gridRow = block.y + 1;
-                    blockElement.style.gridColumn = block.x + 1;
-                    blockElement.textContent = '❄️';
-                    gameState.gameBoardElement.appendChild(blockElement);
-                }
-            }
-            
-            // プレイヤーを描画
-            function renderPlayer() {
-                // 既存のプレイヤーを削除
-                const existingPlayer = document.querySelector('.player');
-                if (existingPlayer) existingPlayer.remove();
-                
-                // 新しいプレイヤーを追加
-                const playerElement = document.createElement('div');
-                playerElement.className = 'player';
-                playerElement.style.left = (gameState.playerX * (100 / 10)) + '%';
-                playerElement.style.top = (gameState.playerY * (100 / 15)) + '%';
-                playerElement.textContent = '👨';
-                gameState.gameBoardElement.appendChild(playerElement);
-            }
-            
-            // ゴールを描画
-            function renderGoal() {
-                // 既存のゴールを削除
-                const existingGoal = document.querySelector('.goal');
-                if (existingGoal) existingGoal.remove();
-                
-                // 新しいゴールを追加
-                const goalElement = document.createElement('div');
-                goalElement.className = 'goal';
-                goalElement.style.left = (gameState.goalX * (100 / 10)) + '%';
-                goalElement.style.top = (gameState.goalY * (100 / 15)) + '%';
-                goalElement.textContent = '🏁';
-                gameState.gameBoardElement.appendChild(goalElement);
-            }
-            
-            // スコアとレベルを更新
-            function updateScore() {
-                gameState.scoreElement.textContent = `スコア: ${gameState.score}`;
-                gameState.levelElement.textContent = `レベル: ${gameState.level}`;
-            }
-            
-            // ゲームオーバー処理
-            function gameOver() {
-                gameState.isPlaying = false;
-                gameState.finalScoreElement.textContent = `スコア: ${gameState.score}`;
-                gameState.gameOverScreen.style.display = 'flex';
-            }
-            
-            // ゲームクリア処理
-            function gameClear() {
-                gameState.score += 100 * gameState.level;
-                gameState.level++;
-                gameState.scoreElement.textContent = `スコア: ${gameState.score}`;
-                gameState.levelElement.textContent = `レベル: ${gameState.level}`;
-                
-                // 次のレベルへ
-                setTimeout(() => {
-                    initGame();
-                }, 1000);
-            }
-            
-            // プレイヤーの移動
-            function movePlayer(dx, dy) {
-                if (!gameState.isPlaying) return;
-                
-                const newX = gameState.playerX + dx;
-                const newY = gameState.playerY + dy;
-                
-                // ゲーム領域外の移動を禁止
-                if (newX < 0 || newX >= 10 || newY < 0 || newY >= 15) {
-                    return;
-                }
-                
-                // 氷のブロックとの衝突判定
-                for (const block of gameState.iceBlocks) {
-                    if (block.x === newX && block.y === newY) {
-                        return; // 衝突した場合は移動しない
-                    }
-                }
-                
-                // 移動
-                gameState.playerX = newX;
-                gameState.playerY = newY;
-                renderPlayer();
-                
-                // ゴールに到達したか判定
-                if (gameState.playerX === gameState.goalX && gameState.playerY === gameState.goalY) {
-                    gameClear();
-                }
-            }
-            
-            // タッチ操作対応
-            let touchStartX = 0;
-            let touchStartY = 0;
-            
-            gameState.gameBoardElement.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                const touch = e.touches[0];
-                touchStartX = touch.clientX;
-                touchStartY = touch.clientY;
-            });
-            
-            gameState.gameBoardElement.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                if (!gameState.isPlaying) return;
-                
-                const touch = e.touches[0];
-                const diffX = touch.clientX - touchStartX;
-                const diffY = touch.clientY - touchStartY;
-                
-                // 移動量に応じて方向を判定
-                if (Math.abs(diffX) > Math.abs(diffY)) {
-                    if (diffX > 0) {
-                        movePlayer(1, 0); // 右
-                    } else {
-                        movePlayer(-1, 0); // 左
-                    }
-                } else {
-                    if (diffY > 0) {
-                        movePlayer(0, 1); // 下
-                    } else {
-                        movePlayer(0, -1); // 上
-                    }
-                }
-                
-                // 移動量をリセット
-                touchStartX = touch.clientX;
-                touchStartY = touch.clientY;
-            });
-            
-            // マウス操作対応
-            gameState.gameBoardElement.addEventListener('mousedown', (e) => {
-                if (!gameState.isPlaying) return;
-                
-                const rect = gameState.gameBoardElement.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                const cellWidth = rect.width / 10;
-                const cellHeight = rect.height / 15;
-                
-                const gridX = Math.floor(x / cellWidth);
-                const gridY = Math.floor(y / cellHeight);
-                
-                // プレイヤーの位置から移動方向を計算
-                const dx = gridX - gameState.playerX;
-                const dy = gridY - gameState.playerY;
-                
-                // 1マスだけ移動
-                if (Math.abs(dx) > Math.abs(dy)) {
-                    movePlayer(dx > 0 ? 1 : -1, 0);
-                } else {
-                    movePlayer(0, dy > 0 ? 1 : -1);
-                }
-            });
-            
-            // スタートボタン
-            gameState.startButton.addEventListener('click', () => {
-                gameState.startScreen.style.display = 'none';
-                gameState.gameScreen.style.display = 'block';
-                gameState.isPlaying = true;
-                initGame();
-            });
-            
-            // リスタートボタン
-            gameState.restartButton.addEventListener('click', () => {
-                gameState.gameOverScreen.style.display = 'none';
-                gameState.isPlaying = true;
-                gameState.score = 0;
-                gameState.level = 1;
-                initGame();
-            });
-            
-            // キーボード操作対応
-            document.addEventListener('keydown', (e) => {
-                if (!gameState.isPlaying) return;
-                
-                switch (e.key) {
-                    case 'ArrowUp':
-                        movePlayer(0, -1);
-                        break;
-                    case 'ArrowDown':
-                        movePlayer(0, 1);
-                        break;
-                    case 'ArrowLeft':
-                        movePlayer(-1, 0);
-                        break;
-                    case 'ArrowRight':
-                        movePlayer(1, 0);
-                        break;
-                }
-            });
-        });
-    </script>
+<div class="app">
+  <div class="hud">
+    <div class="stat"><span>SCORE</span><b id="scoreDisplay">0</b></div>
+    <div class="stat"><span>FLOOR</span><b id="floorDisplay">1</b></div>
+  </div>
+
+  <div class="screen">
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div id="message">
+      <h2 id="msgTitle">ICE CLIMBER</h2>
+      <p>左右移動: Arrow / ボタン<br>ジャンプ: Space / JUMP</p>
+      <button class="btn jump" onclick="startGame()" style="font-size:1rem; height:40px;">START</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="dpad">
+      <button class="btn" id="btnLeft">◀</button>
+      <button class="btn" id="btnRight">▶</button>
+    </div>
+    <div style="text-align:center; font-size:0.8rem; color:var(--muted)">天井を叩き割って<br>上へ登れ！</div>
+    <div class="action-pad">
+      <button class="btn jump" id="btnJump">JUMP</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// ゲーム定数
+const GRAVITY = 0.4;
+const JUMP_FORCE = -8.5;
+const MOVE_SPEED = 3.5;
+const TILE_SIZE = 32;
+const MAX_FLOORS = 15;
+
+let state = {
+  running: false,
+  score: 0,
+  cameraY: 0,
+  maxFloorReached: 1,
+  keys: { left: false, right: false, jump: false }
+};
+
+let player = { x: 200, y: 0, vx: 0, vy: 0, width: 24, height: 32, isGrounded: false };
+let blocks = [];
+let particles = [];
+let enemies = [];
+
+// マップ生成（階層ごとのブロック配置）
+function generateMap() {
+  blocks = [];
+  enemies = [];
+  
+  // 地上階 (y=600付近)
+  const groundY = 560;
+  player.y = groundY - player.height;
+  player.x = 200;
+  state.cameraY = 0;
+
+  for (let floor = 0; floor < MAX_FLOORS; floor++) {
+    const floorY = groundY - (floor * 120);
+    
+    // 穴の位置をランダムに決定
+    const gapStart = Math.floor(Math.random() * 8) + 1;
+    const gapWidth = Math.floor(Math.random() * 2) + 2;
+
+    for (let i = 0; i < 13; i++) {
+      if (i >= gapStart && i < gapStart + gapWidth) continue; // 穴
+      
+      blocks.push({
+        x: i * TILE_SIZE,
+        y: floorY,
+        width: TILE_SIZE,
+        height: 16,
+        type: 'breakable'
+      });
+    }
+
+    // 敵の配置 (3階以上から出現)
+    if (floor >= 2 && Math.random() > 0.3) {
+      enemies.push({
+        x: (gapStart > 6 ? 2 : 10) * TILE_SIZE,
+        y: floorY - 24,
+        vx: gapStart > 6 ? 1 : -1,
+        width: 24,
+        height: 24
+      });
+    }
+  }
+}
+
+function startGame() {
+  document.getElementById('message').style.display = 'none';
+  state.score = 0;
+  state.maxFloorReached = 1;
+  document.getElementById('scoreDisplay').innerText = state.score;
+  document.getElementById('floorDisplay').innerText = state.maxFloorReached;
+  generateMap();
+  state.running = true;
+  requestAnimationFrame(gameLoop);
+}
+
+function gameOver() {
+  state.running = false;
+  document.getElementById('msgTitle').innerText = "GAME OVER";
+  document.getElementById('message').style.display = 'block';
+}
+
+function createParticles(x, y) {
+  for (let i = 0; i < 8; i++) {
+    particles.push({
+      x: x, y: y,
+      vx: (Math.random() - 0.5) * 6,
+      vy: (Math.random() - 1) * 6,
+      life: 30
+    });
+  }
+}
+
+// 物理演算と衝突判定
+function update() {
+  if (!state.running) return;
+
+  // プレイヤーの左右移動
+  if (state.keys.left) player.vx = -MOVE_SPEED;
+  else if (state.keys.right) player.vx = MOVE_SPEED;
+  else player.vx = 0;
+
+  player.x += player.vx;
+  
+  // 画面端のループ（左から出たら右へ）
+  if (player.x < -player.width) player.x = canvas.width;
+  if (player.x > canvas.width) player.x = -player.width;
+
+  // ジャンプと重力
+  player.vy += GRAVITY;
+  player.y += player.vy;
+  player.isGrounded = false;
+
+  // ブロックとの衝突判定
+  for (let i = blocks.length - 1; i >= 0; i--) {
+    let b = blocks[i];
+    
+    // AABB衝突判定
+    if (player.x < b.x + b.width && player.x + player.width > b.x &&
+        player.y < b.y + b.height && player.y + player.height > b.y) {
+        
+      // 上から乗った場合（着地）
+      if (player.vy > 0 && player.y + player.height - player.vy <= b.y + 4) {
+        player.y = b.y - player.height;
+        player.vy = 0;
+        player.isGrounded = true;
+      } 
+      // 下から突き上げた場合（ブロック破壊）
+      else if (player.vy < 0 && player.y - player.vy >= b.y + b.height - 4) {
+        player.y = b.y + b.height;
+        player.vy = 2; // 下にはじかれる
+        
+        if (b.type === 'breakable') {
+          createParticles(b.x + b.width/2, b.y + b.height/2);
+          blocks.splice(i, 1);
+          state.score += 10;
+          document.getElementById('scoreDisplay').innerText = state.score;
+        }
+      }
+    }
+  }
+
+  // 敵の挙動
+  enemies.forEach(e => {
+    e.x += e.vx;
+    if (e.x <= 0 || e.x + e.width >= canvas.width) e.vx *= -1;
+    
+    // プレイヤーと敵の衝突（ゲームオーバー）
+    if (player.x < e.x + e.width && player.x + player.width > e.x &&
+        player.y < e.y + e.height && player.y + player.height > e.y) {
+      gameOver();
+    }
+  });
+
+  // パーティクルの更新
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += GRAVITY;
+    p.life--;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  // カメラのスクロール（プレイヤーが画面上部にいったらカメラを上に移動）
+  const targetCameraY = 400 - player.y;
+  if (targetCameraY > state.cameraY) {
+    state.cameraY += (targetCameraY - state.cameraY) * 0.1;
+  }
+
+  // 階層の更新
+  const currentFloor = Math.floor((560 - player.y) / 120) + 1;
+  if (currentFloor > state.maxFloorReached) {
+    state.maxFloorReached = currentFloor;
+    document.getElementById('floorDisplay').innerText = state.maxFloorReached;
+    state.score += 100; // 階層クリアボーナス
+    document.getElementById('scoreDisplay').innerText = state.score;
+  }
+
+  // 落下判定（画面外に落ちたらミス）
+  if (player.y > 600 - state.cameraY + 50) {
+    gameOver();
+  }
+}
+
+// 描画
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  ctx.save();
+  ctx.translate(0, state.cameraY);
+
+  // ブロック描画
+  blocks.forEach(b => {
+    ctx.fillStyle = '#a0e6ff'; // 氷の色
+    ctx.fillRect(b.x, b.y, b.width, b.height);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(b.x, b.y, b.width, 2); // 氷のハイライト
+    ctx.strokeStyle = '#45a4e8';
+    ctx.strokeRect(b.x, b.y, b.width, b.height);
+  });
+
+  // 敵（トッピー風）描画
+  enemies.forEach(e => {
+    ctx.fillStyle = '#b7a878';
+    ctx.beginPath();
+    ctx.arc(e.x + e.width/2, e.y + e.height/2, e.width/2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff'; // 目
+    ctx.fillRect(e.x + (e.vx > 0 ? 14 : 6), e.y + 6, 4, 4);
+  });
+
+  // プレイヤー描画
+  ctx.fillStyle = '#45a4e8'; // ポポの青色
+  ctx.fillRect(player.x, player.y, player.width, player.height);
+  ctx.fillStyle = '#df5142'; // 赤いハンマーのイメージ
+  ctx.fillRect(player.x + (state.keys.left ? -6 : player.width-2), player.y + 4, 8, 12);
+
+  // パーティクル描画
+  ctx.fillStyle = '#ffffff';
+  particles.forEach(p => {
+    ctx.globalAlpha = p.life / 30;
+    ctx.fillRect(p.x, p.y, 4, 4);
+  });
+  ctx.globalAlpha = 1.0;
+
+  ctx.restore();
+}
+
+function gameLoop() {
+  update();
+  draw();
+  if (state.running) requestAnimationFrame(gameLoop);
+}
+
+// --- 入力制御 ---
+window.addEventListener('keydown', e => {
+  if (e.code === 'ArrowLeft') state.keys.left = true;
+  if (e.code === 'ArrowRight') state.keys.right = true;
+  if (e.code === 'Space' && player.isGrounded) { state.keys.jump = true; player.vy = JUMP_FORCE; }
+});
+window.addEventListener('keyup', e => {
+  if (e.code === 'ArrowLeft') state.keys.left = false;
+  if (e.code === 'ArrowRight') state.keys.right = false;
+  if (e.code === 'Space') state.keys.jump = false;
+});
+
+// スマホ用ボタン制御
+const bindBtn = (id, key) => {
+  const btn = document.getElementById(id);
+  const press = (e) => { e.preventDefault(); if (key === 'jump' && player.isGrounded) { player.vy = JUMP_FORCE; } state.keys[key] = true; };
+  const release = (e) => { e.preventDefault(); state.keys[key] = false; };
+  btn.addEventListener('touchstart', press);
+  btn.addEventListener('touchend', release);
+  btn.addEventListener('mousedown', press);
+  btn.addEventListener('mouseup', release);
+  btn.addEventListener('mouseleave', release);
+};
+
+bindBtn('btnLeft', 'left');
+bindBtn('btnRight', 'right');
+bindBtn('btnJump', 'jump');
+
+// 初期表示
+document.getElementById('message').style.display = 'block';
+draw();
+
+</script>
 </body>
 </html>
