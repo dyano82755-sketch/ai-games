@@ -1,518 +1,1513 @@
-```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>ヴァンパイア サバイバーズ</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      touch-action: manipulation;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ヴァンパイア サバイバーズ</title>
+<style>
+  :root {
+    --ink: #f8e8b0;
+    --muted: #b7a878;
+    --panel: #101827;
+    --panel-2: #172336;
+    --line: #f0d878;
+    --gold: #f6c945;
+    --red: #df5142;
+    --blue: #45a4e8;
+    --green: #5cc66e;
+    --violet: #8c70ff;
+    --shadow: rgba(0, 0, 0, 0.42);
+  }
 
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+    overflow: hidden;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 50% 25%, rgba(82, 99, 160, 0.28), transparent 36%),
+      linear-gradient(180deg, #071224 0 62%, #120a1f 62% 100%);
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Hiragino Sans", "Yu Gothic", monospace;
+  }
+
+  button {
+    font: inherit;
+    touch-action: manipulation;
+  }
+
+  .app {
+    width: min(1220px, 100%);
+    height: 100dvh;
+    min-height: 100dvh;
+    margin: 0 auto;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .hud,
+  .screen,
+  .controls,
+  .modal-card,
+  .upgrade-card {
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    box-shadow: 0 10px 28px var(--shadow);
+  }
+
+  .hud {
+    min-height: 70px;
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) repeat(7, auto);
+    gap: 8px;
+    align-items: center;
+    padding: 8px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
+      var(--panel);
+  }
+
+  .brand {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .star-mark {
+    width: 50px;
+    height: 50px;
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 2px;
+    padding: 4px;
+    border: 2px solid var(--line);
+    background: #050910;
+  }
+
+  .star-mark span {
+    background: transparent;
+  }
+
+  .star-mark span:nth-child(3),
+  .star-mark span:nth-child(8),
+  .star-mark span:nth-child(11),
+  .star-mark span:nth-child(12),
+  .star-mark span:nth-child(13),
+  .star-mark span:nth-child(14),
+  .star-mark span:nth-child(15),
+  .star-mark span:nth-child(18),
+  .star-mark span:nth-child(23) {
+    background: var(--gold);
+  }
+
+  .brand-title {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+  }
+
+  .brand-title strong {
+    font-size: 1.16rem;
+    line-height: 1.08;
+  }
+
+  .brand-title span {
+    max-width: 100%;
+    color: var(--muted);
+    font-size: 0.82rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .stat {
+    min-width: 74px;
+    min-height: 46px;
+    display: grid;
+    align-content: center;
+    gap: 2px;
+    padding: 5px 8px;
+    text-align: center;
+    border: 1px solid rgba(240, 216, 120, 0.34);
+    border-radius: 8px;
+    background: rgba(5, 9, 16, 0.55);
+  }
+
+  .stat span {
+    color: var(--muted);
+    font-size: 0.62rem;
+    line-height: 1;
+  }
+
+  .stat b {
+    font-size: 0.96rem;
+    line-height: 1.1;
+  }
+
+  .bar-stat {
+    min-width: 122px;
+    display: grid;
+    gap: 5px;
+  }
+
+  .bar {
+    width: 100%;
+    height: 14px;
+    overflow: hidden;
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    background: rgba(5, 9, 16, 0.66);
+  }
+
+  .bar i {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #e7473f, #ffd36b);
+    transition: width 120ms linear;
+  }
+
+  .bar.xp i {
+    width: 0%;
+    background: linear-gradient(90deg, #45a4e8, #8c70ff, #f6c945);
+  }
+
+  .btn,
+  .pad-btn {
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    background: linear-gradient(180deg, #2c3e52, #162334);
+    cursor: pointer;
+    font-weight: 900;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.52);
+  }
+
+  .btn {
+    min-height: 44px;
+    padding: 0 14px;
+  }
+
+  .btn.icon {
+    width: 46px;
+    padding: 0;
+  }
+
+  .btn.play {
+    color: #07100a;
+    background: linear-gradient(180deg, #86e18d, #42a953);
+  }
+
+  .btn:active,
+  .pad-btn:active,
+  .upgrade-card:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.52);
+  }
+
+  .screen {
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(90, 80, 150, 0.2), transparent 54%),
+      #050910;
+  }
+
+  #gameCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 340px;
+    image-rendering: pixelated;
+  }
+
+  .message {
+    position: absolute;
+    left: 50%;
+    bottom: 10px;
+    width: min(760px, calc(100% - 24px));
+    min-height: 40px;
+    transform: translateX(-50%);
+    display: grid;
+    place-items: center;
+    padding: 7px 12px;
+    border: 2px solid rgba(240, 216, 120, 0.82);
+    border-radius: 8px;
+    background: rgba(5, 9, 16, 0.86);
+    text-align: center;
+    font-weight: 900;
+    pointer-events: none;
+  }
+
+  .controls {
+    min-height: 118px;
+    display: grid;
+    grid-template-columns: minmax(190px, 1fr) auto auto minmax(190px, 1fr);
+    gap: 10px;
+    align-items: center;
+    padding: 8px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
+      var(--panel-2);
+  }
+
+  .mini-panel {
+    min-width: 0;
+    display: grid;
+    gap: 5px;
+    font-weight: 800;
+    line-height: 1.28;
+  }
+
+  .mini-panel small {
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+
+  .dpad {
+    width: 174px;
+    height: 96px;
+    display: grid;
+    grid-template-columns: repeat(3, 54px);
+    grid-template-rows: repeat(2, 44px);
+    gap: 6px;
+  }
+
+  .pad-btn {
+    min-width: 0;
+    min-height: 0;
+    font-size: 1.18rem;
+  }
+
+  .pad-btn.up {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .pad-btn.left {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .pad-btn.down {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .pad-btn.right {
+    grid-column: 3;
+    grid-row: 2;
+  }
+
+  .action-panel {
+    display: grid;
+    grid-template-columns: repeat(2, 92px);
+    gap: 8px;
+  }
+
+  .upgrade-layer,
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: none;
+    place-items: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.62);
+  }
+
+  .upgrade-layer.show,
+  .modal.show {
+    display: grid;
+  }
+
+  .modal-card {
+    width: min(590px, 100%);
+    padding: 18px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
+      var(--panel);
+    text-align: center;
+  }
+
+  .modal-card h1,
+  .upgrade-box h2 {
+    margin: 0;
+    font-size: 1.85rem;
+    line-height: 1.1;
+  }
+
+  .modal-card p,
+  .upgrade-box p {
+    margin: 10px auto 0;
+    max-width: 520px;
+    color: #d8c889;
+    line-height: 1.55;
+    font-weight: 720;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .upgrade-box {
+    width: min(820px, 100%);
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
+      var(--panel);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    text-align: center;
+  }
+
+  .upgrade-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .upgrade-card {
+    min-height: 142px;
+    display: grid;
+    align-content: center;
+    gap: 8px;
+    padding: 12px;
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0)),
+      #152236;
+    cursor: pointer;
+    text-align: left;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.52);
+  }
+
+  .upgrade-card strong {
+    font-size: 1.05rem;
+  }
+
+  .upgrade-card span {
+    color: #d8c889;
+    font-size: 0.82rem;
+    line-height: 1.35;
+  }
+
+  @media (max-width: 980px) {
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-      color: #fff;
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      overflow: auto;
     }
 
-    #game-container {
-      width: 100%;
-      max-width: 500px;
-      height: 100vh;
-      max-height: 800px;
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
+    .app {
+      height: auto;
+      min-height: 100dvh;
+      grid-template-rows: auto minmax(430px, 1fr) auto;
     }
 
-    #screen {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      position: relative;
-      background: rgba(0, 0, 0, 0.7);
-      border-radius: 10px;
-      margin: 10px;
-      overflow: hidden;
+    .hud {
+      grid-template-columns: minmax(210px, 1fr) repeat(4, auto);
     }
 
-    .screen-content {
-      text-align: center;
-      padding: 20px;
-      max-width: 90%;
-    }
-
-    h1 {
-      font-size: 2.5rem;
-      margin-bottom: 20px;
-      text-shadow: 0 0 10px #ff0000;
-      animation: pulse 1.5s infinite;
-    }
-
-    h2 {
-      font-size: 1.8rem;
-      margin-bottom: 15px;
-      color: #ff6b6b;
-    }
-
-    p {
-      font-size: 1.1rem;
-      margin-bottom: 15px;
-      line-height: 1.6;
-    }
-
-    button {
-      background: linear-gradient(to right, #ff6b6b, #ff8e8e);
-      border: none;
-      padding: 15px 30px;
-      font-size: 1.2rem;
-      border-radius: 50px;
-      color: white;
-      cursor: pointer;
-      margin: 10px;
-      transition: all 0.3s ease;
-      box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
-    }
-
-    button:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(255, 107, 107, 0.6);
-    }
-
-    #start-screen, #game-over-screen {
+    .hud .stat:nth-of-type(n+4),
+    .hud .bar-stat:nth-of-type(n+3) {
       display: none;
-    }
-
-    #game-screen {
-      display: none;
-    }
-
-    #player {
-      position: absolute;
-      font-size: 3rem;
-      z-index: 10;
-      transition: all 0.1s ease;
-    }
-
-    #vampires {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-    }
-
-    .vampire {
-      position: absolute;
-      font-size: 2rem;
-      animation: float 3s infinite ease-in-out;
-    }
-
-    #score-display {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      font-size: 1.5rem;
-      z-index: 20;
-    }
-
-    #health-bar {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      width: 150px;
-      height: 20px;
-      background: #333;
-      border-radius: 10px;
-      overflow: hidden;
-      z-index: 20;
-    }
-
-    #health-fill {
-      height: 100%;
-      background: linear-gradient(to right, #ff6b6b, #ff0000);
-      width: 100%;
-      transition: width 0.3s ease;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-
-    @keyframes float {
-      0% { transform: translateY(0px); }
-      50% { transform: translateY(-15px); }
-      100% { transform: translateY(0px); }
-    }
-
-    .hit-effect {
-      position: absolute;
-      font-size: 2rem;
-      animation: hit 0.5s forwards;
-      pointer-events: none;
-    }
-
-    @keyframes hit {
-      0% { transform: scale(1); opacity: 1; }
-      100% { transform: scale(2); opacity: 0; }
-    }
-
-    .instructions {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 15px;
-      border-radius: 10px;
-      margin-top: 20px;
     }
 
     .controls {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 15px;
+      grid-template-columns: 1fr auto auto;
+    }
+  }
+
+  @media (max-width: 620px) {
+    .app {
+      gap: 7px;
+      padding: 7px;
+      grid-template-rows: auto minmax(390px, 1fr) auto;
     }
 
-    .control-key {
-      background: rgba(255, 255, 255, 0.2);
-      padding: 8px 12px;
-      border-radius: 5px;
-      font-size: 0.9rem;
+    .hud {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      min-height: 0;
     }
 
-    @media (max-width: 500px) {
-      h1 { font-size: 2rem; }
-      h2 { font-size: 1.5rem; }
-      button { padding: 12px 20px; font-size: 1rem; }
+    .brand {
+      grid-column: 1 / -1;
     }
-  </style>
+
+    .star-mark {
+      width: 42px;
+      height: 42px;
+    }
+
+    .brand-title strong {
+      font-size: 1.02rem;
+    }
+
+    .brand-title span {
+      font-size: 0.74rem;
+    }
+
+    .stat {
+      min-width: 0;
+      min-height: 38px;
+      padding: 4px 3px;
+    }
+
+    .stat span {
+      font-size: 0.58rem;
+    }
+
+    .stat b {
+      font-size: 0.82rem;
+    }
+
+    .btn {
+      min-height: 38px;
+      padding: 0 8px;
+      font-size: 0.84rem;
+    }
+
+    .btn.icon {
+      width: 40px;
+    }
+
+    .controls {
+      grid-template-columns: 1fr;
+      min-height: 0;
+      gap: 8px;
+    }
+
+    .mini-panel {
+      display: none;
+    }
+
+    .dpad {
+      justify-self: center;
+      width: 168px;
+      height: 92px;
+      grid-template-columns: repeat(3, 52px);
+      grid-template-rows: repeat(2, 42px);
+    }
+
+    .action-panel {
+      justify-self: center;
+      grid-template-columns: repeat(2, 86px);
+    }
+
+    .message {
+      bottom: 8px;
+      min-height: 36px;
+      padding: 6px 8px;
+      font-size: 0.82rem;
+    }
+
+    .upgrade-list {
+      grid-template-columns: 1fr;
+    }
+
+    .modal-card h1,
+    .upgrade-box h2 {
+      font-size: 1.42rem;
+    }
+  }
+</style>
 </head>
 <body>
-  <div id="game-container">
-    <div id="screen">
-      <div id="start-screen" class="screen-content">
-        <h1>🧛‍♂️ ヴァンパイア サバイバーズ 🧛‍♀️</h1>
-        <p>避けて倒すだけ！</p>
-        <p>ヴァンパイアを倒して、生存を競え！</p>
-        <div class="instructions">
-          <p>🎯 タッチまたはクリックして移動</p>
-          <p>💥 タップでヴァンパイアを倒す</p>
-        </div>
-        <button id="start-button">スタート</button>
+<div class="app">
+  <header class="hud">
+    <div class="brand">
+      <div class="star-mark" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
       </div>
-
-      <div id="game-screen" class="screen-content">
-        <div id="score-display">スコア: 0</div>
-        <div id="health-bar">
-          <div id="health-fill"></div>
-        </div>
-        <div id="player">🧛</div>
-        <div id="vampires"></div>
-      </div>
-
-      <div id="game-over-screen" class="screen-content">
-        <h2>💀 ゲームオーバー 💀</h2>
-        <p id="final-score">スコア: 0</p>
-        <p id="vampires-defeated">倒したヴァンパイア: 0</p>
-        <button id="restart-button">リスタート</button>
+      <div class="brand-title">
+        <strong>星くずサバイバー</strong>
+        <span id="statusText">動き回って、星の魔法で押し返せ</span>
       </div>
     </div>
+    <div class="stat"><span>TIME</span><b id="timeText">03:00</b></div>
+    <div class="stat"><span>LV</span><b id="levelText">1</b></div>
+    <div class="stat"><span>KILL</span><b id="killText">0</b></div>
+    <div class="stat"><span>SCORE</span><b id="scoreText">0</b></div>
+    <div class="bar-stat">
+      <div class="stat"><span>HP</span><b id="hpText">100/100</b></div>
+      <div class="bar"><i id="hpBar"></i></div>
+    </div>
+    <div class="bar-stat">
+      <div class="stat"><span>XP</span><b id="xpText">0/12</b></div>
+      <div class="bar xp"><i id="xpBar"></i></div>
+    </div>
+    <button class="btn icon" id="muteBtn" type="button" aria-label="音を切り替え">♪</button>
+    <button class="btn play" id="startBtn" type="button">START</button>
+  </header>
+
+  <main class="screen" aria-label="星くずサバイバーのゲーム画面">
+    <canvas id="gameCanvas"></canvas>
+    <div class="message" id="messageText">STARTを押して開始</div>
+  </main>
+
+  <footer class="controls">
+    <div class="mini-panel">
+      <b>ミッション</b>
+      <small id="missionText">3分間、生き残ろう。攻撃は自動です。</small>
+    </div>
+    <div class="dpad" aria-label="移動ボタン">
+      <button class="pad-btn up" type="button" data-move="up" aria-label="上へ">▲</button>
+      <button class="pad-btn left" type="button" data-move="left" aria-label="左へ">◀</button>
+      <button class="pad-btn down" type="button" data-move="down" aria-label="下へ">▼</button>
+      <button class="pad-btn right" type="button" data-move="right" aria-label="右へ">▶</button>
+    </div>
+    <div class="action-panel">
+      <button class="btn play" id="pauseBtn" type="button">PAUSE</button>
+      <button class="btn" id="dashBtn" type="button">DASH</button>
+    </div>
+    <div class="mini-panel">
+      <b id="weaponText">星弾 Lv1</b>
+      <small id="bestText">BEST 0</small>
+    </div>
+  </footer>
+</div>
+
+<div class="modal show" id="modal">
+  <div class="modal-card">
+    <h1 id="modalTitle">星くずサバイバー</h1>
+    <p id="modalText">移動だけで遊べるサバイバルです。星の弾は自動で一番近い敵を狙います。青い経験値を集めて、どんどん強くなりましょう。</p>
+    <div class="modal-actions" id="modalActions"></div>
   </div>
+</div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // ゲーム状態
-      const gameState = {
-        isPlaying: false,
-        score: 0,
-        health: 100,
-        vampiresDefeated: 0,
-        playerX: 0,
-        playerY: 0,
-        vampires: [],
-        gameLoopId: null,
-        touchStartX: 0,
-        touchStartY: 0
-      };
+<div class="upgrade-layer" id="upgradeLayer">
+  <div class="upgrade-box">
+    <h2>LEVEL UP!</h2>
+    <p>ひとつ選んでパワーアップ。</p>
+    <div class="upgrade-list" id="upgradeList"></div>
+  </div>
+</div>
 
-      // DOM要素
-      const startScreen = document.getElementById('start-screen');
-      const gameScreen = document.getElementById('game-screen');
-      const gameOverScreen = document.getElementById('game-over-screen');
-      const startButton = document.getElementById('start-button');
-      const restartButton = document.getElementById('restart-button');
-      const scoreDisplay = document.getElementById('score-display');
-      const healthFill = document.getElementById('health-fill');
-      const finalScore = document.getElementById('final-score');
-      const vampiresDefeated = document.getElementById('vampires-defeated');
-      const player = document.getElementById('player');
-      const vampiresContainer = document.getElementById('vampires');
+<script>
+(() => {
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+  const el = {
+    time: document.getElementById("timeText"),
+    level: document.getElementById("levelText"),
+    kills: document.getElementById("killText"),
+    score: document.getElementById("scoreText"),
+    hp: document.getElementById("hpText"),
+    hpBar: document.getElementById("hpBar"),
+    xp: document.getElementById("xpText"),
+    xpBar: document.getElementById("xpBar"),
+    status: document.getElementById("statusText"),
+    message: document.getElementById("messageText"),
+    mission: document.getElementById("missionText"),
+    weapon: document.getElementById("weaponText"),
+    best: document.getElementById("bestText"),
+    start: document.getElementById("startBtn"),
+    pause: document.getElementById("pauseBtn"),
+    dash: document.getElementById("dashBtn"),
+    mute: document.getElementById("muteBtn"),
+    modal: document.getElementById("modal"),
+    modalTitle: document.getElementById("modalTitle"),
+    modalText: document.getElementById("modalText"),
+    modalActions: document.getElementById("modalActions"),
+    upgradeLayer: document.getElementById("upgradeLayer"),
+    upgradeList: document.getElementById("upgradeList")
+  };
 
-      // ゲーム開始
-      startButton.addEventListener('click', startGame);
-      restartButton.addEventListener('click', startGame);
+  const WORLD = { width: 2600, height: 1800 };
+  const ROUND_SECONDS = 180;
+  const colors = {
+    bg: "#050910",
+    grid: "#17243a",
+    player: "#45a4e8",
+    playerDark: "#214d77",
+    pet: "#f6c945",
+    enemy: "#df5142",
+    enemy2: "#8c70ff",
+    enemy3: "#5cc66e",
+    gem: "#50c8ff",
+    food: "#86e18d",
+    bolt: "#fff2a6",
+    orbit: "#f6c945",
+    shadow: "rgba(0,0,0,0.32)"
+  };
 
-      function startGame() {
-        // 初期化
-        gameState.isPlaying = true;
-        gameState.score = 0;
-        gameState.health = 100;
-        gameState.vampiresDefeated = 0;
-        gameState.vampires = [];
-        gameState.playerX = window.innerWidth / 2;
-        gameState.playerY = window.innerHeight / 2;
+  const state = {
+    running: false,
+    paused: false,
+    choosing: false,
+    muted: false,
+    time: 0,
+    lastTime: 0,
+    spawnTimer: 0,
+    eliteTimer: 0,
+    messageTimer: 0,
+    kills: 0,
+    score: 0,
+    level: 1,
+    xp: 0,
+    xpNeed: 8,
+    best: Number(localStorage.getItem("starSurvivorBest") || 0),
+    keys: { left: false, right: false, up: false, down: false },
+    player: {
+      x: WORLD.width / 2,
+      y: WORLD.height / 2,
+      r: 18,
+      hp: 120,
+      maxHp: 120,
+      speed: 225,
+      dashReady: 0,
+      invincible: 0,
+      damage: 22,
+      fireRate: 0.72,
+      fireTimer: 0,
+      projectileCount: 1,
+      magnet: 105,
+      orbit: 0,
+      regen: 0,
+      xpBonus: 1
+    },
+    camera: { x: 0, y: 0, w: 900, h: 560 },
+    enemies: [],
+    projectiles: [],
+    gems: [],
+    pickups: [],
+    particles: [],
+    floatTexts: [],
+    audio: null
+  };
 
-        // スクリーン切り替え
-        startScreen.style.display = 'none';
-        gameScreen.style.display = 'flex';
-        gameOverScreen.style.display = 'none';
+  const upgrades = [
+    { id: "damage", name: "星弾パワー", desc: "弾のダメージ +7", apply: () => state.player.damage += 7 },
+    { id: "rate", name: "連射のリズム", desc: "星弾の発射間隔を短くする", apply: () => state.player.fireRate = Math.max(0.34, state.player.fireRate * 0.84) },
+    { id: "multi", name: "ツインスター", desc: "一度に撃つ星弾 +1", apply: () => state.player.projectileCount = Math.min(5, state.player.projectileCount + 1) },
+    { id: "speed", name: "スニーカー", desc: "移動速度 +28", apply: () => state.player.speed += 28 },
+    { id: "heart", name: "ハート強化", desc: "最大HP +20、HPも少し回復", apply: () => { state.player.maxHp += 20; heal(28); } },
+    { id: "magnet", name: "星くず磁石", desc: "経験値を拾う範囲 +45", apply: () => state.player.magnet += 45 },
+    { id: "orbit", name: "ぐるぐる衛星", desc: "周りを回る星を追加", apply: () => state.player.orbit = Math.min(4, state.player.orbit + 1) },
+    { id: "regen", name: "小さな回復", desc: "少しずつHPが回復", apply: () => state.player.regen += 1.2 },
+    { id: "xp", name: "勉強家", desc: "経験値の入り方が少しアップ", apply: () => state.player.xpBonus += 0.18 }
+  ];
 
-        // プレイヤー初期位置
-        player.style.left = `${gameState.playerX - 25}px`;
-        player.style.top = `${gameState.playerY - 25}px`;
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+    canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    state.camera.w = rect.width;
+    state.camera.h = rect.height;
+  }
 
-        // スコアとHP表示更新
-        updateScore();
-        updateHealth();
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
 
-        // ゲームループ開始
-        if (gameState.gameLoopId) {
-          cancelAnimationFrame(gameState.gameLoopId);
+  function distance(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  function angleTo(a, b) {
+    return Math.atan2(b.y - a.y, b.x - a.x);
+  }
+
+  function randomSpawnAroundPlayer(margin = 90) {
+    const p = state.player;
+    const w = state.camera.w || 900;
+    const h = state.camera.h || 560;
+    const side = Math.floor(Math.random() * 4);
+    let x = p.x;
+    let y = p.y;
+    if (side === 0) {
+      x = p.x + (Math.random() - 0.5) * w;
+      y = p.y - h / 2 - margin;
+    } else if (side === 1) {
+      x = p.x + w / 2 + margin;
+      y = p.y + (Math.random() - 0.5) * h;
+    } else if (side === 2) {
+      x = p.x + (Math.random() - 0.5) * w;
+      y = p.y + h / 2 + margin;
+    } else {
+      x = p.x - w / 2 - margin;
+      y = p.y + (Math.random() - 0.5) * h;
+    }
+    return {
+      x: clamp(x, 30, WORLD.width - 30),
+      y: clamp(y, 30, WORLD.height - 30)
+    };
+  }
+
+  function resetGame() {
+    state.running = true;
+    state.paused = false;
+    state.choosing = false;
+    state.time = 0;
+    state.spawnTimer = 1.2;
+    state.eliteTimer = 24;
+    state.messageTimer = 2.5;
+    state.kills = 0;
+    state.score = 0;
+    state.level = 1;
+    state.xp = 0;
+    state.xpNeed = 8;
+    state.enemies = [];
+    state.projectiles = [];
+    state.gems = [];
+    state.pickups = [];
+    state.particles = [];
+    state.floatTexts = [];
+    Object.assign(state.player, {
+      x: WORLD.width / 2,
+      y: WORLD.height / 2,
+      hp: 120,
+      maxHp: 120,
+      speed: 225,
+      dashReady: 0,
+      invincible: 6.0,
+      damage: 22,
+      fireRate: 0.72,
+      fireTimer: 0,
+      projectileCount: 1,
+      magnet: 105,
+      orbit: 0,
+      regen: 0,
+      xpBonus: 1
+    });
+    hideModal();
+    hideUpgrades();
+    setMessage("3分間、生き残ろう。攻撃は自動です。");
+    for (let i = 0; i < 3; i++) spawnEnemy(true);
+    state.lastTime = performance.now();
+    requestAnimationFrame(loop);
+    playTone(520, 0.08, "square");
+    playTone(780, 0.12, "square", 0.06);
+  }
+
+  function spawnEnemy(soft = false) {
+    const elapsed = state.time;
+    const p = randomSpawnAroundPlayer(soft ? 230 : 170);
+    const tier = elapsed > 120 && Math.random() < 0.22 ? 3 : elapsed > 55 && Math.random() < 0.32 ? 2 : 1;
+    const hp = tier === 3 ? 82 + elapsed * 0.62 : tier === 2 ? 42 + elapsed * 0.3 : 24 + elapsed * 0.16;
+    const speed = tier === 3 ? 48 : tier === 2 ? 70 : 86;
+    state.enemies.push({
+      x: clamp(p.x, -160, WORLD.width + 160),
+      y: clamp(p.y, -160, WORLD.height + 160),
+      r: tier === 3 ? 24 : tier === 2 ? 19 : 15,
+      hp,
+      maxHp: hp,
+      speed: speed + Math.random() * 18 + elapsed * 0.12,
+      damage: tier === 3 ? 17 : tier === 2 ? 11 : 7,
+      tier,
+      wobble: Math.random() * Math.PI * 2,
+      hit: 0
+    });
+  }
+
+  function spawnElite() {
+    const p = randomSpawnAroundPlayer(145);
+    const hp = 190 + state.time * 1.0;
+    state.enemies.push({
+      x: p.x,
+      y: p.y,
+      r: 32,
+      hp,
+      maxHp: hp,
+      speed: 48 + state.time * 0.08,
+      damage: 24,
+      tier: 4,
+      wobble: Math.random() * Math.PI * 2,
+      hit: 0,
+      elite: true
+    });
+    setMessage("大きな敵が来た！");
+  }
+
+  function update(dt) {
+    if (!state.running || state.paused || state.choosing) return;
+    state.time += dt;
+    state.messageTimer = Math.max(0, state.messageTimer - dt);
+    if (state.time >= ROUND_SECONDS) {
+      winGame();
+      return;
+    }
+
+    updatePlayer(dt);
+    updateSpawns(dt);
+    updateProjectiles(dt);
+    updateEnemies(dt);
+    updateGems(dt);
+    updatePickups(dt);
+    updateParticles(dt);
+    updateCamera();
+    updateHud();
+  }
+
+  function updatePlayer(dt) {
+    const p = state.player;
+    let dx = (state.keys.right ? 1 : 0) - (state.keys.left ? 1 : 0);
+    let dy = (state.keys.down ? 1 : 0) - (state.keys.up ? 1 : 0);
+    const len = Math.hypot(dx, dy);
+    if (len) {
+      dx /= len;
+      dy /= len;
+      p.x += dx * p.speed * dt;
+      p.y += dy * p.speed * dt;
+    }
+    p.x = clamp(p.x, 26, WORLD.width - 26);
+    p.y = clamp(p.y, 26, WORLD.height - 26);
+    p.invincible = Math.max(0, p.invincible - dt);
+    p.dashReady = Math.max(0, p.dashReady - dt);
+    if (p.regen > 0 && p.hp < p.maxHp) heal(p.regen * dt);
+
+    p.fireTimer -= dt;
+    if (p.fireTimer <= 0) {
+      autoFire();
+      p.fireTimer = p.fireRate;
+    }
+
+    if (p.orbit > 0) updateOrbitDamage(dt);
+  }
+
+  function updateSpawns(dt) {
+    const pressure = 0.5 + state.time / 75;
+    state.spawnTimer -= dt;
+    if (state.spawnTimer <= 0) {
+      const count = 1 + Math.floor(state.time / 45);
+      for (let i = 0; i < count; i++) spawnEnemy();
+      state.spawnTimer = Math.max(0.18, 0.78 / pressure);
+    }
+    state.eliteTimer -= dt;
+    if (state.eliteTimer <= 0) {
+      spawnElite();
+      state.eliteTimer = 34;
+    }
+  }
+
+  function autoFire() {
+    if (!state.enemies.length) return;
+    const p = state.player;
+    const nearest = [...state.enemies]
+      .sort((a, b) => distance(p, a) - distance(p, b))
+      .slice(0, p.projectileCount);
+    nearest.forEach((enemy, index) => {
+      const a = angleTo(p, enemy) + (index - (nearest.length - 1) / 2) * 0.16;
+      state.projectiles.push({
+        x: p.x,
+        y: p.y,
+        vx: Math.cos(a) * 470,
+        vy: Math.sin(a) * 470,
+        r: 6,
+        damage: p.damage,
+        life: 1.45,
+        pierce: p.projectileCount >= 4 ? 1 : 0
+      });
+    });
+    playTone(620 + Math.random() * 80, 0.035, "triangle");
+  }
+
+  function updateProjectiles(dt) {
+    for (let i = state.projectiles.length - 1; i >= 0; i--) {
+      const shot = state.projectiles[i];
+      shot.x += shot.vx * dt;
+      shot.y += shot.vy * dt;
+      shot.life -= dt;
+      let remove = shot.life <= 0;
+      for (let j = state.enemies.length - 1; j >= 0 && !remove; j--) {
+        const enemy = state.enemies[j];
+        if (Math.hypot(shot.x - enemy.x, shot.y - enemy.y) < shot.r + enemy.r) {
+          damageEnemy(enemy, shot.damage);
+          burst(shot.x, shot.y, colors.bolt, 6);
+          if (shot.pierce > 0) shot.pierce--;
+          else remove = true;
         }
-        gameState.gameLoopId = requestAnimationFrame(gameLoop);
-
-        // タッチイベント
-        document.addEventListener('touchstart', handleTouchStart);
-        document.addEventListener('touchmove', handleTouchMove);
-        document.addEventListener('touchend', handleTouchEnd);
-
-        // マウスイベント
-        document.addEventListener('mousedown', handleMouseDown);
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-
-        // ヴァンパイア生成
-        generateVampires();
       }
+      if (remove) state.projectiles.splice(i, 1);
+    }
+  }
 
-      // タッチイベント
-      function handleTouchStart(e) {
-        if (!gameState.isPlaying) return;
-        gameState.touchStartX = e.touches[0].clientX;
-        gameState.touchStartY = e.touches[0].clientY;
+  function updateEnemies(dt) {
+    const p = state.player;
+    for (let i = state.enemies.length - 1; i >= 0; i--) {
+      const enemy = state.enemies[i];
+      enemy.hit = Math.max(0, enemy.hit - dt);
+      const a = angleTo(enemy, p);
+      enemy.wobble += dt * 3;
+      enemy.x += Math.cos(a) * enemy.speed * dt + Math.sin(enemy.wobble) * 10 * dt;
+      enemy.y += Math.sin(a) * enemy.speed * dt + Math.cos(enemy.wobble) * 10 * dt;
+      const d = Math.hypot(enemy.x - p.x, enemy.y - p.y);
+      if (d < enemy.r + p.r && p.invincible <= 0) {
+        p.hp -= enemy.damage;
+      p.invincible = 0.9;
+        burst(p.x, p.y, colors.red, 18);
+        setMessage("当たった！距離を取ろう。");
+        playTone(120, 0.12, "sawtooth");
+        if (p.hp <= 0) {
+          gameOver();
+          return;
+        }
       }
-
-      function handleTouchMove(e) {
-        if (!gameState.isPlaying) return;
-        e.preventDefault();
-        const touchX = e.touches[0].clientX;
-        const touchY = e.touches[0].clientY;
-        movePlayer(touchX, touchY);
+      if (enemy.hp <= 0) {
+        killEnemy(enemy, i);
       }
+    }
+  }
 
-      function handleTouchEnd() {
-        // タッチ終了時は何もしない
-      }
-
-      // マウスイベント
-      function handleMouseDown(e) {
-        if (!gameState.isPlaying) return;
-        gameState.touchStartX = e.clientX;
-        gameState.touchStartY = e.clientY;
-      }
-
-      function handleMouseMove(e) {
-        if (!gameState.isPlaying) return;
-        movePlayer(e.clientX, e.clientY);
-      }
-
-      function handleMouseUp() {
-        // マウスアップ時は何もしない
-      }
-
-      // プレイヤー移動
-      function movePlayer(x, y) {
-        const container = document.getElementById('screen');
-        const containerRect = container.getBoundingClientRect();
-        
-        // プレイヤーの位置を制限
-        let newX = x - containerRect.left - 25;
-        let newY = y - containerRect.top - 25;
-        
-        // コンテナ内に収める
-        newX = Math.max(0, Math.min(newX, containerRect.width - 50));
-        newY = Math.max(0, Math.min(newY, containerRect.height - 50));
-        
-        gameState.playerX = newX + 25;
-        gameState.playerY = newY + 25;
-        
-        player.style.left = `${newX}px`;
-        player.style.top = `${newY}px`;
-      }
-
-      // ヴァンパイア生成
-      function generateVampires() {
-        if (!gameState.isPlaying) return;
-        
-        const vampire = document.createElement('div');
-        vampire.className = 'vampire';
-        vampire.textContent = '🧛‍♂️';
-        
-        // ランダムな位置に配置
-        const containerRect = document.getElementById('screen').getBoundingClientRect();
-        const x = Math.random() * (containerRect.width - 50);
-        const y = Math.random() * (containerRect.height - 50);
-        
-        vampire.style.left = `${x}px`;
-        vampire.style.top = `${y}px`;
-        
-        // ランダムなアニメーション遅延
-        vampire.style.animationDelay = `${Math.random() * 2}s`;
-        
-        vampiresContainer.appendChild(vampire);
-        
-        // ヴァンパイアを状態に追加
-        gameState.vampires.push({
-          element: vampire,
-          x: x,
-          y: y,
-          speed: 0.5 + Math.random() * 1.5,
-          size: 1 + Math.random() * 1
-        });
-        
-        // 1秒ごとに新しいヴァンパイアを生成
-        setTimeout(generateVampires, 1000 + Math.random() * 1000);
-      }
-
-      // クリックでヴァンパイアを倒す
-      document.getElementById('screen').addEventListener('click', (e) => {
-        if (!gameState.isPlaying) return;
-        
-        const rect = e.currentTarget.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const clickY = e.clientY - rect.top;
-        
-        // ヴァンパイアを倒す
-        for (let i = gameState.vampires.length - 1; i >= 0; i--) {
-          const vampire = gameState.vampires[i];
-          const distance = Math.sqrt(
-            Math.pow(clickX - (vampire.x + 25), 2) + 
-            Math.pow(clickY - (vampire.y + 25), 2)
-          );
-          
-          if (distance < 40) {
-            // ヒットエフェクト
-            createHitEffect(vampire.x + 25, vampire.y + 25);
-            
-            // ヴァンパイアを削除
-            vampire.element.remove();
-            gameState.vampires.splice(i, 1);
-            
-            // スコアと倒した数を更新
-            gameState.score += 100;
-            gameState.vampiresDefeated++;
-            updateScore();
-            
-            // プレイヤーに近づく
-            const playerDistance = Math.sqrt(
-              Math.pow(clickX - gameState.playerX, 2) + 
-              Math.pow(clickY - gameState.playerY, 2)
-            );
-            
-            if (playerDistance < 100) {
-              gameState.health = Math.min(100, gameState.health + 5);
-              updateHealth();
-            }
-            
-            break;
-          }
+  function updateOrbitDamage(dt) {
+    const p = state.player;
+    const t = state.time * 3.8;
+    for (let o = 0; o < p.orbit; o++) {
+      const a = t + (Math.PI * 2 * o) / p.orbit;
+      const ox = p.x + Math.cos(a) * 72;
+      const oy = p.y + Math.sin(a) * 72;
+      state.enemies.forEach(enemy => {
+        if (Math.hypot(enemy.x - ox, enemy.y - oy) < enemy.r + 11) {
+          enemy.hp -= (14 + p.damage * 0.28) * dt;
+          enemy.hit = 0.08;
         }
       });
+    }
+  }
 
-      // ヒットエフェクト
-      function createHitEffect(x, y) {
-        const effect = document.createElement('div');
-        effect.className = 'hit-effect';
-        effect.textContent = '💥';
-        effect.style.left = `${x - 20}px`;
-        effect.style.top = `${y - 20}px`;
-        document.getElementById('screen').appendChild(effect);
-        
-        setTimeout(() => {
-          effect.remove();
-        }, 500);
+  function updateGems(dt) {
+    const p = state.player;
+    for (let i = state.gems.length - 1; i >= 0; i--) {
+      const gem = state.gems[i];
+      const d = distance(gem, p);
+      if (d < p.magnet) {
+        const a = angleTo(gem, p);
+        gem.x += Math.cos(a) * (260 + (p.magnet - d) * 2) * dt;
+        gem.y += Math.sin(a) * (260 + (p.magnet - d) * 2) * dt;
       }
-
-      // スコアとHP更新
-      function updateScore() {
-        scoreDisplay.textContent = `スコア: ${gameState.score}`;
+      if (d < p.r + gem.r + 4) {
+        gainXp(gem.value);
+        burst(gem.x, gem.y, colors.gem, 8);
+        state.gems.splice(i, 1);
       }
+    }
+  }
 
-      function updateHealth() {
-        healthFill.style.width = `${gameState.health}%`;
-        if (gameState.health <= 0) {
-          endGame();
+  function updatePickups(dt) {
+    const p = state.player;
+    for (let i = state.pickups.length - 1; i >= 0; i--) {
+      const item = state.pickups[i];
+      if (distance(item, p) < p.r + item.r) {
+        if (item.type === "food") {
+          heal(24);
+          setMessage("回復した！");
+          playTone(520, 0.08, "triangle");
+        } else {
+          state.gems.forEach(gem => {
+            gem.x += (p.x - gem.x) * 0.8;
+            gem.y += (p.y - gem.y) * 0.8;
+          });
+          setMessage("星くずを引き寄せた！");
         }
+        state.pickups.splice(i, 1);
       }
+    }
+  }
 
-      // ゲーム終了
-      function endGame() {
-        gameState.isPlaying = false;
-        cancelAnimationFrame(gameState.gameLoopId);
-        
-        // スクリーン切り替え
-        gameScreen.style.display = 'none';
-        gameOverScreen.style.display = 'flex';
-        
-        // 最終スコア表示
-        finalScore.textContent = `スコア: ${gameState.score}`;
-        vampiresDefeated.textContent = `倒したヴァンパイア: ${gameState.vampiresDefeated}`;
-        
-        // タッチイベント削除
-        document.removeEventListener('touchstart', handleTouchStart);
-        document.removeEventListener('touchmove', handleTouchMove);
-        document.removeEventListener('touchend', handleTouchEnd);
-        
-        document.removeEventListener('mousedown', handleMouseDown);
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      }
+  function updateParticles(dt) {
+    state.particles = state.particles.filter(p => {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 180 * dt;
+      p.life -= dt;
+      return p.life > 0;
+    });
+    state.floatTexts = state.floatTexts.filter(t => {
+      t.y -= 32 * dt;
+      t.life -= dt;
+      return t.life > 0;
+    });
+  }
 
-      // ゲームループ
-      function gameLoop() {
-        if (!gameState.isPlaying) return;
-        
-        // ヴァンパイアを移動
-        gameState.vampires.forEach(vampire => {
-          // プレイヤーに向かって移動
-          const dx = gameState.playerX - (vampire.x + 25);
-          const dy = gameState.playerY - (vampire.y + 25);
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          if (distance > 0) {
-            vampire.x += (dx / distance) * vampire.speed;
-            vampire.y += (dy / distance) * vampire.speed;
-            
-            vampire.element.style.left = `${vampire.x}px`;
-            vampire.element.style.top = `${vampire.y}px`;
-            
-            // プレイヤーに近づいた場合、HPを減らす
-            if (distance < 50) {
-              gameState.health = Math.max(0, gameState.health - 0.1);
-              updateHealth();
-            }
-          }
-        });
-        
-        gameState.gameLoopId = requestAnimationFrame(gameLoop);
-      }
-    })();
+  function updateCamera() {
+    const p = state.player;
+    state.camera.x = clamp(p.x - state.camera.w / 2, 0, WORLD.width - state.camera.w);
+    state.camera.y = clamp(p.y - state.camera.h / 2, 0, WORLD.height - state.camera.h);
+  }
+
+  function damageEnemy(enemy, amount) {
+    enemy.hp -= amount;
+    enemy.hit = 0.09;
+  }
+
+  function killEnemy(enemy, index) {
+    state.enemies.splice(index, 1);
+    state.kills++;
+    const value = enemy.elite ? 12 : enemy.tier === 3 ? 6 : enemy.tier === 2 ? 4 : 3;
+    state.gems.push({ x: enemy.x, y: enemy.y, r: enemy.elite ? 9 : 7, value });
+    if (Math.random() < (enemy.elite ? 0.7 : 0.05)) {
+      state.pickups.push({ x: enemy.x + 12, y: enemy.y - 8, r: 10, type: Math.random() < 0.65 ? "food" : "magnet" });
+    }
+    state.score += enemy.elite ? 250 : enemy.tier * 35;
+    burst(enemy.x, enemy.y, enemy.elite ? colors.violet : colors.enemy, enemy.elite ? 26 : 12);
+    if (state.kills % 25 === 0) setMessage(`${state.kills}体撃破！いい感じ。`);
+  }
+
+  function gainXp(value) {
+    state.xp += Math.ceil(value * state.player.xpBonus);
+    state.score += value * 10;
+    while (state.xp >= state.xpNeed) {
+      state.xp -= state.xpNeed;
+      state.level++;
+      state.xpNeed = Math.floor(state.xpNeed * 1.22 + 6);
+      showUpgrades();
+      playTone(760, 0.1, "triangle");
+      playTone(980, 0.14, "triangle", 0.07);
+      break;
+    }
+  }
+
+  function heal(amount) {
+    state.player.hp = Math.min(state.player.maxHp, state.player.hp + amount);
+  }
+
+  function dash() {
+    if (!state.running || state.paused || state.choosing) return;
+    const p = state.player;
+    if (p.dashReady > 0) {
+      setMessage("DASHはまだ準備中。");
+      return;
+    }
+    let dx = (state.keys.right ? 1 : 0) - (state.keys.left ? 1 : 0);
+    let dy = (state.keys.down ? 1 : 0) - (state.keys.up ? 1 : 0);
+    if (!dx && !dy) dy = -1;
+    const len = Math.hypot(dx, dy);
+    dx /= len;
+    dy /= len;
+    p.x = clamp(p.x + dx * 150, 26, WORLD.width - 26);
+    p.y = clamp(p.y + dy * 150, 26, WORLD.height - 26);
+    p.invincible = 0.45;
+    p.dashReady = 3.6;
+    burst(p.x, p.y, colors.blue, 18);
+    playTone(420, 0.06, "square");
+  }
+
+  function showUpgrades() {
+    state.choosing = true;
+    el.upgradeList.innerHTML = "";
+    const choices = [...upgrades].sort(() => Math.random() - 0.5).slice(0, 3);
+    choices.forEach(choice => {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "upgrade-card";
+      card.innerHTML = `<strong>${choice.name}</strong><span>${choice.desc}</span>`;
+      card.addEventListener("click", () => {
+        choice.apply();
+        hideUpgrades();
+        state.choosing = false;
+        setMessage(`${choice.name} を選んだ！`);
+        updateHud();
+      });
+      el.upgradeList.appendChild(card);
+    });
+    el.upgradeLayer.classList.add("show");
+  }
+
+  function hideUpgrades() {
+    el.upgradeLayer.classList.remove("show");
+  }
+
+  function gameOver() {
+    state.running = false;
+    saveBest();
+    showModal("GAME OVER", `スコア ${state.score}、撃破 ${state.kills}。もう一度いけます。`, [
+      { label: "RETRY", className: "play", action: resetGame }
+    ]);
+    setMessage("GAME OVER");
+  }
+
+  function winGame() {
+    state.running = false;
+    state.score += 3000 + state.kills * 3;
+    saveBest();
+    showModal("SURVIVED!", `3分間生き残りました。スコア ${state.score}、撃破 ${state.kills}。`, [
+      { label: "もう一度", className: "play", action: resetGame }
+    ]);
+    setMessage("クリア！");
+    playTone(660, 0.1, "triangle");
+    playTone(880, 0.16, "triangle", 0.08);
+  }
+
+  function saveBest() {
+    if (state.score <= state.best) return;
+    state.best = state.score;
+    localStorage.setItem("starSurvivorBest", String(state.best));
+  }
+
+  function togglePause() {
+    if (!state.running) {
+      resetGame();
+      return;
+    }
+    if (state.choosing) return;
+    state.paused = !state.paused;
+    setMessage(state.paused ? "PAUSE" : "再開！");
+    state.lastTime = performance.now();
+    updateHud();
+  }
+
+  function updateHud() {
+    const remaining = Math.max(0, ROUND_SECONDS - state.time);
+    const minutes = Math.floor(remaining / 60);
+    const seconds = Math.floor(remaining % 60);
+    el.time.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    el.level.textContent = state.level;
+    el.kills.textContent = state.kills;
+    el.score.textContent = state.score;
+    el.hp.textContent = `${Math.max(0, Math.ceil(state.player.hp))}/${state.player.maxHp}`;
+    el.hpBar.style.width = `${Math.max(0, state.player.hp / state.player.maxHp) * 100}%`;
+    el.xp.textContent = `${state.xp}/${state.xpNeed}`;
+    el.xpBar.style.width = `${Math.min(1, state.xp / state.xpNeed) * 100}%`;
+    el.best.textContent = `BEST ${state.best}`;
+    el.weapon.textContent = `星弾 Lv${state.level} / ${state.player.projectileCount}発`;
+    el.start.textContent = state.running ? (state.paused ? "RESUME" : "RUN") : "START";
+    el.pause.textContent = state.paused ? "RESUME" : "PAUSE";
+    el.status.textContent = state.time > 130 ? "最後のラッシュを生き残れ" : "動き回って、星の魔法で押し返せ";
+  }
+
+  function setMessage(text) {
+    el.message.textContent = text;
+    state.messageTimer = 2.4;
+  }
+
+  function draw() {
+    const cam = state.camera;
+    ctx.clearRect(0, 0, cam.w, cam.h);
+    drawArena();
+    ctx.save();
+    ctx.translate(-cam.x, -cam.y);
+    drawWorldGrid();
+    drawGems();
+    drawPickups();
+    drawProjectiles();
+    drawEnemies();
+    drawOrbit();
+    drawPlayer();
+    drawParticles();
+    drawFloatTexts();
+    ctx.restore();
+    if (state.paused) drawCenterText("PAUSE");
+  }
+
+  function drawArena() {
+    const grd = ctx.createLinearGradient(0, 0, 0, state.camera.h);
+    grd.addColorStop(0, "#071224");
+    grd.addColorStop(1, "#120a1f");
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, state.camera.w, state.camera.h);
+  }
+
+  function drawWorldGrid() {
+    const cam = state.camera;
+    const startX = Math.floor(cam.x / 80) * 80;
+    const startY = Math.floor(cam.y / 80) * 80;
+    ctx.strokeStyle = "rgba(240,216,120,0.08)";
+    ctx.lineWidth = 1;
+    for (let x = startX; x < cam.x + cam.w + 80; x += 80) {
+      ctx.beginPath();
+      ctx.moveTo(x, cam.y);
+      ctx.lineTo(x, cam.y + cam.h);
+      ctx.stroke();
+    }
+    for (let y = startY; y < cam.y + cam.h + 80; y += 80) {
+      ctx.beginPath();
+      ctx.moveTo(cam.x, y);
+      ctx.lineTo(cam.x + cam.w, y);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = "rgba(240,216,120,0.28)";
+    ctx.strokeRect(0, 0, WORLD.width, WORLD.height);
+  }
+
+  function drawPlayer() {
+    const p = state.player;
+    const blink = p.invincible > 0 && Math.floor(performance.now() / 90) % 2 === 0;
+    ctx.save();
+    ctx.globalAlpha = blink ? 0.55 : 1;
+    ctx.fillStyle = colors.shadow;
+    ctx.beginPath();
+    ctx.ellipse(p.x, p.y + p.r * 0.78, p.r * 0.9, p.r * 0.35, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = colors.playerDark;
+    ctx.fillRect(p.x - 12, p.y - 8, 24, 25);
+    ctx.fillStyle = colors.player;
+    ctx.fillRect(p.x - 15, p.y - 17, 26, 25);
+    ctx.fillStyle = "#f7d8a8";
+    ctx.fillRect(p.x - 8, p.y - 12, 13, 8);
+    ctx.fillStyle = colors.pet;
+    ctx.fillRect(p.x + 9, p.y - 23, 7, 7);
+    ctx.restore();
+  }
+
+  function drawEnemies() {
+    state.enemies.forEach(enemy => {
+      ctx.save();
+      ctx.translate(enemy.x, enemy.y);
+      ctx.fillStyle = colors.shadow;
+      ctx.beginPath();
+      ctx.ellipse(0, enemy.r * 0.75, enemy.r * 0.9, enemy.r * 0.35, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = enemy.hit > 0 ? "#fff2a6" : enemy.elite ? colors.violet : enemy.tier === 3 ? colors.enemy3 : enemy.tier === 2 ? colors.enemy2 : colors.enemy;
+      ctx.beginPath();
+      ctx.arc(0, 0, enemy.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#050910";
+      ctx.fillRect(-enemy.r * 0.35, -enemy.r * 0.2, enemy.r * 0.18, enemy.r * 0.18);
+      ctx.fillRect(enemy.r * 0.18, -enemy.r * 0.2, enemy.r * 0.18, enemy.r * 0.18);
+      const hpPct = Math.max(0, enemy.hp / enemy.maxHp);
+      ctx.fillStyle = "#101827";
+      ctx.fillRect(-enemy.r, -enemy.r - 9, enemy.r * 2, 4);
+      ctx.fillStyle = "#86e18d";
+      ctx.fillRect(-enemy.r, -enemy.r - 9, enemy.r * 2 * hpPct, 4);
+      ctx.restore();
+    });
+  }
+
+  function drawProjectiles() {
+    ctx.fillStyle = colors.bolt;
+    state.projectiles.forEach(shot => {
+      ctx.beginPath();
+      ctx.arc(shot.x, shot.y, shot.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillRect(shot.x - 2, shot.y - 10, 4, 20);
+      ctx.fillRect(shot.x - 10, shot.y - 2, 20, 4);
+    });
+  }
+
+  function drawOrbit() {
+    const p = state.player;
+    if (!p.orbit) return;
+    const t = state.time * 3.8;
+    ctx.fillStyle = colors.orbit;
+    for (let i = 0; i < p.orbit; i++) {
+      const a = t + (Math.PI * 2 * i) / p.orbit;
+      const x = p.x + Math.cos(a) * 72;
+      const y = p.y + Math.sin(a) * 72;
+      ctx.beginPath();
+      ctx.arc(x, y, 10, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawGems() {
+    state.gems.forEach(gem => {
+      ctx.fillStyle = colors.gem;
+      ctx.fillRect(gem.x - gem.r, gem.y - gem.r, gem.r * 2, gem.r * 2);
+      ctx.fillStyle = "#e8fbff";
+      ctx.fillRect(gem.x - 2, gem.y - gem.r + 2, 4, 4);
+    });
+  }
+
+  function drawPickups() {
+    state.pickups.forEach(item => {
+      ctx.fillStyle = item.type === "food" ? colors.green : colors.violet;
+      ctx.fillRect(item.x - item.r, item.y - item.r, item.r * 2, item.r * 2);
+      ctx.fillStyle = "#fff2a6";
+      ctx.fillRect(item.x - 3, item.y - 3, 6, 6);
+    });
+  }
+
+  function drawParticles() {
+    state.particles.forEach(p => {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x, p.y, p.size, p.size);
+      ctx.restore();
+    });
+  }
+
+  function drawFloatTexts() {
+    state.floatTexts.forEach(t => {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, t.life / 0.8);
+      ctx.font = "900 16px ui-monospace, monospace";
+      ctx.textAlign = "center";
+      ctx.strokeStyle = "#050910";
+      ctx.lineWidth = 4;
+      ctx.strokeText(t.text, t.x, t.y);
+      ctx.fillStyle = t.color;
+      ctx.fillText(t.text, t.x, t.y);
+      ctx.restore();
+    });
+  }
+
+  function drawCenterText(text) {
+    ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fillRect(0, 0, state.camera.w, state.camera.h);
+    ctx.fillStyle = colors.bolt;
+    ctx.font = "900 42px ui-monospace, monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(text, state.camera.w / 2, state.camera.h / 2);
+    ctx.restore();
+  }
+
+  function burst(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const speed = 60 + Math.random() * 180;
+      state.particles.push({
+        x,
+        y,
+        vx: Math.cos(a) * speed,
+        vy: Math.sin(a) * speed,
+        size: 3 + Math.random() * 4,
+        life: 0.42 + Math.random() * 0.28,
+        maxLife: 0.7,
+        color
+      });
+    }
+  }
+
+  function showModal(title, text, actions) {
+    el.modalTitle.textContent = title;
+    el.modalText.textContent = text;
+    el.modalActions.innerHTML = "";
+    actions.forEach(action => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `btn ${action.className || ""}`;
+      button.textContent = action.label;
+      button.addEventListener("click", action.action);
+      el.modalActions.appendChild(button);
+    });
+    el.modal.classList.add("show");
+  }
+
+  function hideModal() {
+    el.modal.classList.remove("show");
+  }
+
+  function ensureAudio() {
+    if (state.muted) return null;
+    if (!state.audio) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return null;
+      state.audio = new AudioContext();
+    }
+    if (state.audio.state === "suspended") state.audio.resume();
+    return state.audio;
+  }
+
+  function playTone(freq, duration, type = "square", delay = 0) {
+    const audio = ensureAudio();
+    if (!audio) return;
+    const start = audio.currentTime + delay;
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.055, start + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    osc.connect(gain);
+    gain.connect(audio.destination);
+    osc.start(start);
+    osc.stop(start + duration + 0.03);
+  }
+
+  function keyToMove(key) {
+    if (key === "arrowleft" || key === "a") return "left";
+    if (key === "arrowright" || key === "d") return "right";
+    if (key === "arrowup" || key === "w") return "up";
+    if (key === "arrowdown" || key === "s") return "down";
+    return "";
+  }
+
+  document.addEventListener("keydown", event => {
+    const key = event.key.toLowerCase();
+    const move = keyToMove(key);
+    if (move) {
+      event.preventDefault();
+      state.keys[move] = true;
+      return;
+    }
+    if (key === " " || key === "shift") {
+      event.preventDefault();
+      dash();
+      return;
+    }
+    if (key === "enter" || key === "escape") {
+      event.preventDefault();
+      togglePause();
+    }
+  }, { passive: false });
+
+  document.addEventListener("keyup", event => {
+    const move = keyToMove(event.key.toLowerCase());
+    if (move) state.keys[move] = false;
+  });
+
+  document.querySelectorAll("[data-move]").forEach(button => {
+    const move = button.dataset.move;
+    button.addEventListener("pointerdown", event => {
+      event.preventDefault();
+      state.keys[move] = true;
+    });
+    button.addEventListener("pointerup", () => state.keys[move] = false);
+    button.addEventListener("pointercancel", () => state.keys[move] = false);
+    button.addEventListener("click", () => {
+      state.keys[move] = true;
+      setTimeout(() => state.keys[move] = false, 140);
+    });
+  });
+
+  el.start.addEventListener("click", () => {
+    if (!state.running) resetGame();
+  });
+  el.pause.addEventListener("click", togglePause);
+  el.dash.addEventListener("click", dash);
+  el.mute.addEventListener("click", () => {
+    state.muted = !state.muted;
+    el.mute.textContent = state.muted ? "×" : "♪";
+    el.mute.setAttribute("aria-label", state.muted ? "音を出す" : "音を消す");
+  });
+  window.addEventListener("resize", resizeCanvas);
+
+  function loop(now) {
+    const dt = Math.min(0.033, (now - state.lastTime) / 1000 || 0);
+    state.lastTime = now;
+    update(dt);
+    draw();
+    if (state.running) requestAnimationFrame(loop);
+  }
+
+  showModal("星くずサバイバー", "移動だけで遊べるアリーナ型サバイバルです。敵を倒すと青い星くずが落ちます。拾ってレベルアップし、3分間生き残りましょう。", [
+    { label: "START", className: "play", action: resetGame }
+  ]);
+  resizeCanvas();
+  updateHud();
+  draw();
+})();
+</script>
+</body>
+</html>
