@@ -1,565 +1,562 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>オートリオ</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            touch-action: manipulation;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>オートリオ 4人対戦</title>
+<style>
+  :root {
+    --bg-color: #0b132b;
+    --panel-bg: #1c2541;
+    --board-bg: #3a506b;
+    --text-main: #f0f4f8;
+    --accent: #f6c945;
+    
+    /* 4プレイヤーのテーマカラー */
+    --p1-color: #df5142; /* 赤: Player */
+    --p2-color: #45a4e8; /* 青: CPU 1 */
+    --p3-color: #5cc66e; /* 緑: CPU 2 */
+    --p4-color: #8c70ff; /* 紫: CPU 3 */
+    
+    --line: #5bc0be;
+    --shadow: rgba(0, 0, 0, 0.4);
+  }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-        }
+  * { box-sizing: border-box; }
+  
+  body {
+    margin: 0; padding: 0;
+    background: var(--bg-color);
+    color: var(--text-main);
+    font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN", "Yu Rounded Gothic", "Meiryo", sans-serif;
+    min-height: 100dvh;
+    display: flex; flex-direction: column; align-items: center;
+    user-select: none; overflow-x: hidden;
+  }
 
-        #game-container {
-            width: 100%;
-            max-width: 500px;
-            height: 90vh;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
+  .app-container {
+    width: min(800px, 100%); flex: 1; display: flex; flex-direction: column;
+    padding: 10px; gap: 12px;
+  }
 
-        #start-screen, #game-screen, #game-over-screen {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            position: absolute;
-            top: 0;
-            left: 0;
-            transition: opacity 0.5s ease;
-        }
+  /* --- ヘッダー --- */
+  .hud {
+    background: var(--panel-bg);
+    border: 3px solid var(--line); border-radius: 12px;
+    padding: 10px 20px; display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 4px 10px var(--shadow);
+  }
 
-        #game-screen {
-            display: none;
-        }
+  .turn-indicator {
+    font-size: 1.3rem; font-weight: 900; padding: 6px 16px; border-radius: 8px;
+    background: #fff; transition: background-color 0.3s, color 0.3s;
+  }
+  .turn-p1 { color: var(--p1-color); box-shadow: 0 0 10px var(--p1-color); }
+  .turn-p2 { color: var(--p2-color); box-shadow: 0 0 10px var(--p2-color); }
+  .turn-p3 { color: var(--p3-color); box-shadow: 0 0 10px var(--p3-color); }
+  .turn-p4 { color: var(--p4-color); box-shadow: 0 0 10px var(--p4-color); }
 
-        #game-over-screen {
-            display: none;
-        }
+  /* --- CPU情報エリア (上部) --- */
+  .cpu-area {
+    display: flex; justify-content: space-between; gap: 10px; width: 100%;
+  }
+  .cpu-box {
+    flex: 1; background: var(--panel-bg); border: 2px solid #3a506b; border-radius: 8px;
+    padding: 8px; text-align: center; transition: all 0.2s;
+  }
+  .cpu-box.active { transform: translateY(-5px); background: #2a3a5c; }
+  
+  .cpu-name { font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; }
+  .cpu-box.p2.active { border-color: var(--p2-color); box-shadow: 0 0 10px rgba(69, 164, 232, 0.5); }
+  .cpu-box.p3.active { border-color: var(--p3-color); box-shadow: 0 0 10px rgba(92, 198, 110, 0.5); }
+  .cpu-box.p4.active { border-color: var(--p4-color); box-shadow: 0 0 10px rgba(140, 112, 255, 0.5); }
+  .cpu-box.p2 .cpu-name { color: var(--p2-color); }
+  .cpu-box.p3 .cpu-name { color: var(--p3-color); }
+  .cpu-box.p4 .cpu-name { color: var(--p4-color); }
 
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-        }
+  .cpu-inventory-text {
+    font-size: 0.75rem; color: var(--text-main); line-height: 1.4;
+  }
 
-        .screen-content {
-            padding: 20px;
-        }
+  /* --- メインエリア（ボード） --- */
+  .play-area {
+    display: flex; justify-content: center; align-items: center;
+    flex: 1; padding: 10px 0;
+  }
 
-        .btn {
-            background: linear-gradient(to bottom, #ff8a00, #e52e71);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.2rem;
-            border-radius: 50px;
-            cursor: pointer;
-            margin: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            transition: all 0.2s ease;
-        }
+  .board {
+    display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+    gap: 10px; background: var(--board-bg); padding: 15px; border-radius: 16px;
+    box-shadow: 0 10px 30px var(--shadow); width: min(450px, 95vw); aspect-ratio: 1;
+  }
 
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-        }
+  .cell {
+    background: var(--panel-bg); border-radius: 12px; position: relative;
+    cursor: pointer; transition: background-color 0.2s;
+    display: flex; justify-content: center; align-items: center;
+  }
+  .cell:hover { background: rgba(255, 255, 255, 0.1); }
 
-        .btn:active {
-            transform: translateY(1px);
-        }
+  /* --- プレイヤー持ち駒 (下部) --- */
+  .player-inventory {
+    display: flex; justify-content: center; gap: 20px;
+    background: var(--panel-bg); padding: 15px; border-radius: 12px;
+    border: 3px solid var(--p1-color); width: 100%;
+  }
 
-        #score-display {
-            font-size: 2rem;
-            margin: 20px 0;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 10px 20px;
-            border-radius: 20px;
-        }
+  .piece-stack {
+    position: relative; cursor: pointer; transition: transform 0.2s;
+    display: flex; justify-content: center; align-items: center;
+    width: 60px; height: 60px;
+  }
+  .piece-stack.disabled { opacity: 0.3; cursor: not-allowed; filter: grayscale(100%); }
+  .piece-stack.selected { transform: scale(1.2); filter: drop-shadow(0 0 8px #fff); }
 
-        #game-board {
-            width: 100%;
-            height: 60vh;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 15px;
-            position: relative;
-            overflow: hidden;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-        }
+  .count-badge {
+    position: absolute; bottom: -5px; right: -5px;
+    background: #fff; color: #000; font-size: 0.9rem; font-weight: bold;
+    border-radius: 50%; width: 24px; height: 24px; display: flex;
+    justify-content: center; align-items: center; border: 2px solid #000;
+    z-index: 10;
+  }
 
-        .block {
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 20px;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
-            transition: transform 0.1s ease;
-        }
+  /* --- 駒のデザイン --- */
+  .ring {
+    position: absolute; border-radius: 50%;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .ring-0 { width: 80%; height: 80%; border: 10px solid transparent; }
+  .ring-1 { width: 50%; height: 50%; border: 8px solid transparent; }
+  .ring-2 { width: 22%; height: 22%; background-color: transparent; }
 
-        .block:hover {
-            transform: scale(1.05);
-        }
+  /* 色分け */
+  .p1-ring-0, .p1-ring-1 { border-color: var(--p1-color); } .p1-ring-2 { background-color: var(--p1-color); }
+  .p2-ring-0, .p2-ring-1 { border-color: var(--p2-color); } .p2-ring-2 { background-color: var(--p2-color); }
+  .p3-ring-0, .p3-ring-1 { border-color: var(--p3-color); } .p3-ring-2 { background-color: var(--p3-color); }
+  .p4-ring-0, .p4-ring-1 { border-color: var(--p4-color); } .p4-ring-2 { background-color: var(--p4-color); }
 
-        .block-1 { background: linear-gradient(135deg, #ff9a9e, #fad0c4); }
-        .block-2 { background: linear-gradient(135deg, #a1c4fd, #c2e9fb); }
-        .block-3 { background: linear-gradient(135deg, #ffecd2, #fcb090); }
-        .block-4 { background: linear-gradient(135deg, #84fab0, #8fd3f4); }
-        .block-5 { background: linear-gradient(135deg, #d4fc79, #96e6a1); }
+  /* --- ボタン・モーダル --- */
+  .btn {
+    padding: 8px 16px; font-size: 1rem; font-weight: bold; border: none; border-radius: 8px;
+    cursor: pointer; color: #000; background: var(--accent); box-shadow: 0 4px 0 #ccaa00;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .btn:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
 
-        .controls {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    display: none; justify-content: center; align-items: center; z-index: 100;
+  }
+  .modal-overlay.show { display: flex; }
 
-        .control-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.5rem;
-            cursor: pointer;
-            user-select: none;
-        }
+  .modal-box {
+    background: var(--panel-bg); border: 4px solid var(--accent); border-radius: 16px;
+    padding: 30px; text-align: center; max-width: 450px; width: 90%;
+  }
+  .modal-title { font-size: 2rem; margin: 0 0 15px 0; }
+  .modal-desc { font-size: 1rem; color: var(--text-main); margin-bottom: 25px; line-height: 1.6; text-align: left;}
 
-        #start-screen {
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(10px);
-        }
-
-        #game-over-screen {
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-        }
-
-        .instructions {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px 0;
-            font-size: 0.9rem;
-        }
-
-        .highlight {
-            color: #ff8a00;
-            font-weight: bold;
-        }
-
-        @media (max-width: 500px) {
-            h1 {
-                font-size: 2rem;
-            }
-            
-            .btn {
-                padding: 12px 30px;
-                font-size: 1rem;
-            }
-            
-            .block {
-                width: 30px;
-                height: 30px;
-                font-size: 16px;
-            }
-        }
-    </style>
+  @media (max-width: 600px) {
+    .cpu-box { padding: 5px; }
+    .cpu-name { font-size: 0.8rem; }
+    .cpu-inventory-text { font-size: 0.65rem; }
+    .board { padding: 10px; gap: 8px; }
+    .ring-0 { border-width: 6px; }
+    .ring-1 { border-width: 5px; }
+    .player-inventory { padding: 10px; gap: 15px; }
+    .piece-stack { width: 50px; height: 50px; }
+    .turn-indicator { font-size: 1rem; padding: 4px 10px; }
+  }
+</style>
 </head>
 <body>
-    <div id="game-container">
-        <!-- スタート画面 -->
-        <div id="start-screen">
-            <div class="screen-content">
-                <h1>🎯 オートリオ 🎯</h1>
-                <div class="instructions">
-                    <p>同じ絵文字のブロックを3つ以上つなげて消そう！</p>
-                    <p>スワイプまたはクリックでブロックを移動</p>
-                    <p>スコアが増えるほど難しくなるよ！</p>
-                </div>
-                <button id="start-btn" class="btn">スタート</button>
-                <div class="instructions">
-                    <p>スコア <span class="highlight">1000</span> でレベルアップ！</p>
-                    <p>レベルが上がると <span class="highlight">ブロックが増える</span>よ！</p>
-                </div>
-            </div>
-        </div>
 
-        <!-- ゲーム画面 -->
-        <div id="game-screen">
-            <div id="score-display">スコア: 0</div>
-            <div id="game-board"></div>
-            <div class="controls">
-                <div class="control-btn" id="left-btn">⬅️</div>
-                <div class="control-btn" id="up-btn">⬆️</div>
-                <div class="control-btn" id="down-btn">⬇️</div>
-                <div class="control-btn" id="right-btn">➡️</div>
-            </div>
-        </div>
+<div class="app-container">
+  <header class="hud">
+    <div style="font-size: 1.2rem; font-weight: bold; color: var(--accent);">⭕ オートリオ</div>
+    <div class="turn-indicator turn-p1" id="turn-display">🔴 あなたの番</div>
+    <button class="btn" onclick="showRules()">ルール</button>
+  </header>
 
-        <!-- ゲームオーバー画面 -->
-        <div id="game-over-screen">
-            <div class="screen-content">
-                <h1>ゲームオーバー</h1>
-                <p id="final-score">スコア: 0</p>
-                <p id="final-level">レベル: 1</p>
-                <button id="restart-btn" class="btn">もう一度</button>
-                <button id="menu-btn" class="btn">メニュー</button>
-            </div>
-        </div>
+  <div class="cpu-area">
+    <div class="cpu-box p2" id="cpu-2">
+      <div class="cpu-name">CPU 1</div>
+      <div class="cpu-inventory-text" id="inv-text-2">大:3 中:3 小:3</div>
     </div>
+    <div class="cpu-box p3" id="cpu-3">
+      <div class="cpu-name">CPU 2</div>
+      <div class="cpu-inventory-text" id="inv-text-3">大:3 中:3 小:3</div>
+    </div>
+    <div class="cpu-box p4" id="cpu-4">
+      <div class="cpu-name">CPU 3</div>
+      <div class="cpu-inventory-text" id="inv-text-4">大:3 中:3 小:3</div>
+    </div>
+  </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // ゲーム状態管理
-            const gameState = {
-                score: 0,
-                level: 1,
-                board: [],
-                boardSize: 8,
-                blockTypes: ['🍎', '🍌', '🍇', '🍓', '🍒'],
-                isPlaying: false,
-                gameLoop: null
-            };
+  <main class="play-area">
+    <div class="board" id="board">
+      </div>
+  </main>
 
-            // DOM要素
-            const startScreen = document.getElementById('start-screen');
-            const gameScreen = document.getElementById('game-screen');
-            const gameOverScreen = document.getElementById('game-over-screen');
-            const startBtn = document.getElementById('start-btn');
-            const restartBtn = document.getElementById('restart-btn');
-            const menuBtn = document.getElementById('menu-btn');
-            const scoreDisplay = document.getElementById('score-display');
-            const finalScore = document.getElementById('final-score');
-            const finalLevel = document.getElementById('final-level');
-            const gameBoard = document.getElementById('game-board');
-            const leftBtn = document.getElementById('left-btn');
-            const rightBtn = document.getElementById('right-btn');
-            const upBtn = document.getElementById('up-btn');
-            const downBtn = document.getElementById('down-btn');
+  <div class="player-inventory" id="inv-p1">
+    <div class="piece-stack" id="p1-0" onclick="selectPiece(0)">
+      <div class="ring ring-0 p1-ring-0" style="position: relative; width: 100%; height: 100%; transform: none; top: 0; left: 0;"></div>
+      <div class="count-badge" id="p1-count-0">3</div>
+    </div>
+    <div class="piece-stack" id="p1-1" onclick="selectPiece(1)">
+      <div class="ring ring-1 p1-ring-1" style="position: relative; width: 60%; height: 60%; transform: none; top: 0; left: 0;"></div>
+      <div class="count-badge" id="p1-count-1">3</div>
+    </div>
+    <div class="piece-stack" id="p1-2" onclick="selectPiece(2)">
+      <div class="ring ring-2 p1-ring-2" style="position: relative; width: 30%; height: 30%; transform: none; top: 0; left: 0;"></div>
+      <div class="count-badge" id="p1-count-2">3</div>
+    </div>
+  </div>
+</div>
 
-            // ゲーム開始
-            startBtn.addEventListener('click', startGame);
-            restartBtn.addEventListener('click', startGame);
-            menuBtn.addEventListener('click', showStartScreen);
+<div class="modal-overlay" id="result-modal">
+  <div class="modal-box">
+    <h2 class="modal-title" id="modal-title"></h2>
+    <div class="modal-desc" id="modal-result-desc" style="text-align: center;"></div>
+    <button class="btn" onclick="initGame()" style="width: 100%; font-size: 1.2rem; padding: 14px;">もう一度遊ぶ</button>
+  </div>
+</div>
 
-            // ボタン操作
-            leftBtn.addEventListener('click', () => moveBlock(-1, 0));
-            rightBtn.addEventListener('click', () => moveBlock(1, 0));
-            upBtn.addEventListener('click', () => moveBlock(0, -1));
-            downBtn.addEventListener('click', () => moveBlock(0, 1));
+<div class="modal-overlay" id="rule-modal">
+  <div class="modal-box">
+    <h2 class="modal-title" style="color: var(--accent);">📖 ルール (4人対戦)</h2>
+    <div class="modal-desc">
+      <p>自分（赤）の輪を、以下の<b>どれか1つの条件</b>で3つ揃えたら勝ちです！</p>
+      <ul>
+        <li><b>同心円:</b> 同じマスの「大・中・小」をすべて自分の色にする。</li>
+        <li><b>同じサイズ:</b> 同じサイズの輪を、タテ・ヨコ・ナナメのどれかに3つ並べる。</li>
+        <li><b>昇順・降順:</b> 「大・中・小」または「小・中・大」の順で、タテ・ヨコ・ナナメに3つ並べる。</li>
+      </ul>
+      <p style="color: var(--accent); font-weight: bold;">操作方法:</p>
+      <p>下の持ち駒から置きたいサイズを選び、盤面の空いている場所をクリックしてください。</p>
+    </div>
+    <button class="btn" onclick="closeRules()" style="width: 100%;">閉じる</button>
+  </div>
+</div>
 
-            // タッチ操作
-            let touchStartX = 0;
-            let touchStartY = 0;
+<script>
+// --- ゲーム状態管理 ---
+// 1: Player(Red), 2: CPU1(Blue), 3: CPU2(Green), 4: CPU3(Purple)
+let currentPlayer = 1; 
+let selectedSize = -1; // 0: L, 1: M, 2: S
+let gameOver = false;
+let isProcessing = false;
 
-            gameBoard.addEventListener('touchstart', (e) => {
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
-                e.preventDefault();
-            });
+// 持ち駒 [L, M, S]
+let inventory = {
+  1: [3, 3, 3],
+  2: [3, 3, 3],
+  3: [3, 3, 3],
+  4: [3, 3, 3]
+};
 
-            gameBoard.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-            });
+// ボード [row][col][size] = player (0:空, 1~4:プレイヤー)
+let board = [];
 
-            gameBoard.addEventListener('touchend', (e) => {
-                if (touchStartX === 0 && touchStartY === 0) return;
+function initGame() {
+  document.getElementById('result-modal').classList.remove('show');
+  
+  currentPlayer = 1;
+  selectedSize = -1;
+  gameOver = false;
+  isProcessing = false;
+  inventory = { 1: [3, 3, 3], 2: [3, 3, 3], 3: [3, 3, 3], 4: [3, 3, 3] };
+  
+  // 3x3マス、それぞれに大・中・小の3スロット
+  board = Array(3).fill(null).map(() => Array(3).fill(null).map(() => [0, 0, 0]));
 
-                const touchEndX = e.changedTouches[0].clientX;
-                const touchEndY = e.changedTouches[0].clientY;
-                
-                const diffX = touchEndX - touchStartX;
-                const diffY = touchEndY - touchStartY;
-                
-                if (Math.abs(diffX) > Math.abs(diffY)) {
-                    // 横方向
-                    if (diffX > 0) {
-                        moveBlock(1, 0);
-                    } else {
-                        moveBlock(-1, 0);
-                    }
-                } else {
-                    // 縦方向
-                    if (diffY > 0) {
-                        moveBlock(0, 1);
-                    } else {
-                        moveBlock(0, -1);
-                    }
-                }
-                
-                touchStartX = 0;
-                touchStartY = 0;
-            });
+  createBoardUI();
+  updateUI();
+}
 
-            // マウス操作
-            gameBoard.addEventListener('mousedown', (e) => {
-                const rect = gameBoard.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                const blockWidth = gameBoard.offsetWidth / gameState.boardSize;
-                const blockHeight = gameBoard.offsetHeight / gameState.boardSize;
-                
-                const col = Math.floor(x / blockWidth);
-                const row = Math.floor(y / blockHeight);
-                
-                if (row >= 0 && row < gameState.boardSize && col >= 0 && col < gameState.boardSize) {
-                    // クリックされたブロックを移動
-                    moveBlock(col - Math.floor(gameState.boardSize / 2), row - Math.floor(gameState.boardSize / 2));
-                }
-            });
+function createBoardUI() {
+  const boardEl = document.getElementById('board');
+  boardEl.innerHTML = '';
+  
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.onclick = () => placePiece(r, c);
+      cell.id = `cell-${r}-${c}`;
+      boardEl.appendChild(cell);
+    }
+  }
+}
 
-            // ゲーム開始
-            function startGame() {
-                gameState.score = 0;
-                gameState.level = 1;
-                gameState.board = [];
-                updateScore();
-                
-                startScreen.style.display = 'none';
-                gameScreen.style.display = 'flex';
-                gameOverScreen.style.display = 'none';
-                gameState.isPlaying = true;
-                
-                createBoard();
-                renderBoard();
-                startGameLoop();
-            }
+const PLAYER_NAMES = {
+  1: '🔴 あなた',
+  2: '🔵 CPU 1',
+  3: '🟢 CPU 2',
+  4: '🟣 CPU 3'
+};
 
-            // ゲームオーバー画面表示
-            function showGameOver() {
-                gameState.isPlaying = false;
-                cancelAnimationFrame(gameState.gameLoop);
-                
-                finalScore.textContent = `スコア: ${gameState.score}`;
-                finalLevel.textContent = `レベル: ${gameState.level}`;
-                
-                gameScreen.style.display = 'none';
-                gameOverScreen.style.display = 'flex';
-            }
+function updateUI() {
+  // ターン表示
+  const turnDisplay = document.getElementById('turn-display');
+  turnDisplay.textContent = `${PLAYER_NAMES[currentPlayer]}の番`;
+  turnDisplay.className = `turn-indicator turn-p${currentPlayer}`;
 
-            // ゲームボード作成
-            function createBoard() {
-                gameState.board = [];
-                for (let row = 0; row < gameState.boardSize; row++) {
-                    gameState.board[row] = [];
-                    for (let col = 0; col < gameState.boardSize; col++) {
-                        gameState.board[row][col] = getRandomBlock();
-                    }
-                }
-            }
+  // プレイヤー(P1)のインベントリ更新
+  for (let s = 0; s < 3; s++) {
+    const stack = document.getElementById(`p1-${s}`);
+    const count = inventory[1][s];
+    document.getElementById(`p1-count-${s}`).textContent = count;
+    
+    stack.className = 'piece-stack';
+    if (currentPlayer !== 1 || count === 0 || gameOver || isProcessing) {
+      stack.classList.add('disabled');
+    }
+    if (currentPlayer === 1 && s === selectedSize) {
+      stack.classList.add('selected');
+    }
+  }
 
-            // ランダムなブロック生成
-            function getRandomBlock() {
-                const type = Math.floor(Math.random() * gameState.blockTypes.length);
-                return gameState.blockTypes[type];
-            }
+  // CPU(P2, P3, P4)のインベントリ＆アクティブ表示更新
+  for (let p = 2; p <= 4; p++) {
+    const box = document.getElementById(`cpu-${p}`);
+    box.className = `cpu-box p${p} ${currentPlayer === p ? 'active' : ''}`;
+    const inv = inventory[p];
+    document.getElementById(`inv-text-${p}`).textContent = `大:${inv[0]} 中:${inv[1]} 小:${inv[2]}`;
+  }
 
-            // ボード描画
-            function renderBoard() {
-                gameBoard.innerHTML = '';
-                
-                const blockWidth = gameBoard.offsetWidth / gameState.boardSize;
-                const blockHeight = gameBoard.offsetHeight / gameState.boardSize;
-                
-                for (let row = 0; row < gameState.boardSize; row++) {
-                    for (let col = 0; col < gameState.boardSize; col++) {
-                        const block = document.createElement('div');
-                        block.className = `block block-${Math.floor(Math.random() * 5) + 1}`;
-                        block.textContent = gameState.board[row][col];
-                        block.style.left = `${col * blockWidth}px`;
-                        block.style.top = `${row * blockHeight}px`;
-                        block.style.width = `${blockWidth}px`;
-                        block.style.height = `${blockHeight}px`;
-                        gameBoard.appendChild(block);
-                    }
-                }
-            }
+  // ボードの描画
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      const cell = document.getElementById(`cell-${r}-${c}`);
+      cell.innerHTML = ''; 
+      
+      for (let s = 0; s < 3; s++) {
+        const owner = board[r][c][s];
+        if (owner !== 0) {
+          const ring = document.createElement('div');
+          ring.className = `ring ring-${s} p${owner}-ring-${s}`;
+          cell.appendChild(ring);
+        }
+      }
+    }
+  }
+}
 
-            // ブロック移動
-            function moveBlock(deltaX, deltaY) {
-                if (!gameState.isPlaying) return;
-                
-                // 簡易的な移動処理
-                const newBoard = JSON.parse(JSON.stringify(gameState.board));
-                let moved = false;
-                
-                // 一時的にブロックを移動
-                for (let row = 0; row < gameState.boardSize; row++) {
-                    for (let col = 0; col < gameState.boardSize; col++) {
-                        if (newBoard[row][col] !== '') {
-                            const newRow = row + deltaY;
-                            const newCol = col + deltaX;
-                            
-                            if (newRow >= 0 && newRow < gameState.boardSize && 
-                                newCol >= 0 && newCol < gameState.boardSize) {
-                                newBoard[newRow][newCol] = newBoard[row][col];
-                                newBoard[row][col] = '';
-                                moved = true;
-                            }
-                        }
-                    }
-                }
-                
-                if (moved) {
-                    gameState.board = newBoard;
-                    renderBoard();
-                    checkMatches();
-                    // スコア加算
-                    gameState.score += 10;
-                    updateScore();
-                }
-            }
+function selectPiece(size) {
+  if (gameOver || isProcessing || currentPlayer !== 1 || inventory[1][size] === 0) return;
+  
+  if (selectedSize === size) selectedSize = -1;
+  else selectedSize = size;
+  
+  updateUI();
+}
 
-            // マッチチェック
-            function checkMatches() {
-                let scoreIncrease = 0;
-                const matchedBlocks = new Set();
-                
-                // 横方向のマッチ
-                for (let row = 0; row < gameState.boardSize; row++) {
-                    for (let col = 0; col < gameState.boardSize - 2; col++) {
-                        const block = gameState.board[row][col];
-                        if (block !== '' && 
-                            block === gameState.board[row][col + 1] && 
-                            block === gameState.board[row][col + 2]) {
-                            for (let i = 0; i < 3; i++) {
-                                matchedBlocks.add(`${row},${col + i}`);
-                            }
-                            scoreIncrease += 100;
-                        }
-                    }
-                }
-                
-                // 縦方向のマッチ
-                for (let col = 0; col < gameState.boardSize; col++) {
-                    for (let row = 0; row < gameState.boardSize - 2; row++) {
-                        const block = gameState.board[row][col];
-                        if (block !== '' && 
-                            block === gameState.board[row + 1][col] && 
-                            block === gameState.board[row + 2][col]) {
-                            for (let i = 0; i < 3; i++) {
-                                matchedBlocks.add(`${row + i},${col}`);
-                            }
-                            scoreIncrease += 100;
-                        }
-                    }
-                }
-                
-                if (matchedBlocks.size > 0) {
-                    // マッチしたブロックを消す
-                    matchedBlocks.forEach(pos => {
-                        const [row, col] = pos.split(',').map(Number);
-                        gameState.board[row][col] = '';
-                    });
-                    
-                    gameState.score += scoreIncrease;
-                    updateScore();
-                    
-                    // 新しいブロックを生成
-                    setTimeout(() => {
-                        fillEmptySpaces();
-                        renderBoard();
-                    }, 300);
-                }
-                
-                // レベルアップチェック
-                if (gameState.score >= gameState.level * 500) {
-                    gameState.level++;
-                    updateScore();
-                }
-                
-                // ゲームオーバーチェック
-                if (isGameOver()) {
-                    showGameOver();
-                }
-            }
+function placePiece(r, c) {
+  if (gameOver || isProcessing || currentPlayer !== 1 || selectedSize === -1) return;
+  
+  // 既に置かれていたらキャンセル
+  if (board[r][c][selectedSize] !== 0) return;
+  
+  executeMove(r, c, selectedSize);
+}
 
-            // 空きスペースを埋める
-            function fillEmptySpaces() {
-                for (let col = 0; col < gameState.boardSize; col++) {
-                    for (let row = gameState.boardSize - 1; row >= 0; row--) {
-                        if (gameState.board[row][col] === '') {
-                            // 上のブロックを下に移動
-                            for (let r = row - 1; r >= 0; r--) {
-                                if (gameState.board[r][col] !== '') {
-                                    gameState.board[row][col] = gameState.board[r][col];
-                                    gameState.board[r][col] = '';
-                                    break;
-                                }
-                            }
-                            // 新しいブロックを生成
-                            if (gameState.board[row][col] === '') {
-                                gameState.board[row][col] = getRandomBlock();
-                            }
-                        }
-                    }
-                }
-            }
+function executeMove(r, c, s) {
+  board[r][c][s] = currentPlayer;
+  inventory[currentPlayer][s]--;
+  
+  if (checkWin(currentPlayer)) {
+    gameOver = true;
+    updateUI();
+    setTimeout(() => showVictory(currentPlayer), 300);
+  } else {
+    nextTurn();
+  }
+}
 
-            // ゲームオーバーチェック
-            function isGameOver() {
-                // 簡易的なゲームオーバーチェック
-                return gameState.score > 10000; // 仮の条件
-            }
+// ターン進行（置ける駒がないプレイヤーはスキップ）
+function hasValidMoves(player) {
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      for (let s = 0; s < 3; s++) {
+        if (board[r][c][s] === 0 && inventory[player][s] > 0) return true;
+      }
+    }
+  }
+  return false;
+}
 
-            // スコア更新
-            function updateScore() {
-                scoreDisplay.textContent = `スコア: ${gameState.score} | レベル: ${gameState.level}`;
-            }
+function nextTurn() {
+  let found = false;
+  // 順番を次に回し、置けるプレイヤーを探す
+  for (let i = 0; i < 4; i++) {
+    currentPlayer = (currentPlayer % 4) + 1;
+    if (hasValidMoves(currentPlayer)) {
+      found = true;
+      break;
+    }
+  }
 
-            // ゲームループ
-            function startGameLoop() {
-                function gameLoop() {
-                    if (gameState.isPlaying) {
-                        // ランダムな動作
-                        if (Math.random() < 0.05) {
-                            moveBlock(
-                                Math.floor(Math.random() * 3) - 1,
-                                Math.floor(Math.random() * 3) - 1
-                            );
-                        }
-                        gameState.gameLoop = requestAnimationFrame(gameLoop);
-                    }
-                }
-                gameLoop();
-            }
+  // 誰も置けない場合は引き分け
+  if (!found) {
+    gameOver = true;
+    updateUI();
+    setTimeout(showDraw, 300);
+    return;
+  }
 
-            // 初期画面表示
-            function showStartScreen() {
-                startScreen.style.display = 'flex';
-                gameScreen.style.display = 'none';
-                gameOverScreen.style.display = 'none';
-            }
+  selectedSize = -1;
+  
+  if (currentPlayer !== 1) {
+    isProcessing = true;
+    updateUI();
+    setTimeout(cpuPlay, 800); // CPUの思考時間演出
+  } else {
+    isProcessing = false;
+    updateUI();
+  }
+}
 
-            // 初期状態
-            showStartScreen();
-        });
-    </script>
+// --- 勝利判定ロジック ---
+function checkWin(p) {
+  // 1. 同心円 (同じマスに大中小)
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      if (board[r][c][0] === p && board[r][c][1] === p && board[r][c][2] === p) return true;
+    }
+  }
+
+  // 2. 同じサイズの3目並べ
+  for (let s = 0; s < 3; s++) {
+    for (let i = 0; i < 3; i++) {
+      if (board[i][0][s] === p && board[i][1][s] === p && board[i][2][s] === p) return true; // ヨコ
+      if (board[0][i][s] === p && board[1][i][s] === p && board[2][i][s] === p) return true; // タテ
+    }
+    if (board[0][0][s] === p && board[1][1][s] === p && board[2][2][s] === p) return true; // ナナメ \
+    if (board[0][2][s] === p && board[1][1][s] === p && board[2][0][s] === p) return true; // ナナメ /
+  }
+
+  // 3. 昇順・降順 (大中小 or 小中大)
+  for (let i = 0; i < 3; i++) {
+    // ヨコ
+    if (board[i][0][0] === p && board[i][1][1] === p && board[i][2][2] === p) return true;
+    if (board[i][0][2] === p && board[i][1][1] === p && board[i][2][0] === p) return true;
+    // タテ
+    if (board[0][i][0] === p && board[1][i][1] === p && board[2][i][2] === p) return true;
+    if (board[0][i][2] === p && board[1][i][1] === p && board[2][i][0] === p) return true;
+  }
+  // ナナメ \
+  if (board[0][0][0] === p && board[1][1][1] === p && board[2][2][2] === p) return true;
+  if (board[0][0][2] === p && board[1][1][1] === p && board[2][2][0] === p) return true;
+  // ナナメ /
+  if (board[0][2][0] === p && board[1][1][1] === p && board[2][0][2] === p) return true;
+  if (board[0][2][2] === p && board[1][1][1] === p && board[2][0][0] === p) return true;
+
+  return false;
+}
+
+// --- CPU AI ロジック ---
+function cpuPlay() {
+  if (gameOver) return;
+
+  // 可能な手をすべてリストアップ
+  let validMoves = [];
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      for (let s = 0; s < 3; s++) {
+        if (board[r][c][s] === 0 && inventory[currentPlayer][s] > 0) {
+          validMoves.push({ r, c, s });
+        }
+      }
+    }
+  }
+
+  if (validMoves.length === 0) {
+    nextTurn(); return;
+  }
+
+  // 1. 自分が勝てる手があるかチェック（最優先）
+  for (let move of validMoves) {
+    board[move.r][move.c][move.s] = currentPlayer;
+    let win = checkWin(currentPlayer);
+    board[move.r][move.c][move.s] = 0;
+    if (win) {
+      executeMove(move.r, move.c, move.s); return;
+    }
+  }
+
+  // 2. 相手が次に勝つリーチ状態ならブロックする
+  for (let opp = 1; opp <= 4; opp++) {
+    if (opp === currentPlayer) continue;
+    
+    // 相手が置ける場所をチェック
+    let oppMoves = [];
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        for (let s = 0; s < 3; s++) {
+          if (board[r][c][s] === 0 && inventory[opp][s] > 0) {
+            oppMoves.push({ r, c, s });
+          }
+        }
+      }
+    }
+    
+    // 相手が勝てる手を見つけたら、自分がそのサイズを持っているか確認してブロック
+    for (let move of oppMoves) {
+      board[move.r][move.c][move.s] = opp;
+      let win = checkWin(opp);
+      board[move.r][move.c][move.s] = 0;
+      if (win) {
+        // 同じ場所・同じサイズを自分が持っていればブロック！
+        if (inventory[currentPlayer][move.s] > 0) {
+          executeMove(move.r, move.c, move.s); return;
+        }
+      }
+    }
+  }
+
+  // 3. 特に危険がなければランダムに置く
+  let randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+  executeMove(randomMove.r, randomMove.c, randomMove.s);
+}
+
+// --- モーダル表示 ---
+function showVictory(player) {
+  const title = document.getElementById('modal-title');
+  const desc = document.getElementById('modal-result-desc');
+  
+  if (player === 1) {
+    title.textContent = "You Win! 🎉";
+    title.style.color = "var(--p1-color)";
+    desc.textContent = "見事な勝利です！";
+  } else {
+    title.textContent = "You Lose... 💀";
+    title.style.color = `var(--p${player}-color)`;
+    desc.textContent = `${PLAYER_NAMES[player]} の勝利です。`;
+  }
+  document.getElementById('result-modal').classList.add('show');
+}
+
+function showDraw() {
+  const title = document.getElementById('modal-title');
+  title.textContent = "引き分け 🤝";
+  title.style.color = "#fff";
+  document.getElementById('modal-result-desc').textContent = "全員が置ける駒がなくなりました。";
+  document.getElementById('result-modal').classList.add('show');
+}
+
+function showRules() {
+  document.getElementById('rule-modal').classList.add('show');
+}
+
+function closeRules() {
+  document.getElementById('rule-modal').classList.remove('show');
+}
+
+// アプリ起動
+window.onload = initGame;
+
+</script>
 </body>
 </html>
