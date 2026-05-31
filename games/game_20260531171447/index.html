@@ -597,7 +597,6 @@
     modalActions: document.getElementById("modalActions")
   };
 
-  // 1度も死なずに完全クリアできるように再設計されたマップ
   const levels = [
     [
       "########################",
@@ -696,7 +695,8 @@
       blinkUntil: 0,
       stepPulse: 0,
       carryingGold: false,
-      inHole: false
+      inHole: false,
+      isPhasing: false
     };
   }
 
@@ -809,13 +809,8 @@
     return tile === TILE.LADDER || (tile === TILE.ESCAPE && escapeActive());
   }
 
-  function hasSupport(entity) {
-    if (canUseLadder(entity.x, entity.y) || tileAt(entity.x, entity.y) === TILE.ROPE) return true;
-    const below = tileAt(entity.x, entity.y + 1);
-    return below === TILE.BRICK || below === TILE.SOLID || below === TILE.LADDER || (below === TILE.ESCAPE && escapeActive());
-  }
-
   function canFall(entity) {
+    if (entity.isPhasing) return false;
     if (canUseLadder(entity.x, entity.y) || tileAt(entity.x, entity.y) === TILE.ROPE) return false;
     return canOccupy(entity.x, entity.y + 1);
   }
@@ -855,7 +850,7 @@
       collectGold();
       checkExit();
     }
-    if (time - state.lastGuardStep > 150) {
+    if (time - state.lastGuardStep > 220) {
       state.lastGuardStep = time;
       state.guards.forEach(guard => stepGuard(guard, time));
     }
@@ -865,42 +860,65 @@
 
   function stepPlayer(time) {
     const player = state.player;
+    
     if (canFall(player)) {
-      moveEntity(player, 0, 1);
+      player.y += 1;
       return;
     }
 
-    if ((state.keys.has("up") || state.keys.has("down")) && canUseLadder(player.x, player.y + (state.keys.has("up") ? -1 : 1))) {
-      moveEntity(player, 0, state.keys.has("up") ? -1 : 1);
-      return;
+    if (state.keys.has("up")) {
+      if (canUseLadder(player.x, player.y) || player.isPhasing) {
+        if (canOccupy(player.x, player.y - 1)) {
+          player.y -= 1;
+          player.stepPulse = 1;
+          player.isPhasing = false; 
+          return;
+        } else if (tileAt(player.x, player.y - 1) === TILE.BRICK) {
+          player.y -= 1;
+          player.stepPulse = 1;
+          player.isPhasing = true; 
+          return;
+        }
+      }
     }
 
-    if (state.keys.has("up") && canUseLadder(player.x, player.y)) {
-      moveEntity(player, 0, -1);
-      return;
-    }
-
-    if (state.keys.has("down") && (canUseLadder(player.x, player.y) || canUseLadder(player.x, player.y + 1))) {
-      moveEntity(player, 0, 1);
-      return;
+    if (state.keys.has("down")) {
+      if (player.isPhasing) {
+         if (tileAt(player.x, player.y + 1) === TILE.BRICK) {
+           player.y += 1;
+           player.stepPulse = 1;
+           return;
+         } else if (canOccupy(player.x, player.y + 1) || canUseLadder(player.x, player.y + 1)) {
+           player.y += 1;
+           player.stepPulse = 1;
+           player.isPhasing = false; 
+           return;
+         }
+      } else if (canUseLadder(player.x, player.y) || canUseLadder(player.x, player.y + 1)) {
+        if (canOccupy(player.x, player.y + 1)) {
+          player.y += 1;
+          player.stepPulse = 1;
+          return;
+        }
+      } else {
+        if (tileAt(player.x, player.y + 1) === TILE.BRICK && canUseLadder(player.x, player.y + 2)) {
+           player.y += 1;
+           player.stepPulse = 1;
+           player.isPhasing = true;
+           return;
+        }
+      }
     }
 
     const horizontal = state.keys.has("left") ? -1 : state.keys.has("right") ? 1 : 0;
     if (horizontal) {
       player.dir = horizontal;
       if (canOccupy(player.x + horizontal, player.y)) {
-        moveEntity(player, horizontal, 0);
+        player.x += horizontal;
+        player.stepPulse = 1;
+        player.isPhasing = false; 
       }
     }
-  }
-
-  function moveEntity(entity, dx, dy) {
-    if (!canOccupy(entity.x + dx, entity.y + dy)) return false;
-    entity.x += dx;
-    entity.y += dy;
-    if (dx) entity.dir = dx;
-    entity.stepPulse = 1;
-    return true;
   }
 
   function collectGold() {
@@ -1010,7 +1028,8 @@
           return; 
         } else {
           if (canOccupy(guard.x, guard.y - 1)) {
-            moveEntity(guard, 0, -1);
+            guard.y -= 1;
+            guard.stepPulse = 1;
             guard.inHole = false;
           }
           return;
@@ -1021,7 +1040,8 @@
     }
 
     if (canFall(guard)) {
-      moveEntity(guard, 0, 1);
+      guard.y += 1;
+      guard.stepPulse = 1;
       return;
     }
 
@@ -1036,7 +1056,13 @@
     if (!options.length) return;
     options.sort((a, b) => scoreGuardMove(guard, a) - scoreGuardMove(guard, b));
     const best = options[0];
-    moveEntity(guard, best[0], best[1]);
+    
+    if (canOccupy(guard.x + best[0], guard.y + best[1])) {
+       guard.x += best[0];
+       guard.y += best[1];
+       if (best[0] !== 0) guard.dir = best[0];
+       guard.stepPulse = 1;
+    }
   }
 
   function guardOptions(guard) {
@@ -1053,9 +1079,13 @@
       if (canOccupy(guard.x + dx, guard.y)) moves.push([dx, 0]);
     });
     if (!moves.length && px === guard.x && canUseLadder(guard.x, guard.y)) {
-      moves.push(py < guard.y ? [0, -1] : [0, 1]);
+      pushifCanMove(moves, py < guard.y ? [0, -1] : [0, 1], guard);
     }
     return moves;
+  }
+  
+  function pushifCanMove(moves, m, g) {
+      if(canOccupy(g.x + m[0], g.y + m[1])) moves.push(m);
   }
 
   function scoreGuardMove(guard, move) {
@@ -1090,6 +1120,7 @@
     state.player.y = state.player.spawnY;
     state.player.drawX = state.player.x;
     state.player.drawY = state.player.y;
+    state.player.isPhasing = false; 
     state.guards.forEach(guard => resetGuard(guard, false));
     setMessage(message);
     updateHud();
