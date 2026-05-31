@@ -3,381 +3,202 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ポーカー・役作りチャレンジ</title>
+<title>テキサスホールデム vs CPU</title>
 <style>
   :root {
-    --bg-color: #0b2b1a;
+    --bg-color: #0d2b1a;
     --panel-bg: #114227;
     --text-main: #f0f4f8;
     --text-muted: #a3c4b1;
     --accent: #f6c945;
     --card-bg: #ffffff;
+    --card-back: #0f2c4c;
     --red-suit: #df5142;
     --black-suit: #1a1a24;
     --btn-primary: #45a4e8;
     --btn-danger: #df5142;
     --btn-success: #5cc66e;
-    --shadow: rgba(0, 0, 0, 0.4);
+    --shadow: rgba(0, 0, 0, 0.5);
   }
 
   * { box-sizing: border-box; }
   
   body {
-    margin: 0;
-    padding: 0;
-    background: radial-gradient(circle at 50% 30%, #155230, var(--bg-color));
+    margin: 0; padding: 0;
+    background: radial-gradient(circle at 50% 50%, #175e38, var(--bg-color));
     color: var(--text-main);
     font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN", "Yu Rounded Gothic", "Meiryo", sans-serif;
     min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    overflow-x: hidden;
-    user-select: none;
+    display: flex; flex-direction: column; align-items: center;
+    overflow-x: hidden; user-select: none;
   }
 
   .app-container {
-    width: min(900px, 100%);
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-    gap: 16px;
+    width: min(900px, 100%); flex: 1; display: flex; flex-direction: column;
+    padding: 10px; gap: 12px;
   }
 
-  /* --- ヘッダー・スコアボード --- */
-  .hud {
-    background: var(--panel-bg);
-    border: 3px solid #1f6b3e;
-    border-radius: 12px;
-    padding: 12px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 6px 16px var(--shadow);
-  }
-
-  .hud-stats {
-    display: flex;
-    gap: 20px;
-  }
-
-  .stat-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .stat-label {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    font-weight: bold;
-  }
-
-  .stat-value {
-    font-size: 1.5rem;
-    font-weight: 900;
-    color: var(--accent);
-  }
-
-  .round-box {
-    text-align: right;
-  }
-
-  /* --- メインエリア（カード表示） --- */
-  .play-area {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 24px;
+  /* --- プレイヤー情報 --- */
+  .player-info {
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid #1f6b3e; border-radius: 12px;
+    padding: 8px 16px; display: flex; justify-content: space-between; align-items: center;
     position: relative;
   }
 
-  .info-text {
-    font-size: 1.2rem;
-    font-weight: bold;
-    text-align: center;
-    min-height: 1.5em;
-    color: #fff;
-    text-shadow: 1px 1px 2px #000;
+  .player-name { font-size: 1.2rem; font-weight: bold; color: #fff; display: flex; align-items: center; gap: 8px;}
+  .dealer-btn { 
+    background: #fff; color: #000; font-size: 0.8rem; font-weight: 900; 
+    border-radius: 50%; width: 20px; height: 20px; display: flex; 
+    justify-content: center; align-items: center; border: 2px solid #333;
+  }
+  .chip-count { font-size: 1.4rem; font-weight: 900; color: var(--accent); }
+  .current-bet { font-size: 1rem; color: var(--btn-primary); font-weight: bold; background: rgba(0,0,0,0.5); padding: 4px 12px; border-radius: 20px;}
+
+  /* --- テーブル（中央） --- */
+  .table-area {
+    flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
+    gap: 20px; position: relative;
+    border: 3px solid #1f6b3e; border-radius: 100px;
+    background: rgba(0,0,0,0.2); padding: 20px 0;
   }
 
-  .cards-container {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    perspective: 1000px;
-    width: 100%;
+  .pot-box {
+    background: rgba(0,0,0,0.7); border: 2px solid var(--accent);
+    padding: 8px 24px; border-radius: 30px; text-align: center;
   }
+  .pot-label { font-size: 0.8rem; color: var(--text-muted); }
+  .pot-value { font-size: 1.8rem; font-weight: 900; color: var(--accent); }
 
-  .card-slot {
-    flex: 1;
-    max-width: 140px;
-    aspect-ratio: 2.5 / 3.5;
-    position: relative;
+  .action-log {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.8); color: #fff; padding: 6px 16px; border-radius: 8px;
+    font-size: 0.9rem; font-weight: bold; opacity: 0; transition: opacity 0.3s;
+    border: 1px solid var(--text-muted); z-index: 10;
   }
+  .action-log.show { opacity: 1; }
+
+  /* --- カードレイアウト --- */
+  .cards-row {
+    display: flex; justify-content: center; gap: 8px; perspective: 1000px; height: 110px;
+  }
+  .community-cards { height: 130px; margin: 10px 0; }
+
+  .card-slot { width: 80px; height: 100%; position: relative; }
+  .community-cards .card-slot { width: 90px; }
 
   .card {
-    width: 100%;
-    height: 100%;
-    background: var(--card-bg);
-    border-radius: 10px;
-    border: 2px solid #ccc;
-    box-shadow: 0 8px 16px var(--shadow);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 10px;
-    cursor: pointer;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s, filter 0.2s;
-    position: absolute;
-    top: 0;
-    left: 0;
-    backface-visibility: hidden;
+    width: 100%; height: 100%; background: var(--card-bg);
+    border-radius: 8px; border: 2px solid #ccc;
+    box-shadow: 0 4px 10px var(--shadow);
+    display: flex; flex-direction: column; justify-content: space-between; padding: 6px;
+    position: absolute; top: 0; left: 0;
+    transition: transform 0.4s, opacity 0.4s; backface-visibility: hidden;
   }
 
-  /* 選択時（交換予定）のアニメーション */
-  .card.selected {
-    transform: translateY(-20px);
-    border-color: var(--btn-danger);
-    box-shadow: 0 15px 20px rgba(223, 81, 66, 0.4);
-    filter: brightness(0.85);
+  .card.face-down {
+    background: repeating-linear-gradient(45deg, #0f2c4c, #0f2c4c 10px, #153c66 10px, #153c66 20px);
+    border: 2px solid #fff;
+    color: transparent;
   }
+  .card.face-down * { display: none; }
 
-  .card.hidden {
-    opacity: 0;
-    pointer-events: none;
-    transform: rotateY(180deg);
-  }
-
-  .card-top {
-    font-size: 1.4rem;
-    font-weight: 900;
-    line-height: 1;
-  }
-
-  .card-center {
-    font-size: 3rem;
-    text-align: center;
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .card-bottom {
-    font-size: 1.4rem;
-    font-weight: 900;
-    line-height: 1;
-    transform: rotate(180deg);
-    text-align: left;
-  }
+  .card-top { font-size: 1.1rem; font-weight: 900; line-height: 1; }
+  .card-center { font-size: 2.2rem; text-align: center; flex: 1; display: flex; align-items: center; justify-content: center; }
+  .card-bottom { font-size: 1.1rem; font-weight: 900; line-height: 1; transform: rotate(180deg); text-align: left; }
 
   .suit-hearts, .suit-diams { color: var(--red-suit); }
   .suit-spades, .suit-clubs { color: var(--black-suit); }
 
-  .exchange-badge {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(-15deg);
-    background: var(--btn-danger);
-    color: white;
-    padding: 4px 12px;
-    border-radius: 4px;
-    font-weight: 900;
-    font-size: 1.2rem;
-    border: 2px solid #fff;
-    opacity: 0;
-    transition: opacity 0.2s;
-    pointer-events: none;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
-  }
-
-  .card.selected .exchange-badge {
-    opacity: 1;
-  }
-
   /* --- コントロールエリア --- */
   .controls {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    padding: 20px 0;
+    display: flex; justify-content: center; gap: 10px; padding: 10px 0; flex-wrap: wrap;
   }
 
   .btn {
-    padding: 14px 28px;
-    font-size: 1.2rem;
-    font-weight: 900;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    color: #fff;
-    box-shadow: 0 6px 0 rgba(0,0,0,0.4);
-    transition: transform 0.1s, box-shadow 0.1s;
-    font-family: inherit;
+    padding: 14px 20px; font-size: 1.1rem; font-weight: 900; border: none; border-radius: 12px;
+    cursor: pointer; color: #fff; box-shadow: 0 6px 0 rgba(0,0,0,0.4);
+    transition: transform 0.1s, box-shadow 0.1s; flex: 1; min-width: 100px;
   }
+  .btn:active { transform: translateY(6px); box-shadow: 0 0 0 transparent; }
+  .btn:disabled { background: #555; color: #888; box-shadow: 0 6px 0 #333; cursor: not-allowed; transform: none; }
 
-  .btn:active {
-    transform: translateY(6px);
-    box-shadow: 0 0 0 transparent;
-  }
+  .btn-fold { background: linear-gradient(180deg, var(--btn-danger), #9c3327); }
+  .btn-call { background: linear-gradient(180deg, var(--btn-primary), #2974a6); }
+  .btn-raise { background: linear-gradient(180deg, var(--btn-success), #3a8a47); }
 
-  .btn:disabled {
-    background: #555;
-    color: #888;
-    box-shadow: 0 6px 0 #333;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  .btn-exchange { background: linear-gradient(180deg, var(--btn-primary), #2974a6); }
-  .btn-score { background: linear-gradient(180deg, var(--btn-success), #3a8a47); }
-  
   /* --- モーダル --- */
   .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.8);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 100;
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    display: none; justify-content: center; align-items: center; z-index: 100;
   }
-
   .modal-overlay.show { display: flex; }
 
   .modal-box {
-    background: var(--panel-bg);
-    border: 4px solid var(--accent);
-    border-radius: 16px;
-    padding: 30px;
-    text-align: center;
-    max-width: 450px;
-    width: 90%;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    background: var(--panel-bg); border: 4px solid var(--accent); border-radius: 16px;
+    padding: 24px; text-align: center; max-width: 450px; width: 90%;
   }
 
-  .modal-title {
-    font-size: 2rem;
-    color: var(--accent);
-    margin: 0 0 10px 0;
-  }
+  .modal-title { font-size: 1.8rem; color: #fff; margin: 0 0 10px 0; }
+  .modal-desc { font-size: 1.2rem; color: var(--accent); font-weight: bold; margin-bottom: 20px;}
 
-  .modal-score {
-    font-size: 3rem;
-    font-weight: 900;
-    color: #fff;
-    margin: 10px 0 20px 0;
-  }
-
-  /* スマホ対応 */
   @media (max-width: 600px) {
-    .cards-container { gap: 6px; }
-    .card-slot { aspect-ratio: 2 / 3.2; }
-    .card { padding: 6px; border-radius: 6px; }
-    .card-top, .card-bottom { font-size: 1rem; }
-    .card-center { font-size: 2rem; }
-    .exchange-badge { font-size: 0.9rem; padding: 2px 6px; }
-    .btn { padding: 12px 20px; font-size: 1rem; }
-    .stat-value { font-size: 1.2rem; }
+    .table-area { border-radius: 30px; }
+    .card-slot { width: 65px; }
+    .community-cards .card-slot { width: 65px; }
+    .card-top, .card-bottom { font-size: 0.9rem; }
+    .card-center { font-size: 1.6rem; }
+    .btn { font-size: 1rem; padding: 10px; }
   }
 </style>
 </head>
 <body>
 
 <div class="app-container">
-  <header class="hud">
-    <div class="hud-stats">
-      <div class="stat-box">
-        <span class="stat-label">TOTAL SCORE</span>
-        <span class="stat-value" id="score-display">0</span>
-      </div>
-      <div class="stat-box">
-        <span class="stat-label">交換チャンス</span>
-        <span class="stat-value" id="exchanges-display">2 / 2</span>
-      </div>
+  <div class="player-info" id="cpu-info">
+    <div>
+      <div class="player-name">CPU <span id="cpu-dealer" class="dealer-btn" style="display:none;">D</span></div>
+      <div class="chip-count" id="cpu-chips">1000</div>
     </div>
-    <div class="round-box">
-      <div class="stat-label">ROUND</div>
-      <div class="stat-value" id="round-display">1 / 5</div>
+    <div class="current-bet" id="cpu-bet">Bet: 0</div>
+  </div>
+  <div class="cards-row" id="cpu-cards"></div>
+
+  <div class="table-area">
+    <div class="action-log" id="action-log"></div>
+    <div class="pot-box">
+      <div class="pot-label">TOTAL POT</div>
+      <div class="pot-value" id="pot-display">0</div>
     </div>
-  </header>
+    <div class="cards-row community-cards" id="community-cards"></div>
+  </div>
 
-  <main class="play-area">
-    <div class="info-text" id="info-text">交換するカードを選んでください</div>
-    
-    <div class="cards-container" id="cards-container">
-      </div>
-  </main>
+  <div class="cards-row" id="player-cards"></div>
+  <div class="player-info" id="player-info">
+    <div>
+      <div class="player-name">YOU <span id="player-dealer" class="dealer-btn" style="display:none;">D</span></div>
+      <div class="chip-count" id="player-chips">1000</div>
+    </div>
+    <div class="current-bet" id="player-bet">Bet: 0</div>
+  </div>
 
-  <footer class="controls">
-    <button class="btn btn-exchange" id="btn-exchange" onclick="exchangeCards()">交換する</button>
-    <button class="btn btn-score" id="btn-score" onclick="scoreHand()">勝負する！</button>
-  </footer>
+  <div class="controls">
+    <button class="btn btn-fold" id="btn-fold" onclick="playerAction('fold')">降りる(Fold)</button>
+    <button class="btn btn-call" id="btn-call" onclick="playerAction('call')">コール(Call)</button>
+    <button class="btn btn-raise" id="btn-raise" onclick="playerAction('raise')">レイズ(Raise)</button>
+  </div>
 </div>
 
 <div class="modal-overlay" id="result-modal">
   <div class="modal-box">
-    <h2 class="modal-title" id="modal-hand-name">役名</h2>
-    <div class="stat-label">獲得スコア</div>
-    <div class="modal-score" id="modal-score-value">+0</div>
-    <div id="modal-final-text" style="margin-bottom: 20px; color: var(--text-muted); display: none;"></div>
-    <button class="btn btn-score" id="btn-next-round" onclick="startRound()" style="width: 100%;">次のラウンドへ</button>
+    <h2 class="modal-title" id="modal-title"></h2>
+    <div class="modal-desc" id="modal-desc"></div>
+    <button class="btn btn-call" onclick="startNextHand()" style="width: 100%;">次のハンドへ</button>
   </div>
 </div>
 
 <script>
-// --- オーディオ設定 (レトロな効果音) ---
-let audioCtx;
-function ensureAudio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-}
-function playSound(type) {
-  ensureAudio();
-  if (!audioCtx) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  
-  if (type === 'deal') {
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-  } else if (type === 'select') {
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-  } else if (type === 'exchange') {
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-    osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.15);
-    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.15);
-  } else if (type === 'score') {
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
-    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
-    osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
-    gain.gain.setValueAtTime(0, audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
-    gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.4);
-  }
-}
-
-// --- ゲームロジック ---
+// --- カードデータ ---
 const SUITS = [
   { id: 'hearts', symbol: '♥', colorClass: 'suit-hearts' },
   { id: 'diams', symbol: '♦', colorClass: 'suit-diams' },
@@ -392,25 +213,39 @@ const RANKS = [
   { label: 'A', value: 14 }
 ];
 
+// --- ゲーム状態管理 ---
 let state = {
   deck: [],
-  hand: [],
-  selectedForExchange: [false, false, false, false, false],
-  exchangesLeft: 2,
-  round: 1,
-  maxRounds: 5,
-  totalScore: 0,
-  gameState: 'playing' // 'playing', 'scored', 'gameover'
+  playerChips: 1000,
+  cpuChips: 1000,
+  pot: 0,
+  playerHoleCards: [],
+  cpuHoleCards: [],
+  communityCards: [],
+  phase: 'preflop', // preflop, flop, turn, river, showdown
+  currentBet: 0,
+  playerBetTotal: 0,
+  cpuBetTotal: 0,
+  isPlayerTurn: false,
+  dealer: 'cpu', // 'player' or 'cpu' (Dealer Button = SB in heads up)
+  bigBlind: 20,
+  smallBlind: 10,
+  actsThisRound: { player: false, cpu: false } // ラウンド終了判定用
 };
+
+function logAction(msg) {
+  const logEl = document.getElementById('action-log');
+  logEl.textContent = msg;
+  logEl.classList.remove('show');
+  void logEl.offsetWidth; // リフローによるアニメーションリセット
+  logEl.classList.add('show');
+}
 
 function createDeck() {
   let deck = [];
   for (let suit of SUITS) {
-    for (let rank of RANKS) {
-      deck.push({ ...suit, ...rank });
-    }
+    for (let rank of RANKS) deck.push({ ...suit, ...rank });
   }
-  // シャッフル (Fisher-Yates)
   for (let i = deck.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -418,230 +253,435 @@ function createDeck() {
   return deck;
 }
 
-function initGame() {
-  state.totalScore = 0;
-  state.round = 1;
-  document.getElementById('score-display').textContent = '0';
-  startRound();
+// 組み合わせ生成 (5,6,7枚対応)
+function getCombinations(array, size) {
+  const result = [];
+  function p(t, i) {
+    if (t.length === size) { result.push(t); return; }
+    if (i + 1 > array.length) return;
+    p(t.concat(array[i]), i + 1);
+    p(t, i + 1);
+  }
+  p([], 0);
+  return result;
 }
 
-function startRound() {
-  document.getElementById('result-modal').classList.remove('show');
-  
-  if (state.round > state.maxRounds) {
-    // 全ラウンド終了
-    showFinalResult();
-    return;
-  }
-
-  state.deck = createDeck();
-  state.hand = [];
-  for (let i = 0; i < 5; i++) {
-    state.hand.push(state.deck.pop());
-  }
-  
-  state.selectedForExchange = [false, false, false, false, false];
-  state.exchangesLeft = 2;
-  state.gameState = 'playing';
-  
-  updateUI();
-  renderCards(true);
-  
-  setTimeout(() => playSound('deal'), 100);
-}
-
-function toggleCard(index) {
-  if (state.gameState !== 'playing' || state.exchangesLeft <= 0) return;
-  
-  state.selectedForExchange[index] = !state.selectedForExchange[index];
-  playSound('select');
-  renderCards(false);
-  updateButtons();
-}
-
-function exchangeCards() {
-  if (state.gameState !== 'playing' || state.exchangesLeft <= 0) return;
-  
-  const anySelected = state.selectedForExchange.some(v => v);
-  if (!anySelected) {
-    alert("交換するカードを選んでください（タップで選択）");
-    return;
-  }
-
-  playSound('exchange');
-  
-  // 新しいカードを引く
-  for (let i = 0; i < 5; i++) {
-    if (state.selectedForExchange[i]) {
-      state.hand[i] = state.deck.pop();
-      state.selectedForExchange[i] = false; // 選択解除
-    }
-  }
-  
-  state.exchangesLeft--;
-  updateUI();
-  renderCards(true); // アニメーション付きで再描画
-}
-
-// 役判定ロジック
-function evaluateHand(hand) {
-  const values = hand.map(c => c.value).sort((a, b) => b - a);
-  const suits = hand.map(c => c.suit);
-  
-  const isFlush = new Set(suits).size === 1;
-  
-  let isStraight = false;
-  // 通常のストレート (例: 10, 9, 8, 7, 6)
-  if (values[0] - values[4] === 4 && new Set(values).size === 5) {
-    isStraight = true;
-  }
-  // A, 5, 4, 3, 2 の特別なストレート
-  if (values[0] === 14 && values[1] === 5 && values[2] === 4 && values[3] === 3 && values[4] === 2) {
-    isStraight = true;
-  }
-
-  // 同じ数字のカウント
-  const counts = {};
-  values.forEach(v => counts[v] = (counts[v] || 0) + 1);
-  const frequencies = Object.values(counts).sort((a, b) => b - a); // 多い順 (例: フォーカードなら [4, 1])
-
-  if (isFlush && isStraight) {
-    if (values[0] === 14 && values[1] === 13) return { name: "ロイヤルストレートフラッシュ", score: 1000 };
-    return { name: "ストレートフラッシュ", score: 500 };
-  }
-  if (frequencies[0] === 4) return { name: "フォーカード", score: 250 };
-  if (frequencies[0] === 3 && frequencies[1] === 2) return { name: "フルハウス", score: 150 };
-  if (isFlush) return { name: "フラッシュ", score: 100 };
-  if (isStraight) return { name: "ストレート", score: 70 };
-  if (frequencies[0] === 3) return { name: "スリーカード", score: 40 };
-  if (frequencies[0] === 2 && frequencies[1] === 2) return { name: "ツーペア", score: 20 };
-  if (frequencies[0] === 2) return { name: "ワンペア", score: 10 };
-  
-  return { name: "ハイカード (役なし)", score: 0 };
-}
-
-function scoreHand() {
-  if (state.gameState !== 'playing') return;
-  state.gameState = 'scored';
-  
-  // 選択状態をリセットして見やすくする
-  state.selectedForExchange = [false, false, false, false, false];
-  renderCards(false);
-  playSound('score');
-
-  const result = evaluateHand(state.hand);
-  state.totalScore += result.score;
-  
-  // UI更新
-  document.getElementById('score-display').textContent = state.totalScore;
-  
-  // モーダル表示
-  setTimeout(() => {
-    document.getElementById('modal-hand-name').textContent = result.name;
-    document.getElementById('modal-score-value').textContent = `+${result.score}`;
-    
-    const nextBtn = document.getElementById('btn-next-round');
-    if (state.round >= state.maxRounds) {
-      nextBtn.textContent = "最終結果を見る";
-    } else {
-      nextBtn.textContent = "次のラウンドへ";
-    }
-    
-    document.getElementById('result-modal').classList.add('show');
-    state.round++;
-  }, 500);
-}
-
-function showFinalResult() {
-  document.getElementById('modal-hand-name').textContent = "チャレンジ終了！";
-  document.getElementById('modal-hand-name').style.color = "#fff";
-  document.getElementById('modal-score-value').textContent = `合計: ${state.totalScore}点`;
-  document.getElementById('modal-score-value').style.color = "var(--accent)";
-  
-  const textEl = document.getElementById('modal-final-text');
-  textEl.style.display = "block";
-  if (state.totalScore >= 500) textEl.textContent = "神業！プロのポーカープレイヤーです！";
-  else if (state.totalScore >= 200) textEl.textContent = "素晴らしい！かなりの豪運の持ち主です。";
-  else if (state.totalScore >= 50) textEl.textContent = "ナイスプレイ！堅実に役を作りました。";
-  else textEl.textContent = "残念！次はもっと良いカードが来るはず。";
-
-  const nextBtn = document.getElementById('btn-next-round');
-  nextBtn.textContent = "もう一度遊ぶ";
-  nextBtn.onclick = () => {
-    textEl.style.display = "none";
-    document.getElementById('modal-hand-name').style.color = "var(--accent)";
-    document.getElementById('modal-score-value').style.color = "#fff";
-    nextBtn.onclick = startRound; // クリックイベントを元に戻す
-    initGame();
-  };
-  
-  document.getElementById('result-modal').classList.add('show');
-}
-
-// --- UI描画 ---
+// UI更新
 function updateUI() {
-  document.getElementById('exchanges-display').textContent = `${state.exchangesLeft} / 2`;
-  document.getElementById('round-display').textContent = `${state.round} / ${state.maxRounds}`;
-  
-  const infoText = document.getElementById('info-text');
-  if (state.exchangesLeft > 0) {
-    infoText.textContent = `交換するカードを選んでください（あと ${state.exchangesLeft} 回）`;
+  document.getElementById('player-chips').textContent = state.playerChips;
+  document.getElementById('cpu-chips').textContent = state.cpuChips;
+  document.getElementById('pot-display').textContent = state.pot;
+  document.getElementById('player-bet').textContent = `Bet: ${state.playerBetTotal}`;
+  document.getElementById('cpu-bet').textContent = `Bet: ${state.cpuBetTotal}`;
+
+  document.getElementById('player-dealer').style.display = state.dealer === 'player' ? 'flex' : 'none';
+  document.getElementById('cpu-dealer').style.display = state.dealer === 'cpu' ? 'flex' : 'none';
+
+  const callAmount = state.currentBet - state.playerBetTotal;
+  const maxTotalBet = Math.min(state.playerChips + state.playerBetTotal, state.cpuChips + state.cpuBetTotal); // 有効スタックの計算
+  const maxAdditionalBet = maxTotalBet - state.playerBetTotal;
+
+  const btnCall = document.getElementById('btn-call');
+  if (callAmount === 0) {
+    btnCall.textContent = "チェック(Check)";
+  } else if (callAmount >= maxAdditionalBet) {
+    btnCall.textContent = `オールインコール`;
   } else {
-    infoText.textContent = "交換終了！「勝負する！」を押してください";
+    btnCall.textContent = `コール(${callAmount})`;
+  }
+
+  const btnFold = document.getElementById('btn-fold');
+  const btnRaise = document.getElementById('btn-raise');
+  
+  // レイズ額の計算 (ミニマムレイズは通常BB額だが、ここではシンプルに+BB固定)
+  let raiseAmount = callAmount + state.bigBlind;
+  if (state.playerBetTotal + raiseAmount > maxTotalBet) {
+    btnRaise.textContent = `オールイン`;
+  } else {
+    btnRaise.textContent = `レイズ(+${state.bigBlind})`;
   }
   
-  updateButtons();
+  const canAct = state.isPlayerTurn && state.phase !== 'showdown' && state.phase !== 'processing';
+  btnCall.disabled = !canAct;
+  btnFold.disabled = !canAct;
+  
+  // 有効スタックがコール額と同じ（またはそれ以下）ならレイズ不可
+  btnRaise.disabled = !canAct || maxAdditionalBet <= callAmount;
 }
 
-function updateButtons() {
-  const btnExchange = document.getElementById('btn-exchange');
-  const btnScore = document.getElementById('btn-score');
-  
-  const anySelected = state.selectedForExchange.some(v => v);
-  
-  btnExchange.disabled = state.exchangesLeft <= 0 || !anySelected || state.gameState !== 'playing';
-  btnScore.disabled = state.gameState !== 'playing';
-}
-
-function renderCards(animate = false) {
-  const container = document.getElementById('cards-container');
-  container.innerHTML = '';
-  
-  state.hand.forEach((card, index) => {
-    const slot = document.createElement('div');
-    slot.className = 'card-slot';
-    
-    const cardEl = document.createElement('div');
-    cardEl.className = `card ${card.colorClass}`;
-    if (state.selectedForExchange[index]) cardEl.classList.add('selected');
-    
-    // アニメーション用
-    if (animate) {
-      cardEl.style.transform = 'translateY(-100px) rotateY(180deg)';
-      cardEl.style.opacity = '0';
-      setTimeout(() => {
-        cardEl.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-        cardEl.style.transform = state.selectedForExchange[index] ? 'translateY(-20px)' : 'translateY(0) rotateY(0)';
-        cardEl.style.opacity = '1';
-      }, index * 100);
-    }
-    
-    cardEl.innerHTML = `
+function renderCardHTML(card, faceDown = false) {
+  if (faceDown) return `<div class="card face-down"></div>`;
+  return `
+    <div class="card ${card.colorClass}">
       <div class="card-top">${card.label} ${card.symbol}</div>
       <div class="card-center">${card.symbol}</div>
       <div class="card-bottom">${card.label} ${card.symbol}</div>
-      <div class="exchange-badge">CHANGE</div>
-    `;
-    
-    cardEl.onclick = () => toggleCard(index);
-    
-    slot.appendChild(cardEl);
-    container.appendChild(slot);
-  });
+    </div>
+  `;
 }
 
-// アプリ起動
-window.onload = initGame;
+function renderCards(revealCpu = false) {
+  const pContainer = document.getElementById('player-cards');
+  const cContainer = document.getElementById('cpu-cards');
+  const commContainer = document.getElementById('community-cards');
+
+  pContainer.innerHTML = state.playerHoleCards.map(c => `<div class="card-slot">${renderCardHTML(c)}</div>`).join('');
+  cContainer.innerHTML = state.cpuHoleCards.map(c => `<div class="card-slot">${renderCardHTML(c, !revealCpu)}</div>`).join('');
+  
+  let commHTML = '';
+  for(let i=0; i<5; i++) {
+    if(i < state.communityCards.length) {
+      commHTML += `<div class="card-slot">${renderCardHTML(state.communityCards[i])}</div>`;
+    } else {
+      commHTML += `<div class="card-slot"><div class="card" style="background:transparent; border-color: rgba(255,255,255,0.2); box-shadow:none;"></div></div>`;
+    }
+  }
+  commContainer.innerHTML = commHTML;
+}
+
+// ゲームフロー
+function startNextHand() {
+  document.getElementById('result-modal').classList.remove('show');
+  
+  if (state.playerChips <= 0) {
+    alert("チップがなくなりました。ゲームオーバー！");
+    location.reload(); return;
+  }
+  if (state.cpuChips <= 0) {
+    alert("CPUのチップを全て奪いました。あなたの勝利です！");
+    location.reload(); return;
+  }
+
+  // ディーラーの交代
+  state.dealer = state.dealer === 'player' ? 'cpu' : 'player';
+  
+  state.deck = createDeck();
+  // バーンカードはロジック内で pop() する
+  state.playerHoleCards = [state.deck.pop(), state.deck.pop()];
+  state.cpuHoleCards = [state.deck.pop(), state.deck.pop()];
+  state.communityCards = [];
+  
+  state.phase = 'preflop';
+  state.pot = 0;
+  state.playerBetTotal = 0;
+  state.cpuBetTotal = 0;
+  state.currentBet = 0;
+  state.actsThisRound = { player: false, cpu: false };
+
+  // ブラインド支払い (ヘッズアップ: Dealer=SB, Non-Dealer=BB)
+  if (state.dealer === 'player') {
+    placeBet('player', state.smallBlind);
+    placeBet('cpu', state.bigBlind);
+    state.isPlayerTurn = true; // プリフロップはSB(Player)から
+  } else {
+    placeBet('cpu', state.smallBlind);
+    placeBet('player', state.bigBlind);
+    state.isPlayerTurn = false; // プリフロップはSB(CPU)から
+  }
+
+  updateUI();
+  renderCards(false);
+
+  if (!state.isPlayerTurn) {
+    setTimeout(cpuAction, 1000);
+  }
+}
+
+function placeBet(who, amount) {
+  const maxTotalBet = Math.min(state.playerChips + state.playerBetTotal, state.cpuChips + state.cpuBetTotal);
+  
+  if (who === 'player') {
+    let targetTotal = Math.min(state.playerBetTotal + amount, maxTotalBet);
+    let actualBet = targetTotal - state.playerBetTotal;
+    state.playerChips -= actualBet;
+    state.playerBetTotal += actualBet;
+    state.pot += actualBet;
+    if (state.playerBetTotal > state.currentBet) state.currentBet = state.playerBetTotal;
+  } else {
+    let targetTotal = Math.min(state.cpuBetTotal + amount, maxTotalBet);
+    let actualBet = targetTotal - state.cpuBetTotal;
+    state.cpuChips -= actualBet;
+    state.cpuBetTotal += actualBet;
+    state.pot += actualBet;
+    if (state.cpuBetTotal > state.currentBet) state.currentBet = state.cpuBetTotal;
+  }
+}
+
+// アクション処理
+function playerAction(action) {
+  if (!state.isPlayerTurn) return;
+  state.isPlayerTurn = false;
+  state.actsThisRound.player = true;
+
+  if (action === 'fold') {
+    logAction("Player フォールド");
+    endHand('cpu', 'Player Folded');
+    return;
+  } 
+  
+  const callAmount = state.currentBet - state.playerBetTotal;
+  if (action === 'call') {
+    placeBet('player', callAmount);
+    logAction(callAmount === 0 ? "Player チェック" : "Player コール");
+  } 
+  else if (action === 'raise') {
+    const raiseAmount = callAmount + state.bigBlind;
+    placeBet('player', raiseAmount);
+    logAction("Player レイズ");
+    state.actsThisRound.cpu = false; // レイズされたら相手の行動フラグをリセット
+  }
+
+  updateUI();
+  checkRoundEnd();
+}
+
+function cpuAction() {
+  if (state.phase === 'showdown' || state.phase === 'processing') return;
+
+  state.actsThisRound.cpu = true;
+  const callAmount = state.currentBet - state.cpuBetTotal;
+  const handStrength = evaluateHandDynamic(state.cpuHoleCards, state.communityCards).score;
+  const isPreflop = state.phase === 'preflop';
+  
+  let action = 'call';
+  const r = Math.random();
+
+  // CPU 思考AI
+  if (isPreflop) {
+    if (callAmount > state.bigBlind && r < 0.4) action = 'fold';
+    else if (r < 0.15) action = 'raise';
+    else action = 'call';
+  } else {
+    if (handStrength > 1000000) { // ワンペア以上
+      if (r < 0.3) action = 'raise';
+      else action = 'call';
+    } else {
+      if (callAmount > 0) {
+        if (r < 0.1) action = 'raise'; // 10%ブラフ
+        else if (r < 0.4) action = 'call';
+        else action = 'fold';
+      } else {
+        if (r < 0.1) action = 'raise';
+        else action = 'call';
+      }
+    }
+  }
+
+  // 有効スタックチェック (オールイン状態などでレイズ不可ならコールへ)
+  const maxTotalBet = Math.min(state.playerChips + state.playerBetTotal, state.cpuChips + state.cpuBetTotal);
+  if (action === 'raise' && (maxTotalBet - state.cpuBetTotal) <= callAmount) {
+    action = 'call';
+  }
+
+  if (action === 'fold') {
+    logAction("CPU フォールド");
+    endHand('player', 'CPU Folded');
+    return;
+  } 
+  else if (action === 'raise') {
+    placeBet('cpu', callAmount + state.bigBlind);
+    logAction("CPU レイズ");
+    state.actsThisRound.player = false;
+  } 
+  else {
+    placeBet('cpu', callAmount);
+    logAction(callAmount === 0 ? "CPU チェック" : "CPU コール");
+  }
+
+  updateUI();
+  checkRoundEnd();
+}
+
+// ベッティングラウンドの終了判定
+function checkRoundEnd() {
+  const isAllIn = state.playerChips === 0 || state.cpuChips === 0;
+  const betsMatch = state.playerBetTotal === state.cpuBetTotal;
+  const bothActed = state.actsThisRound.player && state.actsThisRound.cpu;
+
+  if (isAllIn || (betsMatch && bothActed)) {
+    state.phase = 'processing';
+    setTimeout(nextPhase, 1200);
+  } else {
+    // ターン交代
+    if (!state.actsThisRound.player || (state.actsThisRound.cpu && !betsMatch && state.cpuBetTotal > state.playerBetTotal)) {
+      state.isPlayerTurn = true;
+      updateUI();
+    } else {
+      setTimeout(cpuAction, 1000);
+    }
+  }
+}
+
+function nextPhase() {
+  state.playerBetTotal = 0;
+  state.cpuBetTotal = 0;
+  state.currentBet = 0;
+  state.actsThisRound = { player: false, cpu: false };
+
+  // オールイン時の自動進行
+  const isAllIn = state.playerChips === 0 || state.cpuChips === 0;
+
+  // バーンカード処理
+  if (state.phase !== 'showdown') state.deck.pop(); 
+
+  if (state.phase === 'preflop') {
+    state.phase = 'flop';
+    state.communityCards.push(state.deck.pop(), state.deck.pop(), state.deck.pop());
+  } 
+  else if (state.phase === 'flop') {
+    state.phase = 'turn';
+    state.communityCards.push(state.deck.pop());
+  } 
+  else if (state.phase === 'turn') {
+    state.phase = 'river';
+    state.communityCards.push(state.deck.pop());
+  } 
+  else if (state.phase === 'river' || isAllIn) {
+    if (isAllIn && state.communityCards.length < 5) {
+      // オールインで場札が足りない場合は一気に開く
+      while(state.communityCards.length < 5) {
+        state.deck.pop(); // burn
+        state.communityCards.push(state.deck.pop());
+      }
+    }
+    state.phase = 'showdown';
+    resolveShowdown();
+    return;
+  }
+
+  // フロップ以降はNon-Dealer(BB)からアクション
+  if (!isAllIn) {
+    if (state.dealer === 'player') {
+      state.isPlayerTurn = false; // CPUから
+      updateUI(); renderCards(false);
+      setTimeout(cpuAction, 1000);
+    } else {
+      state.isPlayerTurn = true; // Playerから
+      updateUI(); renderCards(false);
+    }
+  } else {
+    updateUI(); renderCards(false);
+    setTimeout(nextPhase, 1200); // オールイン時は自動で次へ
+  }
+}
+
+// 勝敗判定
+function resolveShowdown() {
+  renderCards(true); // CPUの手札を公開
+  
+  const pResult = evaluateHandDynamic(state.playerHoleCards, state.communityCards);
+  const cResult = evaluateHandDynamic(state.cpuHoleCards, state.communityCards);
+
+  let winner = 'draw';
+  if (pResult.score > cResult.score) winner = 'player';
+  else if (pResult.score < cResult.score) winner = 'cpu';
+
+  let desc = `あなた: ${pResult.name}<br>CPU: ${cResult.name}`;
+
+  if (winner === 'player') endHand('player', desc);
+  else if (winner === 'cpu') endHand('cpu', desc);
+  else endHand('draw', desc);
+}
+
+function endHand(winner, descText) {
+  state.phase = 'showdown';
+  state.isPlayerTurn = false;
+  updateUI();
+  
+  const titleEl = document.getElementById('modal-title');
+  if (winner === 'player') {
+    state.playerChips += state.pot;
+    titleEl.textContent = "You Win!";
+    titleEl.style.color = "var(--btn-success)";
+  } else if (winner === 'cpu') {
+    state.cpuChips += state.pot;
+    titleEl.textContent = "You Lose...";
+    titleEl.style.color = "var(--btn-danger)";
+  } else {
+    // 引き分け処理 (端数は切り捨ててポットに残るか、通常はSBが取るが簡易化のため均等割)
+    const half = Math.floor(state.pot / 2);
+    state.playerChips += half;
+    state.cpuChips += half;
+    titleEl.textContent = "Draw (引き分け)";
+    titleEl.style.color = "#fff";
+  }
+
+  document.getElementById('modal-desc').innerHTML = descText;
+  
+  updateUI();
+  setTimeout(() => {
+    document.getElementById('result-modal').classList.add('show');
+  }, 1200);
+}
+
+// --- 役判定ロジック (5〜7枚の動的対応) ---
+function evaluate5Cards(hand) {
+  const values = hand.map(c => c.value).sort((a, b) => b - a);
+  const suits = hand.map(c => c.suit);
+  const isFlush = new Set(suits).size === 1;
+  
+  let isStraight = false;
+  let straightHigh = 0;
+  if (values[0] - values[4] === 4 && new Set(values).size === 5) {
+    isStraight = true; straightHigh = values[0];
+  }
+  if (values[0] === 14 && values[1] === 5 && values[2] === 4 && values[3] === 3 && values[4] === 2) {
+    isStraight = true; straightHigh = 5;
+  }
+
+  const counts = {};
+  values.forEach(v => counts[v] = (counts[v] || 0) + 1);
+  const countArr = Object.keys(counts).map(k => [counts[k], parseInt(k)]).sort((a, b) => b[0] - a[0] || b[1] - a[1]);
+  
+  const getKickerScore = () => {
+    let score = 0;
+    for(let i=0; i<countArr.length; i++) {
+      score += countArr[i][1] * Math.pow(15, 4-i); 
+    }
+    return score;
+  };
+
+  const kickers = getKickerScore();
+
+  if (isFlush && isStraight) {
+    if (straightHigh === 14) return { name: "ロイヤルストレートフラッシュ", score: 9000000 + kickers };
+    return { name: "ストレートフラッシュ", score: 8000000 + straightHigh };
+  }
+  if (countArr[0][0] === 4) return { name: "フォーカード", score: 7000000 + kickers };
+  if (countArr[0][0] === 3 && countArr[1][0] === 2) return { name: "フルハウス", score: 6000000 + kickers };
+  if (isFlush) return { name: "フラッシュ", score: 5000000 + kickers };
+  if (isStraight) return { name: "ストレート", score: 4000000 + straightHigh };
+  if (countArr[0][0] === 3) return { name: "スリーカード", score: 3000000 + kickers };
+  if (countArr[0][0] === 2 && countArr[1][0] === 2) return { name: "ツーペア", score: 2000000 + kickers };
+  if (countArr[0][0] === 2) return { name: "ワンペア", score: 1000000 + kickers };
+  
+  return { name: "ハイカード", score: kickers };
+}
+
+function evaluateHandDynamic(hole, comm) {
+  const allCards = [...hole, ...comm];
+  if (allCards.length < 5) {
+    // 5枚未満の場合は簡易的なスコア(手札の強さ)を返す(AI評価用)
+    const vals = allCards.map(c=>c.value).sort((a,b)=>b-a);
+    let tempScore = vals[0]*15 + (vals[1]||0);
+    if(vals[0]===vals[1]) tempScore += 1000; // ペアなら強い
+    return { name: "判定中", score: tempScore }; 
+  }
+
+  const combos = getCombinations(allCards, 5);
+  let bestResult = { score: -1 };
+  
+  for (let combo of combos) {
+    const res = evaluate5Cards(combo);
+    if (res.score > bestResult.score) {
+      bestResult = res;
+    }
+  }
+  return bestResult;
+}
+
+// 起動時
+window.onload = startNextHand;
 
 </script>
 </body>
