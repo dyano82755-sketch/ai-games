@@ -218,7 +218,7 @@
       </div>
   </main>
 
-  <div class="status-message" id="status-message">下の持ち駒から置きたい輪を選んでください。</div>
+  <div class="status-message" id="status-message">準備中...</div>
 
   <div class="player-inventory" id="inv-p1">
     <div class="piece-stack" id="p1-0" onclick="selectPiece(0)">
@@ -293,6 +293,13 @@ const LINES = [
   [[0, 2], [1, 1], [2, 0]]
 ];
 
+const PLAYER_NAMES = {
+  1: '🔴 あなた',
+  2: '🔵 CPU 1',
+  3: '🟢 CPU 2',
+  4: '🟣 CPU 3'
+};
+
 function setStatus(message, tone = '') {
   const status = document.getElementById('status-message');
   if (!status) return;
@@ -303,19 +310,33 @@ function setStatus(message, tone = '') {
 function initGame() {
   document.getElementById('result-modal').classList.remove('show');
   
-  currentPlayer = 1;
   selectedSize = -1;
   gameOver = false;
   isProcessing = false;
   winningCells = [];
   inventory = { 1: [3, 3, 3], 2: [3, 3, 3], 3: [3, 3, 3], 4: [3, 3, 3] };
-  
-  // 3x3マス、それぞれに大・中・小の3スロット
   board = Array(3).fill(null).map(() => Array(3).fill(null).map(() => [0, 0, 0]));
 
   createBoardUI();
-  updateUI();
-  setStatus('下の持ち駒から置きたい輪を選んでください。');
+
+  // 1〜4の間でランダムにスタートプレイヤーを決定
+  currentPlayer = Math.floor(Math.random() * 4) + 1;
+
+  if (currentPlayer !== 1) {
+    isProcessing = true;
+    updateUI();
+    setStatus(`サイコロの結果、最初は ${PLAYER_NAMES[currentPlayer]} からスタートします！`);
+    
+    // 少しだけ待ってからCPUの思考を開始（ユーザーがテキストを読む時間を作る）
+    setTimeout(() => {
+      setStatus(`${PLAYER_NAMES[currentPlayer]} が考えています...`);
+      setTimeout(cpuPlay, 1000);
+    }, 1500);
+  } else {
+    isProcessing = false;
+    updateUI();
+    setStatus('サイコロの結果、最初はあなたの番です！輪を選んでください。', 'good');
+  }
 }
 
 function createBoardUI() {
@@ -332,13 +353,6 @@ function createBoardUI() {
     }
   }
 }
-
-const PLAYER_NAMES = {
-  1: '🔴 あなた',
-  2: '🔵 CPU 1',
-  3: '🟢 CPU 2',
-  4: '🟣 CPU 3'
-};
 
 function updateUI() {
   // ターン表示
@@ -437,9 +451,11 @@ function executeMove(r, c, s) {
     winningCells = winInfo.cells;
     setStatus(`${PLAYER_NAMES[player]}が${winInfo.label}で勝利！`, 'good');
     updateUI();
-    setTimeout(() => showVictory(player, winInfo), 300);
+    setTimeout(() => showVictory(player, winInfo), 500);
   } else {
-    setStatus(`${PLAYER_NAMES[player]}が${SIZE_LABELS[s]}の輪を置きました。`);
+    if (player === 1) {
+      setStatus(`あなたが${SIZE_LABELS[s]}の輪を置きました。`);
+    }
     nextTurn();
   }
 }
@@ -477,9 +493,9 @@ function nextTurn() {
   // 誰も置けない場合は引き分け
   if (!found) {
     gameOver = true;
-    setStatus('置ける場所がなくなりました。引き分けです。', 'warn');
+    setStatus('誰も置ける場所がなくなりました。引き分けです。', 'warn');
     updateUI();
-    setTimeout(showDraw, 300);
+    setTimeout(showDraw, 500);
     return;
   }
 
@@ -492,7 +508,7 @@ function nextTurn() {
     setTimeout(cpuPlay, 800); // CPUの思考時間演出
   } else {
     isProcessing = false;
-    setStatus('あなたの番です。下の持ち駒から置きたい輪を選んでください。');
+    setStatus('あなたの番です。下の持ち駒から置きたい輪を選んでください。', 'good');
     updateUI();
   }
 }
@@ -557,33 +573,51 @@ function isSameMove(a, b) {
   return a.r === b.r && a.c === b.c && a.s === b.s;
 }
 
+// 手のスコアリング（AIの賢さ）
 function scoreMove(player, move) {
   let score = 0;
-  if (move.r === 1 && move.c === 1) score += 18;
-  if ((move.r === 0 || move.r === 2) && (move.c === 0 || move.c === 2)) score += 8;
+  
+  // マスの価値
+  if (move.r === 1 && move.c === 1) score += 18; // 中央
+  if ((move.r === 0 || move.r === 2) && (move.c === 0 || move.c === 2)) score += 8; // 角
 
   return withTemporaryMove(player, move, () => {
+    // 同じマスに自分の駒がある（同心円狙い）
     const sameCellCount = board[move.r][move.c].filter(owner => owner === player).length;
     score += sameCellCount * 12;
-    score += getWinningMoves(player).length * 45;
 
+    // 自分のリーチ数（攻撃を優先）
+    score += getWinningMoves(player).length * 40;
+
+    // 相手のリーチ数を減らす（防御）
+    // ※難易度調整: 以前は一律で「-20」と厳しすぎたため「-15」に緩和。過度な集中攻撃を減らす。
     for (let opp = 1; opp <= 4; opp++) {
-      if (opp !== player) score -= getWinningMoves(opp).length * 20;
+      if (opp !== player) {
+        score -= getWinningMoves(opp).length * 15;
+      }
     }
+    
+    // わずかなランダム性を足して、毎回同じ動き（膠着状態）になるのを防ぐ
+    score += Math.random() * 5;
+    
     return score;
   });
 }
 
+// 複数の候補から手を選ぶ
 function chooseBestMove(player, moves) {
-  return moves
-    .slice()
-    .sort((a, b) => {
-      const diff = scoreMove(player, b) - scoreMove(player, a);
-      if (diff !== 0) return diff;
-      if (a.r !== b.r) return a.r - b.r;
-      if (a.c !== b.c) return a.c - b.c;
-      return a.s - b.s;
-    })[0];
+  const scoredMoves = moves.map(m => ({ move: m, score: scoreMove(player, m) }));
+  
+  // スコアが高い順にソート
+  scoredMoves.sort((a, b) => b.score - a.score);
+
+  // 難易度調整：
+  // 常に一番良い手（0番目）を選ぶと機械的でプレイヤーが隙を突けなくなるため、
+  // 上位3つのうちどれかをランダムに選ぶ（少し人間らしい迷いやプレミを作る）。
+  const topCount = Math.min(3, scoredMoves.length);
+  const pickIndex = Math.floor(Math.random() * topCount);
+  
+  return scoredMoves[pickIndex].move;
 }
 
 function cpuPlay() {
@@ -595,7 +629,7 @@ function cpuPlay() {
     nextTurn(); return;
   }
 
-  // 1. 自分が勝てる手があるかチェック（最優先）
+  // 1. 自分が即勝てる手があるかチェック（最優先）
   const winningMove = getWinningMoves(currentPlayer)[0];
   if (winningMove) {
     executeMove(winningMove.r, winningMove.c, winningMove.s);
@@ -608,6 +642,7 @@ function cpuPlay() {
     let blocksThreat = false;
     for (let opp = 1; opp <= 4; opp++) {
       if (opp === currentPlayer) continue;
+      // 相手の勝ち手を自分が置くことで潰せるか
       if (getWinningMoves(opp).some(threat => isSameMove(threat, move))) {
         blocksThreat = true;
         break;
@@ -615,13 +650,15 @@ function cpuPlay() {
     }
     if (blocksThreat) blockMoves.push(move);
   }
+  
   if (blockMoves.length > 0) {
+    // 複数のブロック手がある場合も、少しだけランダム性を持たせて選ぶ
     const move = chooseBestMove(currentPlayer, blockMoves);
     executeMove(move.r, move.c, move.s);
     return;
   }
 
-  // 3. 自分のリーチを作りやすい手、相手のリーチを増やしにくい手を選ぶ
+  // 3. 特に差し迫った危機がなければ、良い手（上位3つ）から選んで置く
   const smartMove = chooseBestMove(currentPlayer, validMoves);
   executeMove(smartMove.r, smartMove.c, smartMove.s);
 }
