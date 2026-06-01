@@ -464,10 +464,13 @@
     .app {
       height: auto;
       min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
     }
 
     .topbar {
       grid-template-columns: 1fr repeat(2, auto);
+      order: 1;
     }
 
     .topbar .stat:nth-of-type(n+4) {
@@ -475,24 +478,30 @@
     }
 
     .main {
+      display: contents;
+    }
+
+    .board-zone {
+      order: 2;
+    }
+
+    .input-panel {
       grid-template-columns: 1fr;
+      order: 3;
+    }
+
+    .panel {
+      overflow: visible;
+      grid-template-rows: auto;
+      order: 4;
     }
 
     .board-frame {
       width: min(96vw, 58dvh, 720px);
     }
 
-    .panel {
-      overflow: visible;
-      grid-template-rows: auto;
-    }
-
     .clues {
       max-height: 270px;
-    }
-
-    .input-panel {
-      grid-template-columns: 1fr;
     }
 
     .palette {
