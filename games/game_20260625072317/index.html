@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MinecraftコマンドAI</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background-color: #121212;
+      color: #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .screen {
+      width: 100%;
+      max-width: 600px;
+      display: none;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    .active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+      text-align: center;
+      color: #4caf50;
+    }
+    p {
+      margin-bottom: 20px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .btn {
+      background-color: #333;
+      border: none;
+      color: #fff;
+      padding: 15px 20px;
+      margin: 10px 0;
+      width: 100%;
+      font-size: 1.1rem;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background-color 0.3s;
+    }
+    .btn:hover {
+      background-color: #555;
+    }
+
+    .chat-container {
+      height: 400px;
+      overflow-y: auto;
+      padding: 10px;
+      border: 1px solid #444;
+      background-color: #1e1e1e;
+      margin-bottom: 10px;
+      border-radius: 8px;
+    }
+    .message {
+      margin-bottom: 10px;
+      padding: 8px;
+      border-radius: 6px;
+    }
+    .user-message {
+      background-color: #2a4d7a;
+      text-align: right;
+    }
+    .ai-message {
+      background-color: #333;
+    }
+
+    .input-container {
+      display: flex;
+      gap: 10px;
+    }
+    input {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      background-color: #333;
+      color: white;
+    }
+    button.send-btn {
+      padding: 12px 20px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .settings-display {
+      background-color: #333;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #4caf50;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error {
+      color: #f44336;
+      text-align: center;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- スタート画面 -->
+  <div id="start-screen" class="screen active">
+    <h1>MinecraftコマンドAI</h1>
+    <p>あなたの環境に合わせて最適なコマンドを作成します</p>
+    <button class="btn" onclick="selectVersion('java')">Java版</button>
+    <button class="btn" onclick="selectVersion('bedrock')">統合版</button>
+  </div>
+
+  <!-- 統合版選択画面 -->
+  <div id="bedrock-screen" class="screen">
+    <h1>統合版設定</h1>
+    <p>Switchかどうかを選択してください</p>
+    <button class="btn" onclick="selectBedrockPlatform('switch')">Switch</button>
+    <button class="btn" onclick="selectBedrockPlatform('other')">Switch以外</button>
+  </div>
+
+  <!-- 難易度選択画面 -->
+  <div id="difficulty-screen" class="screen">
+    <h1>コマンド難易度</h1>
+    <p>単純なコマンドから複雑なコマンドまで選べます</p>
+    <button class="btn" onclick="selectDifficulty('simple')">単純なコマンド</button>
+    <button class="btn" onclick="selectDifficulty('complex')">複雑なコマンド</button>
+  </div>
+
+  <!-- チャット画面 -->
+  <div id="chat-screen" class="screen">
+    <h1>チャット画面</h1>
+    <div class="settings-display" id="current-settings">設定が選択されていません</div>
+    <div class="chat-container" id="chat-messages"></div>
+    <div class="input-container">
+      <input type="text" id="user-input" placeholder="メッセージを入力..." />
+      <button class="send-btn" onclick="sendMessage()">送信</button>
+    </div>
+  </div>
+
+  <script>
+    let currentSettings = {
+      version: '',
+      platform: '',
+      difficulty: ''
+    };
+
+    function selectVersion(version) {
+      currentSettings.version = version;
+      document.getElementById('start-screen').classList.remove('active');
+      if (version === 'bedrock') {
+        document.getElementById('bedrock-screen').classList.add('active');
+      } else {
+        showChatScreen();
+      }
+    }
+
+    function selectBedrockPlatform(platform) {
+      currentSettings.platform = platform;
+      document.getElementById('bedrock-screen').classList.remove('active');
+      document.getElementById('difficulty-screen').classList.add('active');
+    }
+
+    function selectDifficulty(difficulty) {
+      currentSettings.difficulty = difficulty;
+      document.getElementById('difficulty-screen').classList.remove('active');
+      showChatScreen();
+    }
+
+    function showChatScreen() {
+      const settingsDisplay = document.getElementById('current-settings');
+      settingsDisplay.textContent = `${currentSettings.version === 'java' ? 'Java版' : '統合版'}\n${currentSettings.platform === 'switch' ? 'Switch' : 'Switch以外'}\n${currentSettings.difficulty === 'simple' ? '単純' : '複雑'}`;
+      document.getElementById('chat-screen').classList.add('active');
+      addAIMessage("こんにちは！Minecraftコマンドを教えてくれます。何が必要ですか？");
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('user-input');
+      const message = input.value.trim();
+      if (!message) return;
+
+      addMessage(message, 'user');
+
+      // 入力中アニメーション
+      const chatContainer = document.getElementById('chat-messages');
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'ai-message';
+      loadingDiv.innerHTML = '<span class="loading"></span> メッセージを処理中...';
+      chatContainer.appendChild(loadingDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      input.value = '';
+
+      // AI応答シミュレーション
+      setTimeout(() => {
+        chatContainer.removeChild(loadingDiv);
+        generateResponse(message);
+      }, 1000);
+    }
+
+    function addMessage(text, sender) {
+      const chatContainer = document.getElementById('chat-messages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${sender}-message`;
+      messageDiv.textContent = text;
+      chatContainer.appendChild(messageDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function addAIMessage(text) {
+      addMessage(text, 'ai');
+    }
+
+    function generateResponse(userInput) {
+      let response = '';
+      const isComplex = currentSettings.difficulty === 'complex';
+
+      if (userInput.includes("ダイヤモンド")) {
+        if (isComplex) {
+          response = `「${userInput}」に応じて複雑なコマンドを生成しました。\n\n1個目\n種類：インパルス\n条件：条件なし\nレッドストーン：必要\n構文：/give @p diamond 50\n説明：ダイヤモンドを50個入手します。\n\n検証結果：OK`;
+        } else {
+          response = `【コマンド】\n/give @p diamond 50\n\n【説明】\nダイヤモンドを50個入手します。\n\n検証結果：OK`;
+        }
+      } else if (userInput.includes("拳銃") || userInput.includes("魔法")) {
+        response = `「${userInput}」に応じて複雑なコマンドブロック構成を生成しました。\n\n1個目\n種類：インパルス\n条件：条件なし\nレッドストーン：必要\n構文：/give @p diamond_sword 1{Enchantments:[{id:sharpness,lvl:5}]}\n説明：高火力のダイヤモンドソードを入手します。\n\n2個目\n種類：リピート\n条件：条件付き\nレッドストーン：不要（常時実行）\n構文：/execute as @e[type=tnt] at @s run tp @p ~ ~ ~\n説明：TNTが爆発するたびにプレイヤーを瞬間移動させます。\n\n検証結果：OK`;
+      } else {
+        response = `「${userInput}」に応じて適切なコマンドを生成しました。\n\n【コマンド】\n/tp @p 0 100 0\n\n【説明】\nプレイヤーをY軸100の位置へ移動します。\n\n検証結果：OK`;
+      }
+
+      addAIMessage(response);
+    }
+
+    document.getElementById('user-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>
